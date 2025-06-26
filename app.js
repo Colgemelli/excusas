@@ -4,6 +4,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Variable para recordar el tipo de usuario durante el proceso de autenticación
+let pendingTipoUsuario = null;
+
 // Variables globales
 let currentUser = null;
 let currentStep = 1;
@@ -22,6 +25,19 @@ async function initializeApp() {
     setFechaActual();
     await loadGrados();
 }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session && session.user) {
+        await completeLogin(session.user);
+    }
+
+    supabase.auth.onAuthStateChange((event, session) => {
+        if (session && session.user) {
+            completeLogin(session.user);
+        } else if (!session) {
+            logout();
+        }
+    });
 
 function setupEventListeners() {
     // Login modal
@@ -431,50 +447,61 @@ function closeModal() {
 
 async function handleLogin(e) {
     e.preventDefault();
-    
+
     const email = document.getElementById('email').value;
     const tipoUsuario = document.getElementById('tipoUsuario').value;
-    
+
+    pendingTipoUsuario = tipoUsuario;
+    localStorage.setItem('login_tipo_usuario', tipoUsuario);
+
     try {
-        // Buscar usuario en la base de datos
-        const { data: usuario, error } = await supabase
-            .from('usuarios')
-            .select('*')
-            .eq('email', email)
-            .eq('tipo_usuario', tipoUsuario)
-            .single();
-        
-        if (error || !usuario) {
-            // Si no existe, crear usuario
-            const { data: nuevoUsuario, error: createError } = await supabase
-                .from('usuarios')
-                .insert([
-                    {
-                        email: email,
-                        nombre: email.split('@')[0], // Usar parte del email como nombre temporal
-                        tipo_usuario: tipoUsuario
-                    }
-                ])
-                .select()
-                .single();
-            
-            if (createError) {
-                alert('Error al crear usuario: ' + createError.message);
-                return;
-            }
-            
-            currentUser = nuevoUsuario;
-        } else {
-            currentUser = usuario;
+        const { error } = await supabase.auth.signInWithOtp({ email });
+        if (error) {
+            alert('Error al enviar enlace de inicio de sesión: ' + error.message);
+            return;
         }
-        
-        // Actualizar UI según tipo de usuario
-        updateUIForUser();
+
+        alert('Revisa tu correo para completar el inicio de sesión');
         closeModal();
         
     } catch (error) {
         alert('Error al iniciar sesión: ' + error.message);
     }
+}
+
+async function completeLogin(user) {
+    const tipoUsuario = localStorage.getItem('login_tipo_usuario') || pendingTipoUsuario || 'padre';
+
+    // Buscar usuario por su auth_id
+    let { data: usuario } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('auth_id', user.id)
+        .single();
+
+    if (!usuario) {
+        const { data: nuevoUsuario, error } = await supabase
+            .from('usuarios')
+            .insert([
+                {
+                    auth_id: user.id,
+                    email: user.email,
+                    nombre: user.email.split('@')[0],
+                    tipo_usuario: tipoUsuario
+                }
+            ])
+            .select()
+            .single();
+
+        if (error) {
+            alert('Error al crear usuario: ' + error.message);
+            return;
+        }
+        usuario = nuevoUsuario;
+    }
+
+    currentUser = usuario;
+    updateUIForUser();
 }
 
 function updateUIForUser() {
@@ -490,6 +517,7 @@ function updateUIForUser() {
 }
 
 function logout() {
+    supabase.auth.signOut();
     currentUser = null;
     datosPersonalesAceptados = false; // Resetear protección de datos al cerrar sesión
     document.getElementById('loginBtn').style.display = 'block';
@@ -956,7 +984,8 @@ async function handleFormSubmit(e) {
                     email: emailRegistrante,
                     nombre: nombreRegistrante,
                     telefono: telefonoRegistrante,
-                    tipo_usuario: 'padre'
+                    tipo_usuario: 'padre',
+                    auth_id: currentUser ? currentUser.id : null
                 }])
                 .select()
                 .single();
@@ -984,6 +1013,7 @@ async function handleFormSubmit(e) {
             const data = {
                 estudiante_id: estudiante.id,
                 padre_id: padre.id,
+                usuario_id: currentUser ? currentUser.id : null,
                 fecha_solicitud: fechaSolicitud,
                 motivo: document.getElementById('motivoPermiso').value,
                 hora_salida: document.getElementById('horaSalida').value || null,
@@ -1004,6 +1034,7 @@ async function handleFormSubmit(e) {
             const data = {
                 estudiante_id: estudiante.id,
                 padre_id: padre.id,
+                usuario_id: currentUser ? currentUser.id : null,
                 fecha_solicitud: fechaSolicitud,
                 dias_inasistencia: document.getElementById('diasInasistencia').value,
                 mes: document.getElementById('mesInasistencia').value,
