@@ -771,14 +771,15 @@ function validateCurrentStep() {
         const fechaSolicitud = document.getElementById('fechaSolicitud').value;
         const nombreRegistrante = document.getElementById('nombreRegistrante').value;
         const emailRegistrante = document.getElementById('emailRegistrante').value;
+        const telefonoRegistrante = document.getElementById('telefonoRegistrante').value;
         const relacionEstudiante = document.getElementById('relacionEstudiante').value;
-        const nombreEstudiante = document.getElementById('nombreEstudiante').value;
-        const documentoEstudiante = document.getElementById('documentoEstudiante').value;
+        const estudianteSelect = document.getElementById('estudianteSelect').value;
+        const codigoEstudiante = document.getElementById('codigoEstudiante').value;
         const gradoEstudiante = document.getElementById('gradoEstudiante').value;
         
-        if (!fechaSolicitud || !nombreRegistrante.trim() || !emailRegistrante.trim() || 
-            !relacionEstudiante || !nombreEstudiante.trim() || 
-            !documentoEstudiante.trim() || !gradoEstudiante) {
+        if (!fechaSolicitud || !nombreRegistrante.trim() || !emailRegistrante.trim() ||
+            !telefonoRegistrante.trim() || !relacionEstudiante || !estudianteSelect ||
+            !codigoEstudiante.trim() || !gradoEstudiante) {
             alert('Por favor complete todos los campos obligatorios');
             return false;
         }
@@ -825,24 +826,28 @@ function showConfirmation() {
     const gradoSelect = document.getElementById('gradoEstudiante');
     const gradoNombre = gradoSelect.options[gradoSelect.selectedIndex].text;
     
+    const estudianteSelect = document.getElementById('estudianteSelect');
+    const estudianteOption = estudianteSelect.options[estudianteSelect.selectedIndex];
+    const estudianteNombre = estudianteOption ? estudianteOption.getAttribute('data-nombre') : '';
+
     let html = `
         <div class="confirmation-item">
             <strong>Fecha de Solicitud:</strong> ${document.getElementById('fechaSolicitud').value}
         </div>
         <div class="confirmation-item">
-            <strong>Padre/Acudiente:</strong> ${document.getElementById('nombrePadre').value}
+            <strong>Registrado por:</strong> ${document.getElementById('nombreRegistrante').value}
         </div>
         <div class="confirmation-item">
-            <strong>Email:</strong> ${document.getElementById('emailPadre').value}
+            <strong>Email:</strong> ${document.getElementById('emailRegistrante').value}
         </div>
         <div class="confirmation-item">
-            <strong>Teléfono:</strong> ${document.getElementById('telefonoPadre').value || 'No especificado'}
+            <strong>Teléfono:</strong> ${document.getElementById('telefonoRegistrante').value || 'No especificado'}
         </div>
         <div class="confirmation-item">
-            <strong>Estudiante:</strong> ${document.getElementById('nombreEstudiante').value}
+            <strong>Estudiante:</strong> ${estudianteNombre}
         </div>
         <div class="confirmation-item">
-            <strong>Documento:</strong> ${document.getElementById('documentoEstudiante').value}
+            <strong>Código:</strong> ${document.getElementById('codigoEstudiante').value}
         </div>
         <div class="confirmation-item">
             <strong>Grado:</strong> ${gradoNombre}
