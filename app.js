@@ -243,6 +243,13 @@ function resetFormFields() {
     document.getElementById('certificadoMedico').checked = false;
     document.getElementById('incapacidad').checked = false;
     
+    // Resetear atributos required
+    document.getElementById('motivoPermiso').required = false;
+    document.getElementById('horaSalida').required = false;
+    document.getElementById('diasInasistencia').required = false;
+    document.getElementById('mesInasistencia').required = false;
+    document.getElementById('motivoExcusa').required = false;
+    
     // Ocultar campo "otro" con animación
     const otroGroup = document.getElementById('otroRelacionGroup');
     otroGroup.classList.remove('show');
@@ -456,10 +463,29 @@ function showStepperForm(type) {
         formTitle.textContent = 'Solicitar Permiso';
         permisoFields.style.display = 'block';
         excusaFields.style.display = 'none';
+        
+        // Hacer obligatorios los campos de permiso
+        document.getElementById('motivoPermiso').required = true;
+        document.getElementById('horaSalida').required = true;
+        
+        // Quitar obligatorio de campos de excusa
+        document.getElementById('diasInasistencia').required = false;
+        document.getElementById('mesInasistencia').required = false;
+        document.getElementById('motivoExcusa').required = false;
+        
     } else {
         formTitle.textContent = 'Registrar Excusa';
         permisoFields.style.display = 'none';
         excusaFields.style.display = 'block';
+        
+        // Hacer obligatorios los campos de excusa
+        document.getElementById('diasInasistencia').required = true;
+        document.getElementById('mesInasistencia').required = true;
+        document.getElementById('motivoExcusa').required = true;
+        
+        // Quitar obligatorio de campos de permiso
+        document.getElementById('motivoPermiso').required = false;
+        document.getElementById('horaSalida').required = false;
     }
     
     updateStepperUI();
@@ -498,7 +524,31 @@ function nextStep() {
     if (validateCurrentStep()) {
         currentStep++;
         updateStepperUI();
+    } else {
+        // Destacar campos con errores
+        highlightRequiredFields();
     }
+}
+
+function highlightRequiredFields() {
+    // Función para destacar visualmente los campos que faltan
+    const requiredFields = document.querySelectorAll('input[required], select[required], textarea[required]');
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim() && field.style.display !== 'none' && !field.disabled) {
+            field.style.borderColor = 'var(--danger-color)';
+            field.style.borderWidth = '2px';
+            field.style.boxShadow = '0 0 0 3px rgba(231, 76, 60, 0.1)';
+            
+            // Remover el destacado después de que el usuario escriba algo
+            field.addEventListener('input', function clearHighlight() {
+                field.style.borderColor = '';
+                field.style.borderWidth = '';
+                field.style.boxShadow = '';
+                field.removeEventListener('input', clearHighlight);
+            }, { once: true });
+        }
+    });
 }
 
 function prevStep() {
@@ -756,7 +806,7 @@ async function handleFormSubmit(e) {
         }
         
         // Mostrar mensaje de éxito con el radicado
-        alert(`¡Solicitud enviada exitosamente!\n\nRadicado: ${result.data.radicado}\n\nEstudiante: ${estudiante.nombre} (${estudiante.codigo})\nGrado: ${estudiante.grados.nombre}\n\nRegistrado por: ${nombreRegistrante} (${relacionFinal})\nEmail: ${emailRegistrante}\n\nGuarde este número para consultar el estado de su solicitud.`);
+        alert(`¡Solicitud enviada exitosamente!\n\nRadicado: ${result.data.radicado}\n\nEstudiante: ${estudiante.nombre} (${estudiante.codigo})\nGrado: ${estudiante.grados.nombre}\n\nRegistrado por: ${nombreRegistrante} (${relacionFinal})\nEmail: ${emailRegistrante}\nTeléfono: ${telefonoRegistrante}\n\n⚠️ IMPORTANTE: Guarde este número de radicado para consultar el estado de su solicitud.`);
         
         // Limpiar formulario y volver al inicio
         resetFormFields();
