@@ -46,7 +46,8 @@ function setupEventListeners() {
     document.getElementById('backFromConsulta').addEventListener('click', showHomeScreen);
     document.getElementById('backFromCoordinador').addEventListener('click', showHomeScreen);
     document.getElementById('backFromDocente').addEventListener('click', showHomeScreen);
-    
+    document.getElementById('backFromRadicado').addEventListener('click', showHomeScreen);
+
     // Stepper navigation
     document.getElementById('nextBtn').addEventListener('click', nextStep);
     document.getElementById('prevBtn').addEventListener('click', prevStep);
@@ -514,6 +515,12 @@ function hideAllScreens() {
     document.querySelectorAll('.screen').forEach(screen => {
         screen.style.display = 'none';
     });
+}
+
+function showRadicadoScreen(radicado) {
+    hideAllScreens();
+    document.getElementById('radicadoDisplay').innerText = radicado;
+    document.getElementById('radicadoScreen').style.display = 'block';
 }
 
 function handleOptionClick(e) {
@@ -1020,13 +1027,12 @@ async function handleFormSubmit(e) {
             return;
         }
         
-        // Mostrar mensaje de éxito con el radicado
-        alert(`¡Solicitud enviada exitosamente!\n\nRadicado: ${result.data.radicado}\n\nEstudiante: ${estudiante.nombre} (${estudiante.codigo})\nGrado: ${estudiante.grados.nombre}\n\nRegistrado por: ${nombreRegistrante} (${relacionFinal})\nEmail: ${emailRegistrante}\nTeléfono: ${telefonoRegistrante}\n\n⚠️ IMPORTANTE: Guarde este número de radicado para consultar el estado de su solicitud.`);
-        
-        // Limpiar formulario y volver al inicio
+        // Mostrar pantalla de radicado exitoso
+        showRadicadoScreen(result.data.radicado);
+
+        // Limpiar formulario para futuras solicitudes
         resetFormFields();
         setFechaActual();
-        showHomeScreen();
         
     } catch (error) {
         console.error('Error al procesar la solicitud:', error);
