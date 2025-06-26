@@ -55,19 +55,20 @@
                     <div class="welcome-section">
                         <h2>Bienvenido al Sistema de Gestión</h2>
                         <p>Seleccione una opción para continuar</p>
+                        <p class="info-text">✨ Los padres de familia pueden registrar permisos y excusas sin necesidad de crear una cuenta</p>
                     </div>
                     
                     <div class="options-grid">
                         <div class="option-card" data-option="permiso">
                             <div class="option-icon">📋</div>
                             <h3>Solicitar Permiso</h3>
-                            <p>Para salidas anticipadas o llegadas tardías</p>
+                            <p>Para salidas anticipadas o llegadas tardías<br><small>No requiere registro previo</small></p>
                         </div>
                         
                         <div class="option-card" data-option="excusa">
                             <div class="option-icon">📝</div>
                             <h3>Registrar Excusa</h3>
-                            <p>Para justificar inasistencias</p>
+                            <p>Para justificar inasistencias<br><small>No requiere registro previo</small></p>
                         </div>
                         
                         <div class="option-card" data-option="consultar">
@@ -119,11 +120,57 @@
                                 <label for="fechaSolicitud">Fecha de Solicitud:</label>
                                 <input type="date" id="fechaSolicitud" required>
                             </div>
-                            <div class="form-group">
-                                <label for="estudiante">Estudiante:</label>
-                                <select id="estudiante" required>
-                                    <option value="">Seleccione un estudiante...</option>
-                                </select>
+                            
+                            <div class="form-section">
+                                <h4>👤 Datos de quien registra la solicitud</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="nombreRegistrante">Nombre completo:</label>
+                                        <input type="text" id="nombreRegistrante" required placeholder="Su nombre completo">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="emailRegistrante">Correo electrónico:</label>
+                                        <input type="email" id="emailRegistrante" required placeholder="Su correo electrónico">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4>👨‍👩‍👧‍👦 Datos del padre/acudiente del estudiante</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="nombrePadre">Nombre del Padre/Acudiente:</label>
+                                        <input type="text" id="nombrePadre" required placeholder="Nombre del padre/acudiente">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="emailPadre">Email del Padre/Acudiente:</label>
+                                        <input type="email" id="emailPadre" required placeholder="Email del padre/acudiente">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="telefonoPadre">Teléfono del Padre/Acudiente:</label>
+                                    <input type="tel" id="telefonoPadre" placeholder="Teléfono del padre/acudiente">
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4>🎓 Datos del estudiante</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="nombreEstudiante">Nombre del Estudiante:</label>
+                                        <input type="text" id="nombreEstudiante" required placeholder="Nombre completo del estudiante">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="documentoEstudiante">Documento del Estudiante:</label>
+                                        <input type="text" id="documentoEstudiante" required placeholder="Documento del estudiante">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="gradoEstudiante">Grado del Estudiante:</label>
+                                    <select id="gradoEstudiante" required>
+                                        <option value="">Seleccione el grado...</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
