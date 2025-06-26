@@ -508,47 +508,42 @@ input[required]:focus:invalid, select[required]:focus:invalid, textarea[required
     pointer-events: none;
 }
 
-/* Indicador de progreso en tiempo real */
-.step-progress {
-    background: linear-gradient(90deg, var(--success-color) var(--progress, 0%), var(--light-gray) var(--progress, 0%));
-    height: 4px;
-    border-radius: 2px;
-    margin-bottom: 1rem;
-    transition: all 0.3s ease;
-}
-
-/* Mejoras en los mensajes de error */
-.error-message {
-    color: var(--danger-color);
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.error-message::before {
-    content: "⚠️";
-}
-
-.success-message {
-    color: var(--success-color);
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.success-message::before {
-    content: "✅";
-}
-
 /* Destacar campo activo */
 .form-group:focus-within {
     background-color: rgba(44, 90, 160, 0.02);
     border-radius: var(--border-radius);
     transition: var(--transition);
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    color: var(--white);
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
+}
+
+.btn-warning:hover {
+    background-color: #e67e22;
+    transform: translateY(-1px);
+}
+
+/* Mensajes temporales de feedback */
+.temp-feedback {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    font-size: 0.85rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.temp-feedback.error-message {
+    background-color: rgba(231, 76, 60, 0.1);
+    border-left: 3px solid var(--danger-color);
+}
+
+.temp-feedback.success-message {
+    background-color: rgba(39, 174, 96, 0.1);
+    border-left: 3px solid var(--success-color);
 }
 
 /* Contador de caracteres para teléfono */
@@ -557,14 +552,17 @@ input[required]:focus:invalid, select[required]:focus:invalid, textarea[required
     color: var(--medium-gray);
     text-align: right;
     margin-top: 0.25rem;
+    transition: var(--transition);
 }
 
 .char-counter.valid {
     color: var(--success-color);
+    font-weight: 600;
 }
 
 .char-counter.invalid {
     color: var(--danger-color);
+    font-weight: 600;
 }
 
 .form-group input,
