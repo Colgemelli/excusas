@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Permisos y Excusas - Colegio Gemelli Franciscanos</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="logo">
+                    <h1>Colegio Gemelli Franciscanos</h1>
+                    <p>Sistema de Permisos y Excusas</p>
+                </div>
+                <nav class="nav">
+                    <button id="loginBtn" class="btn btn-primary">Iniciar Sesión</button>
+                    <button id="logoutBtn" class="btn btn-secondary" style="display: none;">Cerrar Sesión</button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Iniciar Sesión</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tipoUsuario">Tipo de Usuario:</label>
+                        <select id="tipoUsuario" required>
+                            <option value="">Seleccione...</option>
+                            <option value="padre">Padre de Familia</option>
+                            <option value="coordinador">Coordinador</option>
+                            <option value="docente">Docente</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Home Screen -->
+            <div id="homeScreen" class="screen">
+                <div class="container">
+                    <div class="welcome-section">
+                        <h2>Bienvenido al Sistema de Gestión</h2>
+                        <p>Seleccione una opción para continuar</p>
+                    </div>
+                    
+                    <div class="options-grid">
+                        <div class="option-card" data-option="permiso">
+                            <div class="option-icon">📋</div>
+                            <h3>Solicitar Permiso</h3>
+                            <p>Para salidas anticipadas o llegadas tardías</p>
+                        </div>
+                        
+                        <div class="option-card" data-option="excusa">
+                            <div class="option-icon">📝</div>
+                            <h3>Registrar Excusa</h3>
+                            <p>Para justificar inasistencias</p>
+                        </div>
+                        
+                        <div class="option-card" data-option="consultar">
+                            <div class="option-icon">🔍</div>
+                            <h3>Consultar Radicado</h3>
+                            <p>Verificar estado de solicitudes</p>
+                        </div>
+                        
+                        <div class="option-card coordinador-only" data-option="coordinador" style="display: none;">
+                            <div class="option-icon">👨‍💼</div>
+                            <h3>Panel Coordinador</h3>
+                            <p>Revisar y autorizar solicitudes</p>
+                        </div>
+                        
+                        <div class="option-card docente-only" data-option="docente" style="display: none;">
+                            <div class="option-icon">👨‍🏫</div>
+                            <h3>Panel Docente</h3>
+                            <p>Autorizar excusas y asignar trabajos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stepper Forms -->
+            <div id="stepperScreen" class="screen" style="display: none;">
+                <div class="container">
+                    <button id="backToHome" class="btn btn-secondary">← Volver al Inicio</button>
+                    
+                    <div class="stepper">
+                        <div class="step active" data-step="1">
+                            <div class="step-number">1</div>
+                            <div class="step-title">Información Básica</div>
+                        </div>
+                        <div class="step" data-step="2">
+                            <div class="step-number">2</div>
+                            <div class="step-title">Detalles</div>
+                        </div>
+                        <div class="step" data-step="3">
+                            <div class="step-number">3</div>
+                            <div class="step-title">Confirmación</div>
+                        </div>
+                    </div>
+
+                    <form id="mainForm">
+                        <!-- Step 1: Información Básica -->
+                        <div class="step-content active" data-step="1">
+                            <h3 id="formTitle">Solicitar Permiso</h3>
+                            <div class="form-group">
+                                <label for="fechaSolicitud">Fecha de Solicitud:</label>
+                                <input type="date" id="fechaSolicitud" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="estudiante">Estudiante:</label>
+                                <select id="estudiante" required>
+                                    <option value="">Seleccione un estudiante...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Detalles -->
+                        <div class="step-content" data-step="2">
+                            <!-- Campos específicos para permiso -->
+                            <div class="permiso-fields">
+                                <div class="form-group">
+                                    <label for="motivoPermiso">Motivo del Permiso:</label>
+                                    <textarea id="motivoPermiso" rows="3" placeholder="Describe el motivo del permiso"></textarea>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="horaSalida">Hora de Salida:</label>
+                                        <input type="time" id="horaSalida">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="horaRegreso">Hora de Regreso (opcional):</label>
+                                        <input type="time" id="horaRegreso">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Campos específicos para excusa -->
+                            <div class="excusa-fields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="diasInasistencia">Días de Inasistencia:</label>
+                                    <input type="text" id="diasInasistencia" placeholder="Ej: 1, 2, 3 o 1-5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="mesInasistencia">Mes:</label>
+                                    <select id="mesInasistencia">
+                                        <option value="">Seleccione el mes...</option>
+                                        <option value="enero">Enero</option>
+                                        <option value="febrero">Febrero</option>
+                                        <option value="marzo">Marzo</option>
+                                        <option value="abril">Abril</option>
+                                        <option value="mayo">Mayo</option>
+                                        <option value="junio">Junio</option>
+                                        <option value="julio">Julio</option>
+                                        <option value="agosto">Agosto</option>
+                                        <option value="septiembre">Septiembre</option>
+                                        <option value="octubre">Octubre</option>
+                                        <option value="noviembre">Noviembre</option>
+                                        <option value="diciembre">Diciembre</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="motivoExcusa">Motivo de la Inasistencia:</label>
+                                    <textarea id="motivoExcusa" rows="3" placeholder="Describe el motivo de la inasistencia"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <div class="checkbox-group">
+                                        <label>
+                                            <input type="checkbox" id="certificadoMedico">
+                                            Certificado Médico
+                                        </label>
+                                        <label>
+                                            <input type="checkbox" id="incapacidad">
+                                            Incapacidad
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Confirmación -->
+                        <div class="step-content" data-step="3">
+                            <h3>Confirmar Solicitud</h3>
+                            <div id="confirmationDetails" class="confirmation-details">
+                                <!-- Los detalles se llenarán dinámicamente -->
+                            </div>
+                        </div>
+
+                        <div class="form-navigation">
+                            <button type="button" id="prevBtn" class="btn btn-secondary" style="display: none;">Anterior</button>
+                            <button type="button" id="nextBtn" class="btn btn-primary">Siguiente</button>
+                            <button type="submit" id="submitBtn" class="btn btn-success" style="display: none;">Enviar Solicitud</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Consulta Screen -->
+            <div id="consultaScreen" class="screen" style="display: none;">
+                <div class="container">
+                    <button id="backFromConsulta" class="btn btn-secondary">← Volver al Inicio</button>
+                    
+                    <h2>Consultar Radicado</h2>
+                    <div class="search-section">
+                        <div class="form-group">
+                            <label for="radicadoSearch">Número de Radicado:</label>
+                            <input type="text" id="radicadoSearch" placeholder="Ej: RAD202406261234">
+                        </div>
+                        <button id="searchBtn" class="btn btn-primary">Buscar</button>
+                    </div>
+                    
+                    <div id="resultadoConsulta" class="resultado-consulta" style="display: none;">
+                        <!-- Los resultados se mostrarán aquí -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coordinador Panel -->
+            <div id="coordinadorScreen" class="screen" style="display: none;">
+                <div class="container">
+                    <button id="backFromCoordinador" class="btn btn-secondary">← Volver al Inicio</button>
+                    
+                    <h2>Panel del Coordinador</h2>
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="permisos">Permisos Pendientes</button>
+                        <button class="tab-btn" data-tab="excusas">Excusas Pendientes</button>
+                    </div>
+                    
+                    <div id="permisosTab" class="tab-content active">
+                        <div id="permisosPendientes" class="solicitudes-grid">
+                            <!-- Las solicitudes se cargarán dinámicamente -->
+                        </div>
+                    </div>
+                    
+                    <div id="excusasTab" class="tab-content">
+                        <div id="excusasPendientes" class="solicitudes-grid">
+                            <!-- Las solicitudes se cargarán dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Docente Panel -->
+            <div id="docenteScreen" class="screen" style="display: none;">
+                <div class="container">
+                    <button id="backFromDocente" class="btn btn-secondary">← Volver al Inicio</button>
+                    
+                    <h2>Panel del Docente</h2>
+                    <div id="excusasDocente" class="solicitudes-grid">
+                        <!-- Las excusas autorizadas por coordinador se cargarán aquí -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <p>&copy; 2025 Colegio Gemelli Franciscanos - Manizales, Caldas</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal de Autorización -->
+    <div id="autorizacionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">Autorizar Solicitud</h2>
+            <div id="modalContent">
+                <!-- El contenido se llenará dinámicamente -->
+            </div>
+            <div class="modal-actions">
+                <button id="rechazarBtn" class="btn btn-danger">Rechazar</button>
+                <button id="autorizarBtn" class="btn btn-success">Autorizar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Trabajos Pendientes -->
+    <div id="trabajosModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Asignar Trabajos Pendientes</h2>
+            <div id="trabajosContent">
+                <div class="form-group">
+                    <label for="descripcionTrabajo">Descripción del Trabajo:</label>
+                    <textarea id="descripcionTrabajo" rows="3" placeholder="Describe el trabajo que debe presentar el estudiante"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="fechaEntrega">Fecha de Entrega:</label>
+                    <input type="date" id="fechaEntrega">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="cancelarTrabajoBtn" class="btn btn-secondary">Cancelar</button>
+                <button id="guardarTrabajoBtn" class="btn btn-primary">Guardar Trabajo</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
