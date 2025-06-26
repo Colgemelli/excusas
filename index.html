@@ -133,23 +133,24 @@
                                         <input type="email" id="emailRegistrante" required placeholder="Su correo electrónico">
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="form-section">
-                                <h4>👨‍👩‍👧‍👦 Datos del padre/acudiente del estudiante</h4>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="nombrePadre">Nombre del Padre/Acudiente:</label>
-                                        <input type="text" id="nombrePadre" required placeholder="Nombre del padre/acudiente">
+                                        <label for="telefonoRegistrante">Teléfono:</label>
+                                        <input type="tel" id="telefonoRegistrante" placeholder="Su número de teléfono">
                                     </div>
                                     <div class="form-group">
-                                        <label for="emailPadre">Email del Padre/Acudiente:</label>
-                                        <input type="email" id="emailPadre" required placeholder="Email del padre/acudiente">
+                                        <label for="relacionEstudiante">¿Cuál es su relación con el estudiante?</label>
+                                        <select id="relacionEstudiante" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="madre">👩 Madre</option>
+                                            <option value="padre">👨 Padre</option>
+                                            <option value="otro">👥 Otro</option>
+                                        </select>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label for="telefonoPadre">Teléfono del Padre/Acudiente:</label>
-                                    <input type="tel" id="telefonoPadre" placeholder="Teléfono del padre/acudiente">
+                                <div class="form-group" id="otroRelacionGroup" style="display: none;">
+                                    <label for="otroRelacion">Especifique la relación:</label>
+                                    <input type="text" id="otroRelacion" placeholder="Ej: Tío, Abuela, Hermano mayor, etc.">
                                 </div>
                             </div>
 
