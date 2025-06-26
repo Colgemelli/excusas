@@ -23,6 +23,40 @@
             </div>
         </header>
 
+        <!-- Modal de Protección de Datos -->
+        <div id="proteccionDatosModal" class="modal">
+            <div class="modal-content datos-modal">
+                <h2>🛡️ Protección de Datos Personales</h2>
+                <div class="datos-content">
+                    <div class="datos-header">
+                        <h3>Colegio Gemelli Franciscanos</h3>
+                        <p>Autorización para el Tratamiento de Datos Personales</p>
+                    </div>
+                    
+                    <div class="datos-body">
+                        <p>El <strong>Colegio Gemelli Franciscanos</strong>, en cumplimiento de la Ley 1581 de 2012 y el Decreto 1377 de 2013, informa que:</p>
+                        
+                        <ul class="datos-list">
+                            <li>📋 Los datos personales suministrados serán utilizados exclusivamente para la gestión académica y administrativa de permisos y excusas escolares.</li>
+                            <li>🔒 Su información será tratada de forma confidencial y segura, implementando medidas técnicas y administrativas para su protección.</li>
+                            <li>✅ Tiene derecho a conocer, actualizar, rectificar y suprimir sus datos personales, así como revocar la autorización otorgada.</li>
+                            <li>📞 Para ejercer sus derechos o presentar consultas, puede contactarnos a través de los canales oficiales de la institución.</li>
+                            <li>⏰ Esta autorización permanecerá vigente hasta que solicite su revocación o finalice la relación con la institución.</li>
+                        </ul>
+                        
+                        <div class="datos-important">
+                            <p><strong>Al continuar, usted autoriza expresamente al Colegio Gemelli Franciscanos para recopilar, almacenar, usar y tratar sus datos personales conforme a nuestra Política de Tratamiento de Datos Personales.</strong></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="datos-actions">
+                    <button id="rechazarDatosBtn" class="btn btn-danger">No Acepto</button>
+                    <button id="aceptarDatosBtn" class="btn btn-success">Acepto y Continúo</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Login Modal -->
         <div id="loginModal" class="modal">
             <div class="modal-content">
@@ -56,6 +90,9 @@
                         <h2>Bienvenido al Sistema de Gestión</h2>
                         <p>Seleccione una opción para continuar</p>
                         <p class="info-text">✨ Los padres de familia pueden registrar permisos y excusas sin necesidad de crear una cuenta</p>
+                        <div id="datosAceptadosInfo" class="datos-aceptados-info" style="display: none;">
+                            <p>🛡️ Protección de datos aceptada para esta sesión</p>
+                        </div>
                     </div>
                     
                     <div class="options-grid">
