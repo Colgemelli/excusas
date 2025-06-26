@@ -54,6 +54,10 @@ function setupEventListeners() {
     // Relación con estudiante
     document.getElementById('relacionEstudiante').addEventListener('change', handleRelacionChange);
     
+    // Selección de grado y estudiante
+    document.getElementById('gradoEstudiante').addEventListener('change', handleGradoChange);
+    document.getElementById('estudianteSelect').addEventListener('change', handleEstudianteChange);
+    
     // Consulta
     document.getElementById('searchBtn').addEventListener('click', buscarRadicado);
     
@@ -95,6 +99,121 @@ function handleRelacionChange() {
     }
 }
 
+async function handleGradoChange() {
+    const gradoSelect = document.getElementById('gradoEstudiante');
+    const estudianteGroup = document.getElementById('estudianteGroup');
+    const estudianteSelect = document.getElementById('estudianteSelect');
+    const codigoGroup = document.getElementById('codigoGroup');
+    const codigoInput = document.getElementById('codigoEstudiante');
+    
+    const gradoId = gradoSelect.value;
+    
+    if (!gradoId) {
+        // Ocultar campos y resetear con animación
+        estudianteGroup.classList.remove('show');
+        codigoGroup.classList.remove('show');
+        setTimeout(() => {
+            estudianteGroup.style.display = 'none';
+            codigoGroup.style.display = 'none';
+        }, 300);
+        
+        estudianteSelect.disabled = true;
+        estudianteSelect.innerHTML = '<option value="">Primero seleccione un grado...</option>';
+        codigoInput.value = '';
+        return;
+    }
+    
+    try {
+        // Mostrar indicador de carga
+        estudianteSelect.classList.add('loading-select');
+        estudianteSelect.innerHTML = '<option value="">Cargando estudiantes...</option>';
+        
+        // Cargar estudiantes del grado seleccionado
+        const { data: estudiantes, error } = await supabase
+            .from('estudiantes')
+            .select('*')
+            .eq('grado_id', gradoId)
+            .order('nombre');
+        
+        if (error) {
+            console.error('Error al cargar estudiantes:', error);
+            alert('Error al cargar estudiantes del grado seleccionado');
+            return;
+        }
+        
+        // Remover indicador de carga
+        estudianteSelect.classList.remove('loading-select');
+        
+        // Actualizar select de estudiantes
+        estudianteSelect.innerHTML = '<option value="">Seleccione un estudiante...</option>';
+        
+        if (estudiantes && estudiantes.length > 0) {
+            estudiantes.forEach(estudiante => {
+                const option = document.createElement('option');
+                option.value = estudiante.id;
+                option.setAttribute('data-codigo', estudiante.codigo);
+                option.setAttribute('data-nombre', estudiante.nombre);
+                option.textContent = `${estudiante.nombre} (${estudiante.codigo})`;
+                estudianteSelect.appendChild(option);
+            });
+            
+            // Mostrar campo de estudiante con animación
+            estudianteGroup.style.display = 'block';
+            setTimeout(() => {
+                estudianteGroup.classList.add('show');
+            }, 10);
+            estudianteSelect.disabled = false;
+        } else {
+            estudianteSelect.innerHTML = '<option value="">No hay estudiantes en este grado</option>';
+            estudianteGroup.style.display = 'block';
+            setTimeout(() => {
+                estudianteGroup.classList.add('show');
+            }, 10);
+            estudianteSelect.disabled = true;
+        }
+        
+        // Ocultar campo de código hasta que se seleccione estudiante
+        codigoGroup.classList.remove('show');
+        setTimeout(() => {
+            codigoGroup.style.display = 'none';
+        }, 300);
+        codigoInput.value = '';
+        
+    } catch (error) {
+        console.error('Error al cargar estudiantes:', error);
+        estudianteSelect.classList.remove('loading-select');
+        alert('Error al conectar con la base de datos');
+    }
+}
+
+function handleEstudianteChange() {
+    const estudianteSelect = document.getElementById('estudianteSelect');
+    const codigoGroup = document.getElementById('codigoGroup');
+    const codigoInput = document.getElementById('codigoEstudiante');
+    
+    const estudianteId = estudianteSelect.value;
+    
+    if (!estudianteId) {
+        codigoGroup.classList.remove('show');
+        setTimeout(() => {
+            codigoGroup.style.display = 'none';
+        }, 300);
+        codigoInput.value = '';
+        return;
+    }
+    
+    // Obtener datos del estudiante seleccionado
+    const selectedOption = estudianteSelect.options[estudianteSelect.selectedIndex];
+    const codigo = selectedOption.getAttribute('data-codigo');
+    
+    // Mostrar código automáticamente con animación
+    codigoInput.value = codigo;
+    codigoGroup.style.display = 'block';
+    setTimeout(() => {
+        codigoGroup.classList.add('show');
+    }, 10);
+}
+
 function setFechaActual() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('fechaSolicitud').value = today;
@@ -107,9 +226,9 @@ function resetFormFields() {
     document.getElementById('telefonoRegistrante').value = '';
     document.getElementById('relacionEstudiante').value = '';
     document.getElementById('otroRelacion').value = '';
-    document.getElementById('nombreEstudiante').value = '';
-    document.getElementById('documentoEstudiante').value = '';
     document.getElementById('gradoEstudiante').value = '';
+    document.getElementById('estudianteSelect').value = '';
+    document.getElementById('codigoEstudiante').value = '';
     document.getElementById('motivoPermiso').value = '';
     document.getElementById('horaSalida').value = '';
     document.getElementById('horaRegreso').value = '';
@@ -122,8 +241,25 @@ function resetFormFields() {
     // Ocultar campo "otro" con animación
     const otroGroup = document.getElementById('otroRelacionGroup');
     otroGroup.classList.remove('show');
-    otroGroup.style.display = 'none';
+    setTimeout(() => {
+        otroGroup.style.display = 'none';
+    }, 300);
     document.getElementById('otroRelacion').required = false;
+    
+    // Resetear campos de estudiante con animación
+    const estudianteGroup = document.getElementById('estudianteGroup');
+    const codigoGroup = document.getElementById('codigoGroup');
+    
+    estudianteGroup.classList.remove('show');
+    codigoGroup.classList.remove('show');
+    
+    setTimeout(() => {
+        estudianteGroup.style.display = 'none';
+        codigoGroup.style.display = 'none';
+    }, 300);
+    
+    document.getElementById('estudianteSelect').disabled = true;
+    document.getElementById('estudianteSelect').innerHTML = '<option value="">Primero seleccione un grado...</option>';
     
     currentStep = 1;
     updateStepperUI();
@@ -450,13 +586,26 @@ async function handleFormSubmit(e) {
         const telefonoRegistrante = document.getElementById('telefonoRegistrante').value.trim();
         const relacionEstudiante = document.getElementById('relacionEstudiante').value;
         const otroRelacion = document.getElementById('otroRelacion').value.trim();
-        const nombreEstudiante = document.getElementById('nombreEstudiante').value.trim();
-        const documentoEstudiante = document.getElementById('documentoEstudiante').value.trim();
-        const gradoId = document.getElementById('gradoEstudiante').value;
+        const estudianteId = document.getElementById('estudianteSelect').value;
         const fechaSolicitud = document.getElementById('fechaSolicitud').value;
         
         // Determinar la relación final
         const relacionFinal = relacionEstudiante === 'otro' ? otroRelacion : relacionEstudiante;
+        
+        // Obtener datos completos del estudiante seleccionado
+        const { data: estudiante, error: errorEstudiante } = await supabase
+            .from('estudiantes')
+            .select(`
+                *,
+                grados (nombre)
+            `)
+            .eq('id', estudianteId)
+            .single();
+        
+        if (errorEstudiante || !estudiante) {
+            alert('Error al obtener datos del estudiante seleccionado');
+            return;
+        }
         
         // Buscar o crear padre/acudiente usando los datos de quien registra
         let padre;
@@ -498,44 +647,12 @@ async function handleFormSubmit(e) {
             padre = nuevoPadre;
         }
         
-        // Buscar o crear estudiante
-        let estudiante;
-        const { data: estudianteExistente } = await supabase
-            .from('estudiantes')
-            .select('*')
-            .eq('documento', documentoEstudiante)
-            .single();
-        
-        if (estudianteExistente) {
-            estudiante = estudianteExistente;
-            // Actualizar información si es necesaria
+        // Actualizar el estudiante para asociarlo con el padre si no lo está
+        if (!estudiante.padre_id) {
             await supabase
                 .from('estudiantes')
-                .update({
-                    nombre: nombreEstudiante,
-                    grado_id: gradoId,
-                    padre_id: padre.id
-                })
+                .update({ padre_id: padre.id })
                 .eq('id', estudiante.id);
-        } else {
-            // Crear nuevo estudiante
-            const { data: nuevoEstudiante, error: errorEstudiante } = await supabase
-                .from('estudiantes')
-                .insert([{
-                    nombre: nombreEstudiante,
-                    documento: documentoEstudiante,
-                    grado_id: gradoId,
-                    padre_id: padre.id
-                }])
-                .select()
-                .single();
-            
-            if (errorEstudiante) {
-                alert('Error al registrar el estudiante: ' + errorEstudiante.message);
-                return;
-            }
-            
-            estudiante = nuevoEstudiante;
         }
         
         // Crear solicitud (permiso o excusa)
@@ -589,7 +706,7 @@ async function handleFormSubmit(e) {
         }
         
         // Mostrar mensaje de éxito con el radicado
-        alert(`¡Solicitud enviada exitosamente!\n\nRadicado: ${result.data.radicado}\n\nRegistrado por: ${nombreRegistrante} (${relacionFinal})\nEmail: ${emailRegistrante}\n\nGuarde este número para consultar el estado de su solicitud.`);
+        alert(`¡Solicitud enviada exitosamente!\n\nRadicado: ${result.data.radicado}\n\nEstudiante: ${estudiante.nombre} (${estudiante.codigo})\nGrado: ${estudiante.grados.nombre}\n\nRegistrado por: ${nombreRegistrante} (${relacionFinal})\nEmail: ${emailRegistrante}\n\nGuarde este número para consultar el estado de su solicitud.`);
         
         // Limpiar formulario y volver al inicio
         resetFormFields();
@@ -678,7 +795,7 @@ async function buscarRadicado() {
             .from('permisos')
             .select(`
                 *,
-                estudiantes (nombre, grados (nombre)),
+                estudiantes (nombre, codigo, grados (nombre)),
                 usuarios (nombre)
             `)
             .eq('radicado', radicado)
@@ -689,7 +806,7 @@ async function buscarRadicado() {
             .from('excusas')
             .select(`
                 *,
-                estudiantes (nombre, grados (nombre)),
+                estudiantes (nombre, codigo, grados (nombre)),
                 usuarios (nombre)
             `)
             .eq('radicado', radicado)
@@ -709,6 +826,7 @@ async function buscarRadicado() {
                 <h3>${tipo} - ${solicitud.radicado}</h3>
                 <div class="solicitud-details">
                     <p><strong>Estudiante:</strong> ${solicitud.estudiantes.nombre}</p>
+                    <p><strong>Código:</strong> ${solicitud.estudiantes.codigo}</p>
                     <p><strong>Grado:</strong> ${solicitud.estudiantes.grados.nombre}</p>
                     <p><strong>Acudiente:</strong> ${solicitud.usuarios.nombre}</p>
                     <p><strong>Fecha de Solicitud:</strong> ${new Date(solicitud.fecha_solicitud).toLocaleDateString()}</p>
@@ -828,7 +946,7 @@ async function loadPermisosPendientes() {
             .from('permisos')
             .select(`
                 *,
-                estudiantes (nombre, grados (nombre)),
+                estudiantes (nombre, codigo, grados (nombre)),
                 usuarios (nombre)
             `)
             .eq('estado', 'pendiente')
@@ -852,7 +970,7 @@ async function loadExcusasPendientes() {
             .from('excusas')
             .select(`
                 *,
-                estudiantes (nombre, grados (nombre)),
+                estudiantes (nombre, codigo, grados (nombre)),
                 usuarios (nombre)
             `)
             .eq('estado', 'pendiente')
@@ -937,7 +1055,7 @@ async function mostrarAutorizacion(solicitudId, tipo) {
             .from(table)
             .select(`
                 *,
-                estudiantes (nombre, grados (nombre)),
+                estudiantes (nombre, codigo, grados (nombre)),
                 usuarios (nombre)
             `)
             .eq('id', solicitudId)
@@ -1158,7 +1276,7 @@ async function loadExcusasDocente() {
                 *,
                 excusas (
                     *,
-                    estudiantes (nombre, grados (nombre)),
+                    estudiantes (nombre, codigo, grados (nombre)),
                     usuarios (nombre)
                 ),
                 asignaturas (nombre)
