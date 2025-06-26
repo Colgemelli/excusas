@@ -162,21 +162,21 @@
                                 <h4>👤 Datos de quien registra la solicitud</h4>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="nombreRegistrante">Nombre completo:</label>
+                                        <label for="nombreRegistrante">Nombre completo: <span class="required">*</span></label>
                                         <input type="text" id="nombreRegistrante" required placeholder="Su nombre completo">
                                     </div>
                                     <div class="form-group">
-                                        <label for="emailRegistrante">Correo electrónico:</label>
+                                        <label for="emailRegistrante">Correo electrónico: <span class="required">*</span></label>
                                         <input type="email" id="emailRegistrante" required placeholder="Su correo electrónico">
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="telefonoRegistrante">Teléfono:</label>
-                                        <input type="tel" id="telefonoRegistrante" placeholder="Su número de teléfono">
+                                        <label for="telefonoRegistrante">Teléfono: <span class="required">*</span></label>
+                                        <input type="tel" id="telefonoRegistrante" required placeholder="Su número de teléfono">
                                     </div>
                                     <div class="form-group">
-                                        <label for="relacionEstudiante">¿Cuál es su relación con el estudiante?</label>
+                                        <label for="relacionEstudiante">¿Cuál es su relación con el estudiante? <span class="required">*</span></label>
                                         <select id="relacionEstudiante" required>
                                             <option value="">Seleccione...</option>
                                             <option value="madre">👩 Madre</option>
@@ -186,7 +186,7 @@
                                     </div>
                                 </div>
                                 <div class="form-group" id="otroRelacionGroup" style="display: none;">
-                                    <label for="otroRelacion">Especifique la relación:</label>
+                                    <label for="otroRelacion">Especifique la relación: <span class="required">*</span></label>
                                     <input type="text" id="otroRelacion" placeholder="Ej: Tío, Abuela, Hermano mayor, etc.">
                                 </div>
                             </div>
@@ -194,13 +194,13 @@
                             <div class="form-section">
                                 <h4>🎓 Datos del estudiante</h4>
                                 <div class="form-group">
-                                    <label for="gradoEstudiante">Grado del Estudiante:</label>
+                                    <label for="gradoEstudiante">Grado del Estudiante: <span class="required">*</span></label>
                                     <select id="gradoEstudiante" required>
                                         <option value="">Seleccione el grado...</option>
                                     </select>
                                 </div>
                                 <div class="form-group" id="estudianteGroup" style="display: none;">
-                                    <label for="estudianteSelect">Estudiante:</label>
+                                    <label for="estudianteSelect">Estudiante: <span class="required">*</span></label>
                                     <select id="estudianteSelect" required disabled>
                                         <option value="">Primero seleccione un grado...</option>
                                     </select>
@@ -218,13 +218,13 @@
                             <!-- Campos específicos para permiso -->
                             <div class="permiso-fields">
                                 <div class="form-group">
-                                    <label for="motivoPermiso">Motivo del Permiso:</label>
-                                    <textarea id="motivoPermiso" rows="3" placeholder="Describe el motivo del permiso"></textarea>
+                                    <label for="motivoPermiso">Motivo del Permiso: <span class="required">*</span></label>
+                                    <textarea id="motivoPermiso" rows="3" required placeholder="Describe el motivo del permiso"></textarea>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="horaSalida">Hora de Salida:</label>
-                                        <input type="time" id="horaSalida">
+                                        <label for="horaSalida">Hora de Salida: <span class="required">*</span></label>
+                                        <input type="time" id="horaSalida" required>
                                     </div>
                                     <div class="form-group">
                                         <label for="horaRegreso">Hora de Regreso (opcional):</label>
@@ -236,12 +236,12 @@
                             <!-- Campos específicos para excusa -->
                             <div class="excusa-fields" style="display: none;">
                                 <div class="form-group">
-                                    <label for="diasInasistencia">Días de Inasistencia:</label>
-                                    <input type="text" id="diasInasistencia" placeholder="Ej: 1, 2, 3 o 1-5">
+                                    <label for="diasInasistencia">Días de Inasistencia: <span class="required">*</span></label>
+                                    <input type="text" id="diasInasistencia" required placeholder="Ej: 1, 2, 3 o 1-5">
                                 </div>
                                 <div class="form-group">
-                                    <label for="mesInasistencia">Mes:</label>
-                                    <select id="mesInasistencia">
+                                    <label for="mesInasistencia">Mes: <span class="required">*</span></label>
+                                    <select id="mesInasistencia" required>
                                         <option value="">Seleccione el mes...</option>
                                         <option value="enero">Enero</option>
                                         <option value="febrero">Febrero</option>
@@ -258,8 +258,8 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="motivoExcusa">Motivo de la Inasistencia:</label>
-                                    <textarea id="motivoExcusa" rows="3" placeholder="Describe el motivo de la inasistencia"></textarea>
+                                    <label for="motivoExcusa">Motivo de la Inasistencia: <span class="required">*</span></label>
+                                    <textarea id="motivoExcusa" rows="3" required placeholder="Describe el motivo de la inasistencia"></textarea>
                                 </div>
                                 <div class="form-group">
                                     <div class="checkbox-group">
