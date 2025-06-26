@@ -865,6 +865,18 @@ input[required]:focus:invalid, select[required]:focus:invalid, textarea[required
     margin-top: 2rem;
 }
 
+/* Radicado screen */
+.radicado-display {
+    font-size: 2rem;
+    text-align: center;
+    color: var(--accent-color);
+    margin: 2rem 0;
+}
+
+#radicadoScreen .container {
+    text-align: center;
+}
+
 /* Solicitudes */
 .solicitudes-grid {
     display: grid;
