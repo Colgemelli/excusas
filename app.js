@@ -124,12 +124,12 @@ function updateTelefonoCounter(valor) {
     const contador = document.getElementById('telefonoCounter');
     const longitud = valor.length;
     
-    contador.textContent = `${longitud}/15 dígitos (mínimo 7)`;
+    contador.textContent = `${longitud}/15 dígitos (mínimo 10)`;
     
     // Actualizar clases según la validación
     contador.classList.remove('valid', 'invalid');
     
-    if (longitud >= 7 && longitud <= 15) {
+    if (longitud >= 10 && longitud <= 15) {
         contador.classList.add('valid');
     } else if (longitud > 0) {
         contador.classList.add('invalid');
@@ -159,6 +159,51 @@ function showTelefonoFeedback(mensaje, tipo) {
             feedback.remove();
         }
     }, 3000);
+}
+
+// Función de test para debugging
+function testValidation() {
+    console.log('🧪 ============= TEST DE VALIDACIÓN =============');
+    
+    const fecha = document.getElementById('fechaSolicitud').value;
+    const nombre = document.getElementById('nombreRegistrante').value;
+    const email = document.getElementById('emailRegistrante').value;
+    const telefono = document.getElementById('telefonoRegistrante').value;
+    const relacion = document.getElementById('relacionEstudiante').value;
+    const otro = document.getElementById('otroRelacion').value;
+    const grado = document.getElementById('gradoEstudiante').value;
+    const estudianteSelect = document.getElementById('estudianteSelect');
+    const estudianteGroup = document.getElementById('estudianteGroup');
+    
+    const resultados = {
+        '📅 Fecha': fecha ? '✅ OK' : '❌ FALTA',
+        '👤 Nombre': nombre.trim() ? '✅ OK' : '❌ FALTA',
+        '📧 Email': email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? '✅ OK' : '❌ INVÁLIDO',
+        '📱 Teléfono': telefono.trim() && /^\d{10,15}$/.test(telefono) ? '✅ OK' : '❌ INVÁLIDO (necesita 10-15 dígitos)',
+        '👥 Relación': relacion ? '✅ OK' : '❌ FALTA',
+        '🔄 Campo "Otro"': relacion === 'otro' ? (otro.trim() ? '✅ OK' : '❌ FALTA') : '➖ No aplica',
+        '🎓 Grado': grado ? '✅ OK' : '❌ FALTA',
+        '👦 Estudiante visible': estudianteGroup.style.display !== 'none' ? '✅ SÍ' : '❌ NO',
+        '👦 Estudiante habilitado': !estudianteSelect.disabled ? '✅ SÍ' : '❌ NO',
+        '👦 Estudiante seleccionado': estudianteSelect.value ? '✅ OK' : '❌ FALTA'
+    };
+    
+    console.log('📊 RESULTADOS:');
+    Object.entries(resultados).forEach(([campo, resultado]) => {
+        console.log(`${campo}: ${resultado}`);
+    });
+    
+    const todoOK = Object.values(resultados).every(r => r.includes('✅') || r.includes('➖'));
+    console.log(`\n🎯 RESULTADO FINAL: ${todoOK ? '✅ TODO OK - DEBERÍA PASAR' : '❌ HAY ERRORES'}`);
+    
+    // Mostrar en alerta también
+    const resumenTexto = Object.entries(resultados)
+        .map(([campo, resultado]) => `${campo}: ${resultado}`)
+        .join('\n');
+    
+    alert(`🧪 TEST DE VALIDACIÓN\n\n${resumenTexto}\n\n🎯 RESULTADO: ${todoOK ? '✅ TODO OK' : '❌ HAY ERRORES'}`);
+    
+    console.log('🧪 ============= FIN TEST =============');
 }
 
 function handleRelacionChange() {
@@ -193,6 +238,7 @@ async function handleGradoChange() {
     const codigoInput = document.getElementById('codigoEstudiante');
     
     const gradoId = gradoSelect.value;
+    console.log('🔄 Cambio de grado:', gradoId);
     
     if (!gradoId) {
         // Ocultar campos y resetear con animación
@@ -211,8 +257,16 @@ async function handleGradoChange() {
     
     try {
         // Mostrar indicador de carga
+        console.log('⏳ Cargando estudiantes para grado:', gradoId);
         estudianteSelect.classList.add('loading-select');
         estudianteSelect.innerHTML = '<option value="">Cargando estudiantes...</option>';
+        estudianteSelect.disabled = true;
+        
+        // Mostrar el grupo de estudiante inmediatamente
+        estudianteGroup.style.display = 'block';
+        setTimeout(() => {
+            estudianteGroup.classList.add('show');
+        }, 10);
         
         // Cargar estudiantes del grado seleccionado
         const { data: estudiantes, error } = await supabase
@@ -222,13 +276,14 @@ async function handleGradoChange() {
             .order('nombre');
         
         if (error) {
-            console.error('Error al cargar estudiantes:', error);
+            console.error('❌ Error al cargar estudiantes:', error);
             alert('Error al cargar estudiantes del grado seleccionado');
             return;
         }
         
         // Remover indicador de carga
         estudianteSelect.classList.remove('loading-select');
+        console.log('✅ Estudiantes cargados:', estudiantes?.length || 0);
         
         // Actualizar select de estudiantes
         estudianteSelect.innerHTML = '<option value="">Seleccione un estudiante...</option>';
@@ -243,19 +298,13 @@ async function handleGradoChange() {
                 estudianteSelect.appendChild(option);
             });
             
-            // Mostrar campo de estudiante con animación
-            estudianteGroup.style.display = 'block';
-            setTimeout(() => {
-                estudianteGroup.classList.add('show');
-            }, 10);
+            // HABILITAR el campo de estudiante
             estudianteSelect.disabled = false;
+            console.log('✅ Campo estudiante habilitado');
         } else {
             estudianteSelect.innerHTML = '<option value="">No hay estudiantes en este grado</option>';
-            estudianteGroup.style.display = 'block';
-            setTimeout(() => {
-                estudianteGroup.classList.add('show');
-            }, 10);
             estudianteSelect.disabled = true;
+            console.log('⚠️ No hay estudiantes en este grado');
         }
         
         // Ocultar campo de código hasta que se seleccione estudiante
@@ -266,7 +315,7 @@ async function handleGradoChange() {
         codigoInput.value = '';
         
     } catch (error) {
-        console.error('Error al cargar estudiantes:', error);
+        console.error('❌ Error al cargar estudiantes:', error);
         estudianteSelect.classList.remove('loading-select');
         alert('Error al conectar con la base de datos');
     }
@@ -593,10 +642,16 @@ function updateStepperUI() {
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     const submitBtn = document.getElementById('submitBtn');
+    const testBtn = document.getElementById('testBtn');
     
     prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
     nextBtn.style.display = currentStep < 3 ? 'block' : 'none';
     submitBtn.style.display = currentStep === 3 ? 'block' : 'none';
+    
+    // Ocultar botón de test después del paso 1
+    if (testBtn) {
+        testBtn.style.display = currentStep === 1 ? 'block' : 'none';
+    }
     
     // Si estamos en el paso 3, mostrar confirmación
     if (currentStep === 3) {
@@ -605,7 +660,27 @@ function updateStepperUI() {
 }
 
 function nextStep() {
-    console.log('🔍 Validando paso:', currentStep);
+    console.log('🔍 =========================');
+    console.log('🔍 INTENTANDO AVANZAR PASO');
+    console.log('🔍 Paso actual:', currentStep);
+    console.log('🔍 =========================');
+    
+    // Test rápido de todos los campos antes de validar
+    if (currentStep === 1) {
+        const campos = {
+            fecha: document.getElementById('fechaSolicitud').value,
+            nombre: document.getElementById('nombreRegistrante').value,
+            email: document.getElementById('emailRegistrante').value,
+            telefono: document.getElementById('telefonoRegistrante').value,
+            relacion: document.getElementById('relacionEstudiante').value,
+            grado: document.getElementById('gradoEstudiante').value,
+            estudiante: document.getElementById('estudianteSelect').value,
+            estudianteDisabled: document.getElementById('estudianteSelect').disabled,
+            estudianteVisible: document.getElementById('estudianteGroup').style.display !== 'none'
+        };
+        
+        console.log('📋 Estado de todos los campos:', campos);
+    }
     
     if (validateCurrentStep()) {
         console.log('✅ Validación exitosa, avanzando al paso:', currentStep + 1);
@@ -616,6 +691,8 @@ function nextStep() {
         // Destacar campos con errores
         highlightRequiredFields();
     }
+    
+    console.log('🔍 =========================');
 }
 
 function highlightRequiredFields() {
