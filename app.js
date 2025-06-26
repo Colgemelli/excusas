@@ -10,6 +10,7 @@ let currentStep = 1;
 let currentFormType = null;
 let estudiantes = [];
 let currentAutorizacion = null;
+let datosPersonalesAceptados = false;
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
@@ -50,6 +51,10 @@ function setupEventListeners() {
     document.getElementById('nextBtn').addEventListener('click', nextStep);
     document.getElementById('prevBtn').addEventListener('click', prevStep);
     document.getElementById('mainForm').addEventListener('submit', handleFormSubmit);
+    
+    // Protección de datos
+    document.getElementById('aceptarDatosBtn').addEventListener('click', aceptarProteccionDatos);
+    document.getElementById('rechazarDatosBtn').addEventListener('click', rechazarProteccionDatos);
     
     // Relación con estudiante
     document.getElementById('relacionEstudiante').addEventListener('change', handleRelacionChange);
@@ -261,6 +266,13 @@ function resetFormFields() {
     document.getElementById('estudianteSelect').disabled = true;
     document.getElementById('estudianteSelect').innerHTML = '<option value="">Primero seleccione un grado...</option>';
     
+    // Resetear protección de datos para nueva solicitud
+    datosPersonalesAceptados = false;
+    currentFormType = null;
+    
+    // Ocultar indicador de datos aceptados
+    document.getElementById('datosAceptadosInfo').style.display = 'none';
+    
     currentStep = 1;
     updateStepperUI();
 }
@@ -338,8 +350,12 @@ function updateUIForUser() {
 
 function logout() {
     currentUser = null;
+    datosPersonalesAceptados = false; // Resetear protección de datos al cerrar sesión
     document.getElementById('loginBtn').style.display = 'block';
     document.getElementById('logoutBtn').style.display = 'none';
+    
+    // Ocultar indicador de datos aceptados
+    document.getElementById('datosAceptadosInfo').style.display = 'none';
     
     // Ocultar opciones específicas
     document.querySelector('.coordinador-only').style.display = 'none';
@@ -363,7 +379,7 @@ function hideAllScreens() {
 function handleOptionClick(e) {
     const option = e.currentTarget.dataset.option;
     
-    // Solo consultar, permisos y excusas no requieren login
+    // Solo consultar, permisos y excusas no requieren login, pero permisos y excusas sí requieren aceptar protección de datos
     if (!currentUser && (option === 'coordinador' || option === 'docente')) {
         alert('Debe iniciar sesión para acceder a esta función');
         showLoginModal();
@@ -372,10 +388,14 @@ function handleOptionClick(e) {
     
     switch (option) {
         case 'permiso':
-            showStepperForm('permiso');
-            break;
         case 'excusa':
-            showStepperForm('excusa');
+            // Verificar si ya se aceptó la protección de datos en esta sesión
+            if (!datosPersonalesAceptados) {
+                currentFormType = option; // Guardar el tipo para después del modal
+                showProteccionDatosModal();
+            } else {
+                showStepperForm(option);
+            }
             break;
         case 'consultar':
             showConsultaScreen();
@@ -387,6 +407,36 @@ function handleOptionClick(e) {
             showDocenteScreen();
             break;
     }
+}
+
+// Funciones de protección de datos
+function showProteccionDatosModal() {
+    document.getElementById('proteccionDatosModal').style.display = 'block';
+}
+
+function aceptarProteccionDatos() {
+    datosPersonalesAceptados = true;
+    closeModal();
+    
+    // Mostrar indicador de datos aceptados
+    document.getElementById('datosAceptadosInfo').style.display = 'block';
+    
+    // Continuar con el formulario que se había seleccionado
+    if (currentFormType) {
+        showStepperForm(currentFormType);
+    }
+}
+
+function rechazarProteccionDatos() {
+    datosPersonalesAceptados = false;
+    closeModal();
+    
+    // Mostrar mensaje informativo
+    alert('Para registrar permisos o excusas es necesario aceptar el tratamiento de datos personales según la normativa vigente.');
+    
+    // Volver al home
+    currentFormType = null;
+    showHomeScreen();
 }
 
 // Funciones del stepper form
