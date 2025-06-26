@@ -63,6 +63,10 @@ function setupEventListeners() {
     document.getElementById('gradoEstudiante').addEventListener('change', handleGradoChange);
     document.getElementById('estudianteSelect').addEventListener('change', handleEstudianteChange);
     
+    // Campo de teléfono solo números
+    document.getElementById('telefonoRegistrante').addEventListener('input', handleTelefonoInput);
+    document.getElementById('telefonoRegistrante').addEventListener('keypress', handleTelefonoKeypress);
+    
     // Consulta
     document.getElementById('searchBtn').addEventListener('click', buscarRadicado);
     
@@ -78,6 +82,83 @@ function setupEventListeners() {
     // Trabajos modal
     document.getElementById('guardarTrabajoBtn').addEventListener('click', guardarTrabajo);
     document.getElementById('cancelarTrabajoBtn').addEventListener('click', () => closeModal());
+}
+
+// Funciones para validar teléfono solo números
+function handleTelefonoInput(e) {
+    // Remover cualquier carácter que no sea número
+    const valorOriginal = e.target.value;
+    const valorLimpio = valorOriginal.replace(/[^0-9]/g, '');
+    e.target.value = valorLimpio;
+    
+    // Actualizar contador
+    updateTelefonoCounter(valorLimpio);
+    
+    // Si el usuario intentó escribir algo que no es número, mostrar feedback
+    if (valorOriginal !== valorLimpio && valorOriginal.length > valorLimpio.length) {
+        showTelefonoFeedback('Solo se permiten números', 'error');
+    }
+}
+
+function handleTelefonoKeypress(e) {
+    // Permitir solo números, backspace, delete, tab, escape, enter
+    const allowedKeys = [8, 9, 27, 13, 46]; // backspace, tab, escape, enter, delete
+    
+    if (allowedKeys.includes(e.keyCode) || 
+        // Permitir Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+        (e.keyCode === 65 && e.ctrlKey) || 
+        (e.keyCode === 67 && e.ctrlKey) || 
+        (e.keyCode === 86 && e.ctrlKey) || 
+        (e.keyCode === 88 && e.ctrlKey)) {
+        return;
+    }
+    
+    // Asegurarse de que es un número
+    if (e.keyCode < 48 || e.keyCode > 57) {
+        e.preventDefault();
+        showTelefonoFeedback('Solo se permiten números', 'error');
+    }
+}
+
+function updateTelefonoCounter(valor) {
+    const contador = document.getElementById('telefonoCounter');
+    const longitud = valor.length;
+    
+    contador.textContent = `${longitud}/15 dígitos (mínimo 7)`;
+    
+    // Actualizar clases según la validación
+    contador.classList.remove('valid', 'invalid');
+    
+    if (longitud >= 7 && longitud <= 15) {
+        contador.classList.add('valid');
+    } else if (longitud > 0) {
+        contador.classList.add('invalid');
+    }
+}
+
+function showTelefonoFeedback(mensaje, tipo) {
+    const telefonoField = document.getElementById('telefonoRegistrante');
+    
+    // Remover mensaje anterior si existe
+    const feedbackAnterior = telefonoField.parentNode.querySelector('.temp-feedback');
+    if (feedbackAnterior) {
+        feedbackAnterior.remove();
+    }
+    
+    // Crear nuevo mensaje
+    const feedback = document.createElement('div');
+    feedback.className = `temp-feedback ${tipo}-message`;
+    feedback.textContent = mensaje;
+    
+    // Insertar después del campo
+    telefonoField.parentNode.insertBefore(feedback, telefonoField.nextSibling);
+    
+    // Remover después de 3 segundos
+    setTimeout(() => {
+        if (feedback.parentNode) {
+            feedback.remove();
+        }
+    }, 3000);
 }
 
 function handleRelacionChange() {
@@ -242,6 +323,9 @@ function resetFormFields() {
     document.getElementById('motivoExcusa').value = '';
     document.getElementById('certificadoMedico').checked = false;
     document.getElementById('incapacidad').checked = false;
+    
+    // Resetear contador de teléfono
+    updateTelefonoCounter('');
     
     // Resetear atributos required
     document.getElementById('motivoPermiso').required = false;
@@ -521,10 +605,14 @@ function updateStepperUI() {
 }
 
 function nextStep() {
+    console.log('🔍 Validando paso:', currentStep);
+    
     if (validateCurrentStep()) {
+        console.log('✅ Validación exitosa, avanzando al paso:', currentStep + 1);
         currentStep++;
         updateStepperUI();
     } else {
+        console.log('❌ Validación falló en paso:', currentStep);
         // Destacar campos con errores
         highlightRequiredFields();
     }
@@ -532,23 +620,68 @@ function nextStep() {
 
 function highlightRequiredFields() {
     // Función para destacar visualmente los campos que faltan
-    const requiredFields = document.querySelectorAll('input[required], select[required], textarea[required]');
-    
-    requiredFields.forEach(field => {
-        if (!field.value.trim() && field.style.display !== 'none' && !field.disabled) {
-            field.style.borderColor = 'var(--danger-color)';
-            field.style.borderWidth = '2px';
-            field.style.boxShadow = '0 0 0 3px rgba(231, 76, 60, 0.1)';
-            
-            // Remover el destacado después de que el usuario escriba algo
-            field.addEventListener('input', function clearHighlight() {
-                field.style.borderColor = '';
-                field.style.borderWidth = '';
-                field.style.boxShadow = '';
-                field.removeEventListener('input', clearHighlight);
-            }, { once: true });
+    if (currentStep === 1) {
+        const fieldsToCheck = [
+            'fechaSolicitud', 'nombreRegistrante', 'emailRegistrante', 
+            'telefonoRegistrante', 'relacionEstudiante', 'gradoEstudiante'
+        ];
+        
+        // Agregar campo "otro" si es necesario
+        const relacionEstudiante = document.getElementById('relacionEstudiante').value;
+        if (relacionEstudiante === 'otro') {
+            fieldsToCheck.push('otroRelacion');
         }
-    });
+        
+        // Agregar estudiante si el grado está seleccionado y el campo está habilitado
+        const gradoEstudiante = document.getElementById('gradoEstudiante').value;
+        const estudianteSelect = document.getElementById('estudianteSelect');
+        if (gradoEstudiante && !estudianteSelect.disabled) {
+            fieldsToCheck.push('estudianteSelect');
+        }
+        
+        fieldsToCheck.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field && (!field.value.trim() || field.value === '')) {
+                field.style.borderColor = 'var(--danger-color)';
+                field.style.borderWidth = '2px';
+                field.style.boxShadow = '0 0 0 3px rgba(231, 76, 60, 0.1)';
+                
+                // Remover el destacado después de que el usuario escriba algo
+                field.addEventListener('input', function clearHighlight() {
+                    field.style.borderColor = '';
+                    field.style.borderWidth = '';
+                    field.style.boxShadow = '';
+                    field.removeEventListener('input', clearHighlight);
+                }, { once: true });
+                
+                field.addEventListener('change', function clearHighlight() {
+                    field.style.borderColor = '';
+                    field.style.borderWidth = '';
+                    field.style.boxShadow = '';
+                    field.removeEventListener('change', clearHighlight);
+                }, { once: true });
+            }
+        });
+    } else if (currentStep === 2) {
+        const requiredFields = document.querySelectorAll('input[required], select[required], textarea[required]');
+        
+        requiredFields.forEach(field => {
+            const isVisible = field.offsetParent !== null;
+            if (isVisible && !field.value.trim() && !field.disabled) {
+                field.style.borderColor = 'var(--danger-color)';
+                field.style.borderWidth = '2px';
+                field.style.boxShadow = '0 0 0 3px rgba(231, 76, 60, 0.1)';
+                
+                // Remover el destacado después de que el usuario escriba algo
+                field.addEventListener('input', function clearHighlight() {
+                    field.style.borderColor = '';
+                    field.style.borderWidth = '';
+                    field.style.boxShadow = '';
+                    field.removeEventListener('input', clearHighlight);
+                }, { once: true });
+            }
+        });
+    }
 }
 
 function prevStep() {
