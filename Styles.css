@@ -306,6 +306,50 @@ body {
     padding-bottom: 0.5rem;
 }
 
+/* Campo "otro" con animación */
+#otroRelacionGroup {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+}
+
+#otroRelacionGroup.show {
+    opacity: 1;
+    max-height: 100px;
+}
+
+/* Select con iconos */
+select {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+/* Efecto visual para el campo de relación */
+#relacionEstudiante {
+    font-weight: 500;
+}
+
+#relacionEstudiante:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+}
+
+/* Campo "otro" destacado */
+#otroRelacion {
+    border-left: 4px solid var(--secondary-color);
+    background-color: rgba(248, 196, 113, 0.1);
+}
+
+#otroRelacion:focus {
+    border-left-color: var(--primary-color);
+    background-color: var(--white);
+}
+
 .form-group label {
     display: block;
     margin-bottom: 0.5rem;
