@@ -156,21 +156,22 @@
 
                             <div class="form-section">
                                 <h4>🎓 Datos del estudiante</h4>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="nombreEstudiante">Nombre del Estudiante:</label>
-                                        <input type="text" id="nombreEstudiante" required placeholder="Nombre completo del estudiante">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="documentoEstudiante">Documento del Estudiante:</label>
-                                        <input type="text" id="documentoEstudiante" required placeholder="Documento del estudiante">
-                                    </div>
-                                </div>
                                 <div class="form-group">
                                     <label for="gradoEstudiante">Grado del Estudiante:</label>
                                     <select id="gradoEstudiante" required>
                                         <option value="">Seleccione el grado...</option>
                                     </select>
+                                </div>
+                                <div class="form-group" id="estudianteGroup" style="display: none;">
+                                    <label for="estudianteSelect">Estudiante:</label>
+                                    <select id="estudianteSelect" required disabled>
+                                        <option value="">Primero seleccione un grado...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" id="codigoGroup" style="display: none;">
+                                    <label for="codigoEstudiante">Código del Estudiante:</label>
+                                    <input type="text" id="codigoEstudiante" readonly placeholder="Se completará automáticamente">
+                                    <div class="help-text">✨ El código se completa automáticamente al seleccionar el estudiante</div>
                                 </div>
                             </div>
                         </div>
