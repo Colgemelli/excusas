@@ -155,6 +155,17 @@ body {
     color: var(--medium-gray);
 }
 
+.welcome-section .info-text {
+    font-size: 0.95rem;
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: rgba(44, 90, 160, 0.1);
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--primary-color);
+}
+
 .options-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -193,6 +204,14 @@ body {
 .option-card p {
     color: var(--medium-gray);
     font-size: 0.95rem;
+}
+
+.option-card p small {
+    display: block;
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
 }
 
 /* Stepper */
@@ -268,6 +287,23 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: var(--border-radius);
+    background-color: #fafafa;
+}
+
+.form-section h4 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-bottom: 2px solid var(--primary-light);
+    padding-bottom: 0.5rem;
 }
 
 .form-group label {
@@ -347,6 +383,25 @@ body {
     padding: 1.5rem;
     border-radius: var(--border-radius);
     margin-bottom: 1.5rem;
+}
+
+.confirmation-section {
+    background: var(--white);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--primary-color);
+}
+
+.confirmation-section:last-child {
+    margin-bottom: 0;
+}
+
+.confirmation-section h4 {
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 .confirmation-item {
@@ -632,6 +687,15 @@ body {
     
     .form-row {
         grid-template-columns: 1fr;
+    }
+    
+    .form-section {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+    }
+    
+    .form-section h4 {
+        font-size: 1rem;
     }
     
     .search-section {
