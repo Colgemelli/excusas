@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initializeApp() {
     setupEventListeners();
     setFechaActual();
-    await loadEstudiantes();
+    await loadGrados();
 }
 
 function setupEventListeners() {
@@ -71,6 +71,28 @@ function setupEventListeners() {
 function setFechaActual() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('fechaSolicitud').value = today;
+}
+
+function resetFormFields() {
+    document.getElementById('mainForm').reset();
+    document.getElementById('nombreRegistrante').value = '';
+    document.getElementById('emailRegistrante').value = '';
+    document.getElementById('nombrePadre').value = '';
+    document.getElementById('emailPadre').value = '';
+    document.getElementById('telefonoPadre').value = '';
+    document.getElementById('nombreEstudiante').value = '';
+    document.getElementById('documentoEstudiante').value = '';
+    document.getElementById('gradoEstudiante').value = '';
+    document.getElementById('motivoPermiso').value = '';
+    document.getElementById('horaSalida').value = '';
+    document.getElementById('horaRegreso').value = '';
+    document.getElementById('diasInasistencia').value = '';
+    document.getElementById('mesInasistencia').value = '';
+    document.getElementById('motivoExcusa').value = '';
+    document.getElementById('certificadoMedico').checked = false;
+    document.getElementById('incapacidad').checked = false;
+    currentStep = 1;
+    updateStepperUI();
 }
 
 // Funciones de autenticación
@@ -127,11 +149,6 @@ async function handleLogin(e) {
         updateUIForUser();
         closeModal();
         
-        // Cargar datos específicos del usuario
-        if (tipoUsuario === 'padre') {
-            await loadEstudiantes();
-        }
-        
     } catch (error) {
         alert('Error al iniciar sesión: ' + error.message);
     }
@@ -176,7 +193,8 @@ function hideAllScreens() {
 function handleOptionClick(e) {
     const option = e.currentTarget.dataset.option;
     
-    if (!currentUser && option !== 'consultar') {
+    // Solo consultar, permisos y excusas no requieren login
+    if (!currentUser && (option === 'coordinador' || option === 'docente')) {
         alert('Debe iniciar sesión para acceder a esta función');
         showLoginModal();
         return;
@@ -271,10 +289,29 @@ function prevStep() {
 function validateCurrentStep() {
     if (currentStep === 1) {
         const fechaSolicitud = document.getElementById('fechaSolicitud').value;
-        const estudiante = document.getElementById('estudiante').value;
+        const nombreRegistrante = document.getElementById('nombreRegistrante').value;
+        const emailRegistrante = document.getElementById('emailRegistrante').value;
+        const nombrePadre = document.getElementById('nombrePadre').value;
+        const emailPadre = document.getElementById('emailPadre').value;
+        const nombreEstudiante = document.getElementById('nombreEstudiante').value;
+        const documentoEstudiante = document.getElementById('documentoEstudiante').value;
+        const gradoEstudiante = document.getElementById('gradoEstudiante').value;
         
-        if (!fechaSolicitud || !estudiante) {
+        if (!fechaSolicitud || !nombreRegistrante.trim() || !emailRegistrante.trim() || 
+            !nombrePadre.trim() || !emailPadre.trim() || !nombreEstudiante.trim() || 
+            !documentoEstudiante.trim() || !gradoEstudiante) {
             alert('Por favor complete todos los campos obligatorios');
+            return false;
+        }
+        
+        // Validar formato de emails
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailRegistrante)) {
+            alert('Por favor ingrese un email válido para quien registra');
+            return false;
+        }
+        if (!emailRegex.test(emailPadre)) {
+            alert('Por favor ingrese un email válido para el padre/acudiente');
             return false;
         }
     } else if (currentStep === 2) {
@@ -301,15 +338,30 @@ function validateCurrentStep() {
 
 function showConfirmation() {
     const detailsDiv = document.getElementById('confirmationDetails');
-    const estudianteSelect = document.getElementById('estudiante');
-    const estudianteNombre = estudianteSelect.options[estudianteSelect.selectedIndex].text;
+    const gradoSelect = document.getElementById('gradoEstudiante');
+    const gradoNombre = gradoSelect.options[gradoSelect.selectedIndex].text;
     
     let html = `
         <div class="confirmation-item">
             <strong>Fecha de Solicitud:</strong> ${document.getElementById('fechaSolicitud').value}
         </div>
         <div class="confirmation-item">
-            <strong>Estudiante:</strong> ${estudianteNombre}
+            <strong>Padre/Acudiente:</strong> ${document.getElementById('nombrePadre').value}
+        </div>
+        <div class="confirmation-item">
+            <strong>Email:</strong> ${document.getElementById('emailPadre').value}
+        </div>
+        <div class="confirmation-item">
+            <strong>Teléfono:</strong> ${document.getElementById('telefonoPadre').value || 'No especificado'}
+        </div>
+        <div class="confirmation-item">
+            <strong>Estudiante:</strong> ${document.getElementById('nombreEstudiante').value}
+        </div>
+        <div class="confirmation-item">
+            <strong>Documento:</strong> ${document.getElementById('documentoEstudiante').value}
+        </div>
+        <div class="confirmation-item">
+            <strong>Grado:</strong> ${gradoNombre}
         </div>
     `;
     
@@ -354,19 +406,110 @@ async function handleFormSubmit(e) {
     if (currentStep !== 3) return;
     
     try {
-        const estudianteId = document.getElementById('estudiante').value;
+        // Obtener datos del formulario
+        const nombreRegistrante = document.getElementById('nombreRegistrante').value.trim();
+        const emailRegistrante = document.getElementById('emailRegistrante').value.trim();
+        const nombrePadre = document.getElementById('nombrePadre').value.trim();
+        const emailPadre = document.getElementById('emailPadre').value.trim();
+        const telefonoPadre = document.getElementById('telefonoPadre').value.trim();
+        const nombreEstudiante = document.getElementById('nombreEstudiante').value.trim();
+        const documentoEstudiante = document.getElementById('documentoEstudiante').value.trim();
+        const gradoId = document.getElementById('gradoEstudiante').value;
         const fechaSolicitud = document.getElementById('fechaSolicitud').value;
         
+        // Buscar o crear padre
+        let padre;
+        const { data: padreExistente } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('email', emailPadre)
+            .eq('tipo_usuario', 'padre')
+            .single();
+        
+        if (padreExistente) {
+            padre = padreExistente;
+            // Actualizar información si es necesaria
+            await supabase
+                .from('usuarios')
+                .update({
+                    nombre: nombrePadre,
+                    telefono: telefonoPadre
+                })
+                .eq('id', padre.id);
+        } else {
+            // Crear nuevo padre
+            const { data: nuevoPadre, error: errorPadre } = await supabase
+                .from('usuarios')
+                .insert([{
+                    email: emailPadre,
+                    nombre: nombrePadre,
+                    telefono: telefonoPadre,
+                    tipo_usuario: 'padre'
+                }])
+                .select()
+                .single();
+            
+            if (errorPadre) {
+                alert('Error al registrar el padre: ' + errorPadre.message);
+                return;
+            }
+            
+            padre = nuevoPadre;
+        }
+        
+        // Buscar o crear estudiante
+        let estudiante;
+        const { data: estudianteExistente } = await supabase
+            .from('estudiantes')
+            .select('*')
+            .eq('documento', documentoEstudiante)
+            .single();
+        
+        if (estudianteExistente) {
+            estudiante = estudianteExistente;
+            // Actualizar información si es necesaria
+            await supabase
+                .from('estudiantes')
+                .update({
+                    nombre: nombreEstudiante,
+                    grado_id: gradoId,
+                    padre_id: padre.id
+                })
+                .eq('id', estudiante.id);
+        } else {
+            // Crear nuevo estudiante
+            const { data: nuevoEstudiante, error: errorEstudiante } = await supabase
+                .from('estudiantes')
+                .insert([{
+                    nombre: nombreEstudiante,
+                    documento: documentoEstudiante,
+                    grado_id: gradoId,
+                    padre_id: padre.id
+                }])
+                .select()
+                .single();
+            
+            if (errorEstudiante) {
+                alert('Error al registrar el estudiante: ' + errorEstudiante.message);
+                return;
+            }
+            
+            estudiante = nuevoEstudiante;
+        }
+        
+        // Crear solicitud (permiso o excusa)
         let result;
         
         if (currentFormType === 'permiso') {
             const data = {
-                estudiante_id: estudianteId,
-                padre_id: currentUser.id,
+                estudiante_id: estudiante.id,
+                padre_id: padre.id,
                 fecha_solicitud: fechaSolicitud,
                 motivo: document.getElementById('motivoPermiso').value,
                 hora_salida: document.getElementById('horaSalida').value || null,
-                hora_regreso: document.getElementById('horaRegreso').value || null
+                hora_regreso: document.getElementById('horaRegreso').value || null,
+                registrado_por_nombre: nombreRegistrante,
+                registrado_por_email: emailRegistrante
             };
             
             result = await supabase
@@ -376,14 +519,16 @@ async function handleFormSubmit(e) {
                 .single();
         } else {
             const data = {
-                estudiante_id: estudianteId,
-                padre_id: currentUser.id,
+                estudiante_id: estudiante.id,
+                padre_id: padre.id,
                 fecha_solicitud: fechaSolicitud,
                 dias_inasistencia: document.getElementById('diasInasistencia').value,
                 mes: document.getElementById('mesInasistencia').value,
                 motivo: document.getElementById('motivoExcusa').value,
                 certificado_medico: document.getElementById('certificadoMedico').checked,
-                incapacidad: document.getElementById('incapacidad').checked
+                incapacidad: document.getElementById('incapacidad').checked,
+                registrado_por_nombre: nombreRegistrante,
+                registrado_por_email: emailRegistrante
             };
             
             result = await supabase
@@ -398,19 +543,51 @@ async function handleFormSubmit(e) {
             return;
         }
         
-        alert(`Solicitud enviada exitosamente.\nRadicado: ${result.data.radicado}`);
+        // Mostrar mensaje de éxito con el radicado
+        alert(`¡Solicitud enviada exitosamente!\n\nRadicado: ${result.data.radicado}\n\nRegistrado por: ${nombreRegistrante}\nEmail: ${emailRegistrante}\n\nGuarde este número para consultar el estado de su solicitud.`);
         
         // Limpiar formulario y volver al inicio
-        document.getElementById('mainForm').reset();
+        resetFormFields();
         setFechaActual();
         showHomeScreen();
         
     } catch (error) {
+        console.error('Error al procesar la solicitud:', error);
         alert('Error al procesar la solicitud: ' + error.message);
     }
 }
 
 // Funciones de carga de datos
+async function loadGrados() {
+    try {
+        const { data, error } = await supabase
+            .from('grados')
+            .select('*')
+            .order('nombre');
+        
+        if (error) {
+            console.error('Error al cargar grados:', error);
+            return;
+        }
+        
+        // Actualizar select de grados
+        const select = document.getElementById('gradoEstudiante');
+        if (select) {
+            select.innerHTML = '<option value="">Seleccione el grado...</option>';
+            
+            data.forEach(grado => {
+                const option = document.createElement('option');
+                option.value = grado.id;
+                option.textContent = grado.nombre;
+                select.appendChild(option);
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar grados:', error);
+    }
+}
+
 async function loadEstudiantes() {
     if (!currentUser || currentUser.tipo_usuario !== 'padre') return;
     
@@ -429,17 +606,6 @@ async function loadEstudiantes() {
         }
         
         estudiantes = data || [];
-        
-        // Actualizar select de estudiantes
-        const select = document.getElementById('estudiante');
-        select.innerHTML = '<option value="">Seleccione un estudiante...</option>';
-        
-        estudiantes.forEach(estudiante => {
-            const option = document.createElement('option');
-            option.value = estudiante.id;
-            option.textContent = `${estudiante.nombre} (${estudiante.grados?.nombre || 'Sin grado'})`;
-            select.appendChild(option);
-        });
         
     } catch (error) {
         console.error('Error al cargar estudiantes:', error);
@@ -499,9 +665,15 @@ async function buscarRadicado() {
                 <div class="solicitud-details">
                     <p><strong>Estudiante:</strong> ${solicitud.estudiantes.nombre}</p>
                     <p><strong>Grado:</strong> ${solicitud.estudiantes.grados.nombre}</p>
+                    <p><strong>Padre/Acudiente:</strong> ${solicitud.usuarios.nombre}</p>
                     <p><strong>Fecha de Solicitud:</strong> ${new Date(solicitud.fecha_solicitud).toLocaleDateString()}</p>
                     <p><strong>Estado:</strong> <span class="estado-${solicitud.estado}">${getEstadoTexto(solicitud.estado)}</span></p>
         `;
+        
+        // Mostrar información de quien registró si está disponible
+        if (solicitud.registrado_por_nombre) {
+            html += `<p><strong>Registrado por:</strong> ${solicitud.registrado_por_nombre} (${solicitud.registrado_por_email})</p>`;
+        }
         
         if (tipo === 'Permiso') {
             html += `
@@ -670,9 +842,14 @@ function renderSolicitudes(solicitudes, containerId, tipo) {
                 <div class="solicitud-details">
                     <p><strong>Estudiante:</strong> ${solicitud.estudiantes.nombre}</p>
                     <p><strong>Grado:</strong> ${solicitud.estudiantes.grados.nombre}</p>
-                    <p><strong>Padre:</strong> ${solicitud.usuarios.nombre}</p>
+                    <p><strong>Padre/Acudiente:</strong> ${solicitud.usuarios.nombre}</p>
                     <p><strong>Fecha:</strong> ${new Date(solicitud.fecha_solicitud).toLocaleDateString()}</p>
         `;
+        
+        // Mostrar información de quien registró si está disponible
+        if (solicitud.registrado_por_nombre) {
+            html += `<p><strong>Registrado por:</strong> ${solicitud.registrado_por_nombre} (${solicitud.registrado_por_email})</p>`;
+        }
         
         if (tipo === 'permiso') {
             html += `
@@ -733,9 +910,14 @@ async function mostrarAutorizacion(solicitudId, tipo) {
                 <p><strong>Radicado:</strong> ${data.radicado}</p>
                 <p><strong>Estudiante:</strong> ${data.estudiantes.nombre}</p>
                 <p><strong>Grado:</strong> ${data.estudiantes.grados.nombre}</p>
-                <p><strong>Padre:</strong> ${data.usuarios.nombre}</p>
+                <p><strong>Padre/Acudiente:</strong> ${data.usuarios.nombre}</p>
                 <p><strong>Fecha:</strong> ${new Date(data.fecha_solicitud).toLocaleDateString()}</p>
         `;
+        
+        // Mostrar información de quien registró si está disponible
+        if (data.registrado_por_nombre) {
+            html += `<p><strong>Registrado por:</strong> ${data.registrado_por_nombre} (${data.registrado_por_email})</p>`;
+        }
         
         if (tipo === 'permiso') {
             html += `
@@ -796,7 +978,16 @@ async function autorizarSolicitud() {
         
         // Si es excusa, crear autorizaciones para docentes
         if (currentAutorizacion.tipo === 'excusa') {
-            await crearAutorizacionesDocentes(currentAutorizacion.id, currentAutorizacion.estudiantes.grados.id);
+            // Obtener el grado del estudiante
+            const { data: estudiante } = await supabase
+                .from('estudiantes')
+                .select('grado_id')
+                .eq('id', currentAutorizacion.estudiante_id)
+                .single();
+            
+            if (estudiante) {
+                await crearAutorizacionesDocentes(currentAutorizacion.id, estudiante.grado_id);
+            }
         }
         
         alert('Solicitud autorizada exitosamente');
