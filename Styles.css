@@ -451,6 +451,74 @@ select {
     color: var(--dark-gray);
 }
 
+/* Asterisco para campos requeridos */
+.required {
+    color: var(--danger-color);
+    font-weight: 600;
+    margin-left: 2px;
+}
+
+/* Destacar campos requeridos */
+input[required], select[required], textarea[required] {
+    border-left: 3px solid var(--warning-color);
+}
+
+input[required]:valid, select[required]:valid, textarea[required]:valid {
+    border-left-color: var(--success-color);
+}
+
+input[required]:invalid, select[required]:invalid, textarea[required]:invalid {
+    border-left-color: var(--danger-color);
+}
+
+/* Estados de validación en tiempo real */
+input:focus[required]:valid, select:focus[required]:valid, textarea:focus[required]:valid {
+    border-color: var(--success-color);
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+}
+
+input:focus[required]:invalid, select:focus[required]:invalid, textarea:focus[required]:invalid {
+    border-color: var(--danger-color);
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+
+/* Mensaje de campo requerido */
+.field-error {
+    color: var(--danger-color);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: none;
+}
+
+.field-error.show {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Mejorar contraste para campos con errores */
+input.error, select.error, textarea.error {
+    border: 2px solid var(--danger-color) !important;
+    background-color: rgba(231, 76, 60, 0.05);
+}
+
+/* Indicador visual de progreso del formulario */
+.form-progress {
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--medium-gray);
+}
+
+.form-progress .completed {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.form-progress .total {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
 .form-group input,
 .form-group select,
 .form-group textarea {
