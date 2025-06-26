@@ -991,7 +991,8 @@ async function handleFormSubmit(e) {
                 registrado_por_nombre: nombreRegistrante,
                 registrado_por_email: emailRegistrante,
                 registrado_por_relacion: relacionEstudiante,
-                registrado_por_relacion_otro: otroRelacion || null
+                registrado_por_relacion_otro: otroRelacion || null,
+                estado: 'pendiente'
             };
             
             result = await supabase
@@ -1012,7 +1013,8 @@ async function handleFormSubmit(e) {
                 registrado_por_nombre: nombreRegistrante,
                 registrado_por_email: emailRegistrante,
                 registrado_por_relacion: relacionEstudiante,
-                registrado_por_relacion_otro: otroRelacion || null
+               registrado_por_relacion_otro: otroRelacion || null,
+                estado: 'pendiente'
             };
             
             result = await supabase
