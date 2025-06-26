@@ -1264,6 +1264,7 @@ function handleTabClick(e) {
 }
 
 async function loadPermisosPendientes() {
+    const container = document.getElementById('permisosPendientes');
     try {
         const { data, error } = await supabase
             .from('permisos')
@@ -1274,20 +1275,23 @@ async function loadPermisosPendientes() {
             `)
             .eq('estado', 'pendiente')
             .order('created_at', { ascending: false });
-        
+
         if (error) {
             console.error('Error al cargar permisos:', error);
+            container.innerHTML = '<p class="error">Error al cargar permisos.</p>';
             return;
         }
-        
+
         renderSolicitudes(data, 'permisosPendientes', 'permiso');
-        
+
     } catch (error) {
         console.error('Error al cargar permisos:', error);
+        container.innerHTML = '<p class="error">Error al cargar permisos.</p>';
     }
 }
 
 async function loadExcusasPendientes() {
+    const container = document.getElementById('excusasPendientes');
     try {
         const { data, error } = await supabase
             .from('excusas')
@@ -1298,16 +1302,18 @@ async function loadExcusasPendientes() {
             `)
             .eq('estado', 'pendiente')
             .order('created_at', { ascending: false });
-        
+
         if (error) {
             console.error('Error al cargar excusas:', error);
+            container.innerHTML = '<p class="error">Error al cargar excusas.</p>';
             return;
         }
-        
+
         renderSolicitudes(data, 'excusasPendientes', 'excusa');
-        
+
     } catch (error) {
         console.error('Error al cargar excusas:', error);
+        container.innerHTML = '<p class="error">Error al cargar excusas.</p>';
     }
 }
 
