@@ -51,6 +51,9 @@ function setupEventListeners() {
     document.getElementById('prevBtn').addEventListener('click', prevStep);
     document.getElementById('mainForm').addEventListener('submit', handleFormSubmit);
     
+    // Relación con estudiante
+    document.getElementById('relacionEstudiante').addEventListener('change', handleRelacionChange);
+    
     // Consulta
     document.getElementById('searchBtn').addEventListener('click', buscarRadicado);
     
@@ -68,6 +71,30 @@ function setupEventListeners() {
     document.getElementById('cancelarTrabajoBtn').addEventListener('click', () => closeModal());
 }
 
+function handleRelacionChange() {
+    const relacionSelect = document.getElementById('relacionEstudiante');
+    const otroGroup = document.getElementById('otroRelacionGroup');
+    const otroInput = document.getElementById('otroRelacion');
+    
+    if (relacionSelect.value === 'otro') {
+        otroGroup.style.display = 'block';
+        otroGroup.classList.add('show');
+        otroInput.required = true;
+        // Hacer focus en el campo después de la animación
+        setTimeout(() => {
+            otroInput.focus();
+        }, 300);
+    } else {
+        otroGroup.classList.remove('show');
+        otroInput.required = false;
+        otroInput.value = '';
+        // Ocultar después de la animación
+        setTimeout(() => {
+            otroGroup.style.display = 'none';
+        }, 300);
+    }
+}
+
 function setFechaActual() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('fechaSolicitud').value = today;
@@ -77,9 +104,9 @@ function resetFormFields() {
     document.getElementById('mainForm').reset();
     document.getElementById('nombreRegistrante').value = '';
     document.getElementById('emailRegistrante').value = '';
-    document.getElementById('nombrePadre').value = '';
-    document.getElementById('emailPadre').value = '';
-    document.getElementById('telefonoPadre').value = '';
+    document.getElementById('telefonoRegistrante').value = '';
+    document.getElementById('relacionEstudiante').value = '';
+    document.getElementById('otroRelacion').value = '';
     document.getElementById('nombreEstudiante').value = '';
     document.getElementById('documentoEstudiante').value = '';
     document.getElementById('gradoEstudiante').value = '';
@@ -91,6 +118,13 @@ function resetFormFields() {
     document.getElementById('motivoExcusa').value = '';
     document.getElementById('certificadoMedico').checked = false;
     document.getElementById('incapacidad').checked = false;
+    
+    // Ocultar campo "otro" con animación
+    const otroGroup = document.getElementById('otroRelacionGroup');
+    otroGroup.classList.remove('show');
+    otroGroup.style.display = 'none';
+    document.getElementById('otroRelacion').required = false;
+    
     currentStep = 1;
     updateStepperUI();
 }
@@ -291,27 +325,31 @@ function validateCurrentStep() {
         const fechaSolicitud = document.getElementById('fechaSolicitud').value;
         const nombreRegistrante = document.getElementById('nombreRegistrante').value;
         const emailRegistrante = document.getElementById('emailRegistrante').value;
-        const nombrePadre = document.getElementById('nombrePadre').value;
-        const emailPadre = document.getElementById('emailPadre').value;
+        const relacionEstudiante = document.getElementById('relacionEstudiante').value;
         const nombreEstudiante = document.getElementById('nombreEstudiante').value;
         const documentoEstudiante = document.getElementById('documentoEstudiante').value;
         const gradoEstudiante = document.getElementById('gradoEstudiante').value;
         
         if (!fechaSolicitud || !nombreRegistrante.trim() || !emailRegistrante.trim() || 
-            !nombrePadre.trim() || !emailPadre.trim() || !nombreEstudiante.trim() || 
+            !relacionEstudiante || !nombreEstudiante.trim() || 
             !documentoEstudiante.trim() || !gradoEstudiante) {
             alert('Por favor complete todos los campos obligatorios');
             return false;
         }
         
-        // Validar formato de emails
+        // Validar campo "otro" si es necesario
+        if (relacionEstudiante === 'otro') {
+            const otroRelacion = document.getElementById('otroRelacion').value;
+            if (!otroRelacion.trim()) {
+                alert('Por favor especifique cuál es su relación con el estudiante');
+                return false;
+            }
+        }
+        
+        // Validar formato de email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(emailRegistrante)) {
-            alert('Por favor ingrese un email válido para quien registra');
-            return false;
-        }
-        if (!emailRegex.test(emailPadre)) {
-            alert('Por favor ingrese un email válido para el padre/acudiente');
+            alert('Por favor ingrese un email válido');
             return false;
         }
     } else if (currentStep === 2) {
@@ -409,20 +447,23 @@ async function handleFormSubmit(e) {
         // Obtener datos del formulario
         const nombreRegistrante = document.getElementById('nombreRegistrante').value.trim();
         const emailRegistrante = document.getElementById('emailRegistrante').value.trim();
-        const nombrePadre = document.getElementById('nombrePadre').value.trim();
-        const emailPadre = document.getElementById('emailPadre').value.trim();
-        const telefonoPadre = document.getElementById('telefonoPadre').value.trim();
+        const telefonoRegistrante = document.getElementById('telefonoRegistrante').value.trim();
+        const relacionEstudiante = document.getElementById('relacionEstudiante').value;
+        const otroRelacion = document.getElementById('otroRelacion').value.trim();
         const nombreEstudiante = document.getElementById('nombreEstudiante').value.trim();
         const documentoEstudiante = document.getElementById('documentoEstudiante').value.trim();
         const gradoId = document.getElementById('gradoEstudiante').value;
         const fechaSolicitud = document.getElementById('fechaSolicitud').value;
         
-        // Buscar o crear padre
+        // Determinar la relación final
+        const relacionFinal = relacionEstudiante === 'otro' ? otroRelacion : relacionEstudiante;
+        
+        // Buscar o crear padre/acudiente usando los datos de quien registra
         let padre;
         const { data: padreExistente } = await supabase
             .from('usuarios')
             .select('*')
-            .eq('email', emailPadre)
+            .eq('email', emailRegistrante)
             .eq('tipo_usuario', 'padre')
             .single();
         
@@ -432,25 +473,25 @@ async function handleFormSubmit(e) {
             await supabase
                 .from('usuarios')
                 .update({
-                    nombre: nombrePadre,
-                    telefono: telefonoPadre
+                    nombre: nombreRegistrante,
+                    telefono: telefonoRegistrante
                 })
                 .eq('id', padre.id);
         } else {
-            // Crear nuevo padre
+            // Crear nuevo padre/acudiente
             const { data: nuevoPadre, error: errorPadre } = await supabase
                 .from('usuarios')
                 .insert([{
-                    email: emailPadre,
-                    nombre: nombrePadre,
-                    telefono: telefonoPadre,
+                    email: emailRegistrante,
+                    nombre: nombreRegistrante,
+                    telefono: telefonoRegistrante,
                     tipo_usuario: 'padre'
                 }])
                 .select()
                 .single();
             
             if (errorPadre) {
-                alert('Error al registrar el padre: ' + errorPadre.message);
+                alert('Error al registrar el acudiente: ' + errorPadre.message);
                 return;
             }
             
@@ -509,7 +550,9 @@ async function handleFormSubmit(e) {
                 hora_salida: document.getElementById('horaSalida').value || null,
                 hora_regreso: document.getElementById('horaRegreso').value || null,
                 registrado_por_nombre: nombreRegistrante,
-                registrado_por_email: emailRegistrante
+                registrado_por_email: emailRegistrante,
+                registrado_por_relacion: relacionEstudiante,
+                registrado_por_relacion_otro: otroRelacion || null
             };
             
             result = await supabase
@@ -528,7 +571,9 @@ async function handleFormSubmit(e) {
                 certificado_medico: document.getElementById('certificadoMedico').checked,
                 incapacidad: document.getElementById('incapacidad').checked,
                 registrado_por_nombre: nombreRegistrante,
-                registrado_por_email: emailRegistrante
+                registrado_por_email: emailRegistrante,
+                registrado_por_relacion: relacionEstudiante,
+                registrado_por_relacion_otro: otroRelacion || null
             };
             
             result = await supabase
@@ -544,7 +589,7 @@ async function handleFormSubmit(e) {
         }
         
         // Mostrar mensaje de éxito con el radicado
-        alert(`¡Solicitud enviada exitosamente!\n\nRadicado: ${result.data.radicado}\n\nRegistrado por: ${nombreRegistrante}\nEmail: ${emailRegistrante}\n\nGuarde este número para consultar el estado de su solicitud.`);
+        alert(`¡Solicitud enviada exitosamente!\n\nRadicado: ${result.data.radicado}\n\nRegistrado por: ${nombreRegistrante} (${relacionFinal})\nEmail: ${emailRegistrante}\n\nGuarde este número para consultar el estado de su solicitud.`);
         
         // Limpiar formulario y volver al inicio
         resetFormFields();
@@ -665,14 +710,17 @@ async function buscarRadicado() {
                 <div class="solicitud-details">
                     <p><strong>Estudiante:</strong> ${solicitud.estudiantes.nombre}</p>
                     <p><strong>Grado:</strong> ${solicitud.estudiantes.grados.nombre}</p>
-                    <p><strong>Padre/Acudiente:</strong> ${solicitud.usuarios.nombre}</p>
+                    <p><strong>Acudiente:</strong> ${solicitud.usuarios.nombre}</p>
                     <p><strong>Fecha de Solicitud:</strong> ${new Date(solicitud.fecha_solicitud).toLocaleDateString()}</p>
                     <p><strong>Estado:</strong> <span class="estado-${solicitud.estado}">${getEstadoTexto(solicitud.estado)}</span></p>
         `;
         
         // Mostrar información de quien registró si está disponible
         if (solicitud.registrado_por_nombre) {
-            html += `<p><strong>Registrado por:</strong> ${solicitud.registrado_por_nombre} (${solicitud.registrado_por_email})</p>`;
+            const relacion = solicitud.registrado_por_relacion === 'otro' 
+                ? solicitud.registrado_por_relacion_otro 
+                : solicitud.registrado_por_relacion;
+            html += `<p><strong>Registrado por:</strong> ${solicitud.registrado_por_nombre} (${relacion}) - ${solicitud.registrado_por_email}</p>`;
         }
         
         if (tipo === 'Permiso') {
@@ -842,13 +890,16 @@ function renderSolicitudes(solicitudes, containerId, tipo) {
                 <div class="solicitud-details">
                     <p><strong>Estudiante:</strong> ${solicitud.estudiantes.nombre}</p>
                     <p><strong>Grado:</strong> ${solicitud.estudiantes.grados.nombre}</p>
-                    <p><strong>Padre/Acudiente:</strong> ${solicitud.usuarios.nombre}</p>
+                    <p><strong>Acudiente:</strong> ${solicitud.usuarios.nombre}</p>
                     <p><strong>Fecha:</strong> ${new Date(solicitud.fecha_solicitud).toLocaleDateString()}</p>
         `;
         
         // Mostrar información de quien registró si está disponible
         if (solicitud.registrado_por_nombre) {
-            html += `<p><strong>Registrado por:</strong> ${solicitud.registrado_por_nombre} (${solicitud.registrado_por_email})</p>`;
+            const relacion = solicitud.registrado_por_relacion === 'otro' 
+                ? solicitud.registrado_por_relacion_otro 
+                : solicitud.registrado_por_relacion;
+            html += `<p><strong>Registrado por:</strong> ${solicitud.registrado_por_nombre} (${relacion}) - ${solicitud.registrado_por_email}</p>`;
         }
         
         if (tipo === 'permiso') {
@@ -910,13 +961,16 @@ async function mostrarAutorizacion(solicitudId, tipo) {
                 <p><strong>Radicado:</strong> ${data.radicado}</p>
                 <p><strong>Estudiante:</strong> ${data.estudiantes.nombre}</p>
                 <p><strong>Grado:</strong> ${data.estudiantes.grados.nombre}</p>
-                <p><strong>Padre/Acudiente:</strong> ${data.usuarios.nombre}</p>
+                <p><strong>Acudiente:</strong> ${data.usuarios.nombre}</p>
                 <p><strong>Fecha:</strong> ${new Date(data.fecha_solicitud).toLocaleDateString()}</p>
         `;
         
         // Mostrar información de quien registró si está disponible
         if (data.registrado_por_nombre) {
-            html += `<p><strong>Registrado por:</strong> ${data.registrado_por_nombre} (${data.registrado_por_email})</p>`;
+            const relacion = data.registrado_por_relacion === 'otro' 
+                ? data.registrado_por_relacion_otro 
+                : data.registrado_por_relacion;
+            html += `<p><strong>Registrado por:</strong> ${data.registrado_por_nombre} (${relacion}) - ${data.registrado_por_email}</p>`;
         }
         
         if (tipo === 'permiso') {
