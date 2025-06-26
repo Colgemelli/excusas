@@ -471,52 +471,100 @@ input[required]:invalid, select[required]:invalid, textarea[required]:invalid {
     border-left-color: var(--danger-color);
 }
 
-/* Estados de validación en tiempo real */
-input:focus[required]:valid, select:focus[required]:valid, textarea:focus[required]:valid {
+/* Campo de teléfono con validación especial */
+#telefonoRegistrante {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+}
+
+#telefonoRegistrante:valid {
+    border-left-color: var(--success-color);
+}
+
+#telefonoRegistrante:invalid {
+    border-left-color: var(--danger-color);
+}
+
+#telefonoRegistrante::placeholder {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    letter-spacing: normal;
+}
+
+/* Estados mejorados para campos requeridos */
+input[required]:focus:valid, select[required]:focus:valid, textarea[required]:focus:valid {
     border-color: var(--success-color);
     box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
 }
 
-input:focus[required]:invalid, select:focus[required]:invalid, textarea:focus[required]:invalid {
+input[required]:focus:invalid, select[required]:focus:invalid, textarea[required]:focus:invalid {
     border-color: var(--danger-color);
     box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
 }
 
-/* Mensaje de campo requerido */
-.field-error {
-    color: var(--danger-color);
-    font-size: 0.8rem;
-    margin-top: 0.25rem;
-    display: none;
+/* Loading states para selects mejorado */
+.loading-select {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 6v6l4 2'/%3E%3C/svg%3E");
+    animation: spin 1s linear infinite;
+    pointer-events: none;
 }
 
-.field-error.show {
-    display: block;
-    animation: fadeIn 0.3s ease;
-}
-
-/* Mejorar contraste para campos con errores */
-input.error, select.error, textarea.error {
-    border: 2px solid var(--danger-color) !important;
-    background-color: rgba(231, 76, 60, 0.05);
-}
-
-/* Indicador visual de progreso del formulario */
-.form-progress {
+/* Indicador de progreso en tiempo real */
+.step-progress {
+    background: linear-gradient(90deg, var(--success-color) var(--progress, 0%), var(--light-gray) var(--progress, 0%));
+    height: 4px;
+    border-radius: 2px;
     margin-bottom: 1rem;
-    text-align: center;
-    font-size: 0.9rem;
-    color: var(--medium-gray);
+    transition: all 0.3s ease;
 }
 
-.form-progress .completed {
+/* Mejoras en los mensajes de error */
+.error-message {
+    color: var(--danger-color);
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.error-message::before {
+    content: "⚠️";
+}
+
+.success-message {
     color: var(--success-color);
-    font-weight: 600;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.form-progress .total {
-    color: var(--primary-color);
-    font-weight: 600;
+.success-message::before {
+    content: "✅";
+}
+
+/* Destacar campo activo */
+.form-group:focus-within {
+    background-color: rgba(44, 90, 160, 0.02);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+/* Contador de caracteres para teléfono */
+.char-counter {
+    font-size: 0.75rem;
+    color: var(--medium-gray);
+    text-align: right;
+    margin-top: 0.25rem;
+}
+
+.char-counter.valid {
+    color: var(--success-color);
+}
+
+.char-counter.invalid {
+    color: var(--danger-color);
 }
 
 .form-group input,
