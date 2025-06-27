@@ -24,8 +24,6 @@ async function initializeApp() {
     setupEventListeners();
     setFechaActual();
     await loadGrados();
-}
-
     const { data: { session } } = await supabase.auth.getSession();
     if (session && session.user) {
         await completeLogin(session.user);
@@ -38,6 +36,7 @@ async function initializeApp() {
             logout();
         }
     });
+}
 
 function setupEventListeners() {
     // Login modal
@@ -530,7 +529,7 @@ async function logout() {
     } catch (err) {
         console.error('Unexpected error during sign out:', err);
     }
-    
+
     currentUser = null;
     datosPersonalesAceptados = false; // Resetear protección de datos al cerrar sesión
     document.getElementById('loginBtn').style.display = 'block';
