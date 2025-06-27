@@ -455,7 +455,12 @@ async function handleLogin(e) {
     localStorage.setItem('login_tipo_usuario', tipoUsuario);
 
     try {
-        const { error } = await supabase.auth.signInWithOtp({ email });
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+                emailRedirectTo: window.location.href
+            }
+        });
         if (error) {
             alert('Error al enviar enlace de inicio de sesión: ' + error.message);
             return;
