@@ -525,9 +525,13 @@ async function logout() {
         const { error } = await supabase.auth.signOut();
         if (error) {
             console.error('Error signing out:', error.message);
+            alert('Error al cerrar sesión: ' + error.message);
+            return;
         }
     } catch (err) {
         console.error('Unexpected error during sign out:', err);
+        alert('Error al cerrar sesión');
+        return;
     }
 
     currentUser = null;
@@ -1777,3 +1781,9 @@ async function guardarTrabajo() {
         alert('Error al guardar el trabajo');
     }
 }
+
+if (typeof module !== "undefined") {
+    module.exports = { logout };
+}
+
+export { logout };
