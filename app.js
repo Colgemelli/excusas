@@ -985,7 +985,7 @@ async function handleFormSubmit(e) {
                     nombre: nombreRegistrante,
                     telefono: telefonoRegistrante,
                     tipo_usuario: 'padre',
-                    auth_id: currentUser ? currentUser.id : null
+                    auth_id: currentUser ? currentUser.auth_id : null
                 }])
                 .select()
                 .single();
@@ -1013,7 +1013,7 @@ async function handleFormSubmit(e) {
             const data = {
                 estudiante_id: estudiante.id,
                 padre_id: padre.id,
-                usuario_id: currentUser ? currentUser.id : null,
+                usuario_id: currentUser ? currentUser.auth_id : null,
                 fecha_solicitud: fechaSolicitud,
                 motivo: document.getElementById('motivoPermiso').value,
                 hora_salida: document.getElementById('horaSalida').value || null,
@@ -1034,7 +1034,7 @@ async function handleFormSubmit(e) {
             const data = {
                 estudiante_id: estudiante.id,
                 padre_id: padre.id,
-                usuario_id: currentUser ? currentUser.id : null,
+                usuario_id: currentUser ? currentUser.auth_id : null,
                 fecha_solicitud: fechaSolicitud,
                 dias_inasistencia: document.getElementById('diasInasistencia').value,
                 mes: document.getElementById('mesInasistencia').value,
