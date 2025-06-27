@@ -1,0 +1,13 @@
+{
+  "name": "excusas",
+  "version": "1.0.0",
+  "description": "Sistema de permisos y excusas basado en Supabase.",
+  "main": "app.js",
+  "scripts": {
+    "test": "node test/logout.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module"
+}
