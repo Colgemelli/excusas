@@ -521,8 +521,16 @@ function updateUIForUser() {
     }
 }
 
-function logout() {
-    supabase.auth.signOut();
+async function logout() {
+    try {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Error signing out:', error.message);
+        }
+    } catch (err) {
+        console.error('Unexpected error during sign out:', err);
+    }
+    
     currentUser = null;
     datosPersonalesAceptados = false; // Resetear protección de datos al cerrar sesión
     document.getElementById('loginBtn').style.display = 'block';
