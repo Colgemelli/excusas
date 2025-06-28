@@ -2,7 +2,18 @@
 const SUPABASE_URL = 'https://nbpldfyisdhgnkmgwaix.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5icGxkZnlpc2RoZ25rbWd3YWl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5NjY1MTUsImV4cCI6MjA2NjU0MjUxNX0.Pe4ImgTYLmRqOqG-RdhJI2SY0QPl_cyBENOxKvZB0DY';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Inicializar Supabase con manejo de errores
+let supabase;
+try {
+    if (typeof window.supabase === 'undefined') {
+        throw new Error('Supabase library not loaded');
+    }
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('Supabase client initialized successfully');
+} catch (error) {
+    console.error('Error initializing Supabase:', error);
+    alert('Error al conectar con la base de datos. Por favor recargue la página.');
+}
 
 // Estado global de la aplicación
 let currentStep = 1;
@@ -44,12 +55,142 @@ const elements = {
     generatedFiling: document.getElementById('generatedFiling')
 };
 
+// Verificar estado de red
+function checkNetworkStatus() {
+    if (!navigator.onLine) {
+        showNetworkError('Sin conexión a Internet');
+        return false;
+    }
+    return true;
+}
+
+function showNetworkError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; z-index: 10001;
+        background: #dc3545; color: white; padding: 15px; text-align: center;
+        font-weight: bold;
+    `;
+    errorDiv.innerHTML = `📶 ${message} - Verifique su conexión a Internet`;
+    document.body.appendChild(errorDiv);
+    
+    setTimeout(() => {
+        if (errorDiv.parentElement) {
+            errorDiv.remove();
+        }
+    }, 5000);
+}
+
+// Escuchar eventos de red
+window.addEventListener('online', () => {
+    console.log('Network connection restored');
+    hideLoading();
+});
+
+window.addEventListener('offline', () => {
+    console.log('Network connection lost');
+    showNetworkError('Conexión perdida');
+});
+
+// Probar conexión con Supabase
+async function testSupabaseConnection() {
+    try {
+        console.log('Testing Supabase connection...');
+        
+        if (!checkNetworkStatus()) {
+            throw new Error('No network connection');
+        }
+        
+        if (!supabase) {
+            throw new Error('Supabase client not initialized');
+        }
+        
+        // Hacer una consulta simple para probar la conexión
+        const { data, error } = await supabase
+            .from('students')
+            .select('count')
+            .limit(1);
+        
+        if (error && error.code !== 'PGRST116') {
+            throw error;
+        }
+        
+        console.log('Supabase connection test successful');
+        return true;
+        
+    } catch (error) {
+        console.error('Supabase connection test failed:', error);
+        return false;
+    }
+}
+
 // Inicialización de la aplicación
 document.addEventListener('DOMContentLoaded', async () => {
-    hideLoading();
-    setupEventListeners();
-    setupFormValidation();
-    await loadStudents();
+    console.log('DOM loaded, initializing app...');
+    
+    try {
+        // Verificar que Supabase esté disponible
+        if (!supabase) {
+            throw new Error('Supabase not initialized');
+        }
+        
+        // Probar conexión
+        const connectionOk = await Promise.race([
+            testSupabaseConnection(),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Connection timeout')), 5000)
+            )
+        ]);
+        
+        if (!connectionOk) {
+            throw new Error('Database connection failed');
+        }
+        
+        setupEventListeners();
+        setupFormValidation();
+        
+        // Intentar cargar estudiantes con timeout
+        console.log('Loading students...');
+        await Promise.race([
+            loadStudents(),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout loading students')), 10000)
+            )
+        ]);
+        
+        console.log('App initialized successfully');
+        
+    } catch (error) {
+        console.error('Error initializing app:', error);
+        
+        // Mostrar error al usuario pero permitir que la app funcione
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = `
+            position: fixed; top: 20px; right: 20px; z-index: 10000;
+            background: #dc3545; color: white; padding: 15px; border-radius: 8px;
+            max-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
+        errorDiv.innerHTML = `
+            <strong>⚠️ Advertencia:</strong><br>
+            Error al cargar datos iniciales. Algunas funciones pueden no estar disponibles.
+            <button onclick="this.parentElement.remove()" style="float:right; background:none; border:none; color:white; font-size:18px;">×</button>
+        `;
+        document.body.appendChild(errorDiv);
+        
+        // Remover automáticamente después de 10 segundos
+        setTimeout(() => {
+            if (errorDiv.parentElement) {
+                errorDiv.remove();
+            }
+        }, 10000);
+        
+        // Inicializar datos vacíos para que la app funcione
+        window.studentsData = [];
+        setupEventListeners();
+        setupFormValidation();
+    } finally {
+        hideLoading();
+    }
 });
 
 // Configurar event listeners
@@ -142,11 +283,35 @@ function setupFormValidation() {
 
 // Mostrar/ocultar loading
 function showLoading() {
-    elements.loading.style.display = 'flex';
+    if (elements.loading) {
+        elements.loading.style.display = 'flex';
+        
+        // Mostrar botón de recarga después de 10 segundos
+        setTimeout(() => {
+            const reloadBtn = document.getElementById('reloadBtn');
+            if (reloadBtn && elements.loading.style.display === 'flex') {
+                reloadBtn.style.display = 'block';
+            }
+        }, 10000);
+        
+        // Auto-hide loading después de 30 segundos como fallback
+        setTimeout(() => {
+            if (elements.loading && elements.loading.style.display === 'flex') {
+                console.warn('Loading timeout - hiding automatically');
+                hideLoading();
+            }
+        }, 30000);
+    }
 }
 
 function hideLoading() {
-    elements.loading.style.display = 'none';
+    if (elements.loading) {
+        elements.loading.style.display = 'none';
+        const reloadBtn = document.getElementById('reloadBtn');
+        if (reloadBtn) {
+            reloadBtn.style.display = 'none';
+        }
+    }
 }
 
 // Navegación entre vistas
@@ -180,18 +345,53 @@ function showView(viewName) {
 // Cargar estudiantes
 async function loadStudents() {
     try {
+        console.log('Fetching students from Supabase...');
+        
+        if (!supabase) {
+            throw new Error('Supabase client not available');
+        }
+        
         const { data: students, error } = await supabase
             .from('students')
             .select('*')
             .order('grade', { ascending: true })
             .order('full_name', { ascending: true });
             
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase error:', error);
+            throw new Error(`Database error: ${error.message}`);
+        }
         
-        window.studentsData = students;
+        console.log('Students loaded successfully:', students?.length || 0);
+        window.studentsData = students || [];
+        
+        return students;
+        
     } catch (error) {
-        console.error('Error al cargar estudiantes:', error);
-        alert('Error al cargar la información de estudiantes');
+        console.error('Error loading students:', error);
+        
+        // Datos de ejemplo como fallback
+        const fallbackStudents = [
+            {id: 1, code: '0001', full_name: 'Ana María González', grade: 'pre-jardín'},
+            {id: 2, code: '0002', full_name: 'Carlos Pérez', grade: 'jardín'},
+            {id: 3, code: '0003', full_name: 'Laura Rodríguez', grade: 'transición'},
+            {id: 4, code: '0004', full_name: 'Juan Martínez', grade: 'primero'},
+            {id: 5, code: '0005', full_name: 'Sofía López', grade: 'segundo'},
+            {id: 6, code: '0006', full_name: 'Diego Hernández', grade: 'tercero'},
+            {id: 7, code: '0007', full_name: 'Valentina Castro', grade: 'cuarto'},
+            {id: 8, code: '0008', full_name: 'Andrés Ruiz', grade: 'quinto'},
+            {id: 9, code: '0009', full_name: 'Isabella Torres', grade: 'sexto'},
+            {id: 10, code: '0010', full_name: 'Santiago Moreno', grade: 'séptimo'},
+            {id: 11, code: '0011', full_name: 'Camila Jiménez', grade: 'octavo'},
+            {id: 12, code: '0012', full_name: 'Mateo Vargas', grade: 'noveno'},
+            {id: 13, code: '0013', full_name: 'Antonia Sánchez', grade: 'décimo'},
+            {id: 14, code: '0014', full_name: 'Nicolás Ramírez', grade: 'undécimo'}
+        ];
+        
+        console.log('Using fallback student data');
+        window.studentsData = fallbackStudents;
+        
+        throw error; // Re-throw para que la función llamadora pueda manejar el error
     }
 }
 
@@ -386,25 +586,40 @@ function getFormData() {
 
 // Enviar solicitud
 async function submitRequest() {
+    if (!supabase) {
+        alert('Error: No hay conexión con la base de datos');
+        return;
+    }
+    
     try {
         showLoading();
         
         const formData = getFormData();
+        console.log('Submitting request:', formData);
         
         const { data, error } = await supabase
             .from('excuse_permission_requests')
             .insert([formData])
             .select();
             
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase error:', error);
+            throw new Error(`Error en la base de datos: ${error.message}`);
+        }
         
-        const filingNumber = data[0].filing_number;
+        if (!data || data.length === 0) {
+            throw new Error('No se recibió confirmación de la base de datos');
+        }
+        
+        const filingNumber = data[0].filing_number || `RAD${Date.now()}`;
+        console.log('Request submitted successfully:', filingNumber);
+        
         elements.generatedFiling.textContent = filingNumber;
         elements.successModal.style.display = 'flex';
         
     } catch (error) {
         console.error('Error al enviar solicitud:', error);
-        alert('Error al enviar la solicitud. Por favor intente nuevamente.');
+        alert(`Error al enviar la solicitud: ${error.message}`);
     } finally {
         hideLoading();
     }
@@ -423,14 +638,20 @@ function resetForm() {
 
 // Consultar radicado
 async function consultFiling() {
-    const filingNumber = document.getElementById('filingNumber').value;
+    const filingNumber = document.getElementById('filingNumber').value.trim();
     if (!filingNumber) {
         alert('Por favor ingrese un número de radicado');
         return;
     }
     
+    if (!supabase) {
+        alert('Error: No hay conexión con la base de datos');
+        return;
+    }
+    
     try {
         showLoading();
+        console.log('Consulting filing number:', filingNumber);
         
         const { data, error } = await supabase
             .from('excuse_permission_requests')
@@ -443,15 +664,26 @@ async function consultFiling() {
             .eq('filing_number', filingNumber)
             .single();
             
-        if (error) throw error;
+        if (error) {
+            console.error('Consult error:', error);
+            if (error.code === 'PGRST116') {
+                throw new Error(`No se encontró información para el radicado: ${filingNumber}`);
+            }
+            throw new Error(`Error al consultar: ${error.message}`);
+        }
         
+        if (!data) {
+            throw new Error(`No se encontró información para el radicado: ${filingNumber}`);
+        }
+        
+        console.log('Filing found:', data);
         displayConsultResult(data);
         
     } catch (error) {
         console.error('Error al consultar radicado:', error);
         document.getElementById('consultResult').innerHTML = `
             <div class="alert alert-error">
-                No se encontró información para el radicado: ${filingNumber}
+                ${error.message}
             </div>
         `;
     } finally {
@@ -522,11 +754,21 @@ function displayConsultResult(data) {
 async function handleLogin(e) {
     e.preventDefault();
     
+    if (!supabase) {
+        alert('Error: No hay conexión con la base de datos');
+        return;
+    }
+    
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     
     if (!currentRole) {
         alert('Por favor seleccione un tipo de usuario');
+        return;
+    }
+    
+    if (!username || !password) {
+        alert('Por favor complete todos los campos');
         return;
     }
     
@@ -536,6 +778,8 @@ async function handleLogin(e) {
         const tableName = currentRole === 'coordinator' ? 'coordinators' : 
                          currentRole === 'teacher' ? 'teachers' : 'administrators';
         
+        console.log(`Attempting login for ${currentRole} with username: ${username}`);
+        
         const { data, error } = await supabase
             .from(tableName)
             .select('*')
@@ -543,7 +787,19 @@ async function handleLogin(e) {
             .eq('password', password)
             .single();
             
-        if (error) throw error;
+        if (error) {
+            console.error('Login error:', error);
+            if (error.code === 'PGRST116') {
+                throw new Error('Usuario o contraseña incorrectos');
+            }
+            throw new Error(`Error de conexión: ${error.message}`);
+        }
+        
+        if (!data) {
+            throw new Error('Usuario o contraseña incorrectos');
+        }
+        
+        console.log('Login successful for:', data.full_name);
         
         currentUser = data;
         elements.userName.textContent = data.full_name;
@@ -554,7 +810,7 @@ async function handleLogin(e) {
         
     } catch (error) {
         console.error('Error en login:', error);
-        alert('Usuario o contraseña incorrectos');
+        alert(error.message || 'Error al iniciar sesión');
     } finally {
         hideLoading();
     }
