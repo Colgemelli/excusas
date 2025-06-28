@@ -55,46 +55,6 @@ const elements = {
     generatedFiling: document.getElementById('generatedFiling')
 };
 
-// Función para verificar qué tablas existen
-async function checkDatabaseTables() {
-    const tables = ['students', 'coordinators', 'teachers', 'administrators', 'excuse_permission_requests'];
-    const results = {};
-    
-    console.log('🗃️ Checking database tables...');
-    
-    for (const table of tables) {
-        try {
-            const { data, error } = await supabase
-                .from(table)
-                .select('count')
-                .limit(1);
-                
-            if (error) {
-                results[table] = {
-                    exists: false,
-                    error: error.message,
-                    code: error.code
-                };
-                console.log(`❌ Table "${table}": ${error.message}`);
-            } else {
-                results[table] = {
-                    exists: true,
-                    accessible: true
-                };
-                console.log(`✅ Table "${table}": OK`);
-            }
-        } catch (err) {
-            results[table] = {
-                exists: false,
-                error: err.message
-            };
-            console.log(`💥 Table "${table}": ${err.message}`);
-        }
-    }
-    
-    return results;
-}
-
 // Función de test para verificar zona horaria y meses
 function testTimeZoneAndMonths() {
     console.log('🧪 TESTING TIMEZONE AND MONTHS:');
@@ -153,69 +113,41 @@ window.addEventListener('offline', () => {
     showNetworkError('Conexión perdida');
 });
 
-// Probar conexión con Supabase con más detalles
+// Probar conexión con Supabase (versión simple)
 async function testSupabaseConnection() {
     try {
-        console.log('🔍 Testing Supabase connection...');
+        console.log('🔍 Testing basic Supabase connection...');
         
         if (!checkNetworkStatus()) {
-            throw new Error('No network connection');
+            return false;
         }
         
         if (!supabase) {
-            throw new Error('Supabase client not initialized');
+            console.error('❌ Supabase client not initialized');
+            return false;
         }
         
         console.log('📡 Supabase URL:', SUPABASE_URL);
-        console.log('🔑 API Key length:', SUPABASE_ANON_KEY.length);
+        console.log('🔑 API Key configured:', !!SUPABASE_ANON_KEY);
         
-        // Probar con una consulta simple primero
-        console.log('🎯 Testing simple query...');
-        const { data: testData, error: testError } = await supabase
-            .from('students')
-            .select('count')
-            .limit(1);
+        // Hacer consulta simple
+        const { data, error } = await Promise.race([
+            supabase.from('students').select('count').limit(1),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Connection timeout')), 5000)
+            )
+        ]);
         
-        if (testError) {
-            console.error('❌ Simple query failed:', testError);
-            
-            // Verificar si las tablas existen
-            if (testError.code === 'PGRST116' || testError.message.includes('relation') || testError.message.includes('does not exist')) {
-                throw new Error('La tabla "students" no existe en Supabase. Necesita ejecutar el SQL para crear las tablas.');
-            }
-            
-            if (testError.code === 'PGRST301') {
-                throw new Error('Error de autenticación con Supabase. Verifique la URL y API Key.');
-            }
-            
-            throw new Error(`Error de Supabase: ${testError.message} (Código: ${testError.code})`);
+        if (error) {
+            console.error('❌ Supabase query failed:', error.code, error.message);
+            return false;
         }
         
-        console.log('✅ Simple query successful');
-        
-        // Probar consulta más específica
-        console.log('🎯 Testing students table...');
-        const { data: students, error: studentsError } = await supabase
-            .from('students')
-            .select('id, code, full_name, grade')
-            .limit(5);
-            
-        if (studentsError) {
-            console.error('❌ Students query failed:', studentsError);
-            throw new Error(`Error al acceder a estudiantes: ${studentsError.message}`);
-        }
-        
-        console.log('✅ Students table accessible');
-        console.log('📊 Students found:', students?.length || 0);
-        
-        if (students && students.length > 0) {
-            console.log('👥 Sample student:', students[0]);
-        }
-        
+        console.log('✅ Basic Supabase connection successful');
         return true;
         
     } catch (error) {
-        console.error('💥 Supabase connection test failed:', error);
+        console.error('💥 Connection test failed:', error.message);
         return false;
     }
 }
@@ -294,11 +226,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }, 10000);
         
-        // Inicializar datos vacíos solo si no existen datos de estudiantes
-        if (!window.studentsData) {
-            window.studentsData = [];
-        }
-        
         // Inicializar datos vacíos para que la app funcione
         window.studentsData = [];
         setupEventListeners();
@@ -313,6 +240,14 @@ function showFallbackWarning(show = true) {
     const warning = document.getElementById('fallbackDataWarning');
     if (warning) {
         warning.style.display = show ? 'flex' : 'none';
+        
+        if (show) {
+            console.log('📋 Showing fallback data warning to user');
+        } else {
+            console.log('📋 Hiding fallback data warning');
+        }
+    } else {
+        console.warn('⚠️ Fallback warning element not found in DOM');
     }
 }
 
@@ -321,15 +256,22 @@ function setupRetryButton() {
     const retryBtn = document.getElementById('retryLoadStudents');
     if (retryBtn) {
         retryBtn.addEventListener('click', async () => {
-            console.log('🔄 Retrying to load students...');
+            console.log('🔄 User clicked retry, attempting to reload students...');
             try {
                 showLoading();
-                await loadStudents();
-                showFallbackWarning(false);
-                alert('✅ Estudiantes cargados exitosamente desde la base de datos');
+                
+                // Intentar cargar estudiantes de nuevo
+                const students = await loadStudents();
+                
+                if (window.dataSource === 'supabase') {
+                    alert('✅ Estudiantes cargados exitosamente desde Supabase!\n\n👥 Total: ' + students.length + ' estudiantes');
+                } else {
+                    alert('⚠️ Aún no se puede conectar con Supabase.\n\nSe mantienen los datos de ejemplo para que pueda probar la aplicación.');
+                }
+                
             } catch (error) {
                 console.error('Retry failed:', error);
-                alert(`❌ Error al cargar estudiantes: ${error.message}`);
+                alert(`❌ Error al intentar conectar:\n\n${error.message}\n\nSe mantienen los datos de ejemplo.`);
             } finally {
                 hideLoading();
             }
@@ -423,58 +365,51 @@ function setupEventListeners() {
             try {
                 showLoading();
                 
-                // Ejecutar tests completos
-                console.log('🔧 EJECUTANDO DIAGNÓSTICO COMPLETO...');
+                console.log('🔧 EJECUTANDO DIAGNÓSTICO...');
                 
-                // 1. Test de zona horaria
-                testTimeZoneAndMonths();
+                // 1. Info básica
+                const todayInColombia = getTodayInColombia();
+                const currentMonth = getCurrentMonthInColombia();
+                const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
                 
-                // 2. Test de conexión básica
-                console.log('📡 Testing basic connection...');
+                // 2. Test de conexión
                 const isConnected = await testSupabaseConnection();
                 
-                // 3. Verificar tablas
-                console.log('🗃️ Checking database tables...');
-                const tableResults = await checkDatabaseTables();
+                // 3. Estado actual de datos
+                const dataSource = window.dataSource || 'unknown';
+                const studentCount = window.studentsData?.length || 0;
                 
-                // 4. Intentar cargar estudiantes
-                console.log('👥 Testing student loading...');
-                let studentsLoaded = false;
-                let studentError = '';
+                // 4. Test de carga de estudiantes
+                let loadTestResult = 'No probado';
                 try {
                     await loadStudents();
-                    studentsLoaded = true;
+                    loadTestResult = window.dataSource === 'supabase' ? '✅ Supabase OK' : '⚠️ Usando fallback';
                 } catch (error) {
-                    studentError = error.message;
+                    loadTestResult = `❌ ${error.message.substring(0, 50)}...`;
                 }
                 
-                // Preparar reporte
+                // Reporte final
                 let report = `🔍 DIAGNÓSTICO COMPLETO\n\n`;
-                report += `📅 Fecha Colombia: ${getTodayInColombia()}\n`;
-                report += `📅 Mes actual: ${['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][getCurrentMonthInColombia()]}\n\n`;
-                
-                report += `📡 Conexión Supabase: ${isConnected ? '✅ OK' : '❌ FALLO'}\n\n`;
-                
-                report += `🗃️ Estado de Tablas:\n`;
-                Object.entries(tableResults).forEach(([table, result]) => {
-                    report += `${result.exists ? '✅' : '❌'} ${table}: ${result.exists ? 'OK' : result.error}\n`;
-                });
-                
-                report += `\n👥 Carga de Estudiantes: ${studentsLoaded ? '✅ OK' : '❌ ' + studentError}\n`;
+                report += `📅 Fecha Colombia: ${todayInColombia}\n`;
+                report += `📅 Mes actual: ${monthNames[currentMonth]}\n\n`;
+                report += `📡 Conexión Supabase: ${isConnected ? '✅ OK' : '❌ FALLO'}\n`;
+                report += `👥 Datos de estudiantes: ${studentCount} disponibles\n`;
+                report += `📊 Fuente de datos: ${dataSource}\n`;
+                report += `🧪 Test de carga: ${loadTestResult}\n\n`;
                 
                 // Sugerencias
-                report += `\n💡 SUGERENCIAS:\n`;
                 if (!isConnected) {
-                    report += `• Verifique URL y API Key de Supabase\n`;
-                }
-                
-                const missingTables = Object.entries(tableResults).filter(([_, result]) => !result.exists);
-                if (missingTables.length > 0) {
-                    report += `• Faltan ${missingTables.length} tablas. Ejecute el SQL completo.\n`;
-                }
-                
-                if (!studentsLoaded && studentError.includes('empty')) {
-                    report += `• Inserte datos de ejemplo en las tablas.\n`;
+                    report += `💡 SUGERENCIAS:\n`;
+                    report += `• Verificar URL y API Key de Supabase\n`;
+                    report += `• Revisar conexión a Internet\n`;
+                    report += `• Ejecutar SQL para crear tablas\n`;
+                } else if (dataSource === 'fallback') {
+                    report += `💡 SUGERENCIAS:\n`;
+                    report += `• Las tablas pueden estar vacías\n`;
+                    report += `• Insertar datos de ejemplo\n`;
+                    report += `• Verificar políticas RLS\n`;
+                } else {
+                    report += `🎉 TODO FUNCIONA CORRECTAMENTE`;
                 }
                 
                 alert(report);
@@ -603,91 +538,114 @@ function showView(viewName) {
     }
 }
 
-// Cargar estudiantes
+// Cargar estudiantes (versión simplificada)
 async function loadStudents() {
+    console.log('📚 === LOADING STUDENTS DEBUG ===');
+    console.log('🔍 Supabase client available:', !!supabase);
+    console.log('🔍 Supabase URL:', SUPABASE_URL);
+    console.log('🔍 API Key length:', SUPABASE_ANON_KEY?.length || 0);
+    
     try {
-        console.log('📚 Loading students from Supabase...');
+        console.log('📚 Attempting to load students from Supabase...');
         
         if (!supabase) {
             throw new Error('Supabase client not available');
         }
         
-        // Verificar que la tabla existe primero
-        console.log('🔍 Checking if students table exists...');
-        const tableCheck = await checkDatabaseTables();
-        
-        if (!tableCheck.students?.exists) {
-            throw new Error('La tabla "students" no existe. Ejecute el SQL: CREATE TABLE students...');
-        }
-        
-        console.log('✅ Students table exists, fetching data...');
-        
+        // Consulta directa sin verificaciones previas
+        console.log('📡 Making query to students table...');
         const { data: students, error } = await supabase
             .from('students')
             .select('*')
             .order('grade', { ascending: true })
             .order('full_name', { ascending: true });
             
-        if (error) {
-            console.error('📚 Supabase error loading students:', error);
+        console.log('📡 Query completed. Error:', !!error, 'Data length:', students?.length || 0);
             
-            // Errores específicos
+        if (error) {
+            console.error('📚 Supabase error details:');
+            console.error('  - Code:', error.code);
+            console.error('  - Message:', error.message);
+            console.error('  - Details:', error.details);
+            console.error('  - Hint:', error.hint);
+            
+            // Errores específicos con mensajes claros
             if (error.code === 'PGRST116') {
-                throw new Error('La tabla "students" está vacía. Inserte datos usando: INSERT INTO students...');
+                throw new Error('TABLA_NO_EXISTE: La tabla "students" no existe en Supabase');
             }
             
             if (error.code === 'PGRST301') {
-                throw new Error('Sin permisos para leer estudiantes. Verifique políticas RLS: CREATE POLICY "Allow public read students"...');
+                throw new Error('SIN_PERMISOS: Sin permisos para acceder a la tabla students');
             }
             
-            throw new Error(`Error de base de datos: ${error.message} (${error.code})`);
+            if (error.code === '42P01') {
+                throw new Error('TABLA_NO_ENCONTRADA: La tabla students no fue encontrada');
+            }
+            
+            throw new Error(`ERROR_SUPABASE: ${error.message} (Código: ${error.code})`);
         }
         
         if (!students || students.length === 0) {
-            console.warn('⚠️ No students found in database');
-            throw new Error('Base de datos vacía. Inserte estudiantes de ejemplo ejecutando: INSERT INTO students...');
+            console.warn('⚠️ Students table is empty or returned null');
+            throw new Error('TABLA_VACIA: La tabla students existe pero está vacía');
         }
         
-        console.log('✅ Students loaded successfully:', students.length);
-        console.log('👥 Students by grade:', 
-            students.reduce((acc, student) => {
-                acc[student.grade] = (acc[student.grade] || 0) + 1;
-                return acc;
-            }, {})
-        );
+        console.log('✅ SUCCESS: Loaded', students.length, 'students from Supabase');
+        
+        // Log de distribución por grado
+        const byGrade = students.reduce((acc, student) => {
+            acc[student.grade] = (acc[student.grade] || 0) + 1;
+            return acc;
+        }, {});
+        console.log('👥 Students by grade:', byGrade);
         
         window.studentsData = students;
-        showFallbackWarning(false); // Ocultar warning si carga exitosa
+        window.dataSource = 'supabase';
+        showFallbackWarning(false);
+        
+        console.log('📚 === STUDENTS LOADED SUCCESSFULLY ===');
         return students;
         
     } catch (error) {
-        console.error('💥 Error loading students:', error);
+        console.error('💥 Failed to load students from Supabase:');
+        console.error('  - Error type:', error.constructor.name);
+        console.error('  - Error message:', error.message);
+        console.error('  - Stack:', error.stack);
         
-        // Datos de ejemplo como fallback SOLO en caso de error
-        const fallbackStudents = [
-            {id: 1, code: '0001', full_name: 'Ana María González', grade: 'pre-jardín'},
-            {id: 2, code: '0002', full_name: 'Carlos Pérez', grade: 'jardín'},
-            {id: 3, code: '0003', full_name: 'Laura Rodríguez', grade: 'transición'},
-            {id: 4, code: '0004', full_name: 'Juan Martínez', grade: 'primero'},
-            {id: 5, code: '0005', full_name: 'Sofía López', grade: 'segundo'},
-            {id: 6, code: '0006', full_name: 'Diego Hernández', grade: 'tercero'},
-            {id: 7, code: '0007', full_name: 'Valentina Castro', grade: 'cuarto'},
-            {id: 8, code: '0008', full_name: 'Andrés Ruiz', grade: 'quinto'},
-            {id: 9, code: '0009', full_name: 'Isabella Torres', grade: 'sexto'},
-            {id: 10, code: '0010', full_name: 'Santiago Moreno', grade: 'séptimo'},
-            {id: 11, code: '0011', full_name: 'Camila Jiménez', grade: 'octavo'},
-            {id: 12, code: '0012', full_name: 'Mateo Vargas', grade: 'noveno'},
-            {id: 13, code: '0013', full_name: 'Antonia Sánchez', grade: 'décimo'},
-            {id: 14, code: '0014', full_name: 'Nicolás Ramírez', grade: 'undécimo'}
-        ];
+        // Cargar datos fallback INMEDIATAMENTE
+        console.log('🔄 Loading fallback data...');
+        const fallbackStudents = getFallbackStudents();
+        console.log('✅ Fallback data loaded (' + fallbackStudents.length + ' students)');
         
-        console.log('🔄 Using fallback student data (' + fallbackStudents.length + ' students)');
         window.studentsData = fallbackStudents;
-        showFallbackWarning(true); // Mostrar warning cuando use fallback
+        window.dataSource = 'fallback';
+        showFallbackWarning(true);
         
-        // Re-throw para que la función llamadora maneje el error
-        throw new Error(`No se pudieron cargar estudiantes desde Supabase: ${error.message}`);
+        console.log('📚 === USING FALLBACK DATA ===');
+        
+        // NO hacer re-throw, devolver los datos fallback
+        return fallbackStudents;
     }
+}
+
+// Función separada para datos fallback
+function getFallbackStudents() {
+    return [
+        {id: 1, code: '0001', full_name: 'Ana María González', grade: 'pre-jardín'},
+        {id: 2, code: '0002', full_name: 'Carlos Pérez', grade: 'jardín'},
+        {id: 3, code: '0003', full_name: 'Laura Rodríguez', grade: 'transición'},
+        {id: 4, code: '0004', full_name: 'Juan Martínez', grade: 'primero'},
+        {id: 5, code: '0005', full_name: 'Sofía López', grade: 'segundo'},
+        {id: 6, code: '0006', full_name: 'Diego Hernández', grade: 'tercero'},
+        {id: 7, code: '0007', full_name: 'Valentina Castro', grade: 'cuarto'},
+        {id: 8, code: '0008', full_name: 'Andrés Ruiz', grade: 'quinto'},
+        {id: 9, code: '0009', full_name: 'Isabella Torres', grade: 'sexto'},
+        {id: 10, code: '0010', full_name: 'Santiago Moreno', grade: 'séptimo'},
+        {id: 11, code: '0011', full_name: 'Camila Jiménez', grade: 'octavo'},
+        {id: 12, code: '0012', full_name: 'Mateo Vargas', grade: 'noveno'},
+        {id: 13, code: '0013', full_name: 'Antonia Sánchez', grade: 'décimo'},
+        {id: 14, code: '0014', full_name: 'Nicolás Ramírez', grade: 'undécimo'}
+    ];
 }
 
 // Cargar estudiantes por grado
@@ -1111,6 +1069,8 @@ async function submitRequest() {
 
 // Resetear formulario
 function resetForm() {
+    console.log('🔄 Resetting form...');
+    
     currentStep = 1;
     elements.requestForm.reset();
     updateStepper();
@@ -1130,6 +1090,9 @@ function resetForm() {
     if (debugInfo) {
         debugInfo.style.display = 'none';
     }
+    
+    // Mantener el estado del indicador fallback (no resetearlo)
+    // showFallbackWarning permanece como está
     
     // Limpiar validaciones requeridas
     document.getElementById('startTime').required = false;
@@ -1165,7 +1128,7 @@ function resetForm() {
     // Limpiar tipo de request
     requestType = '';
     
-    console.log('Form reset completed, today in Colombia:', getTodayInColombia());
+    console.log('✅ Form reset completed');
 }
 
 // Consultar radicado
