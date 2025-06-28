@@ -1,6 +1,6 @@
-// Configuración de Supabase
-const SUPABASE_URL = 'https://nbpldfyisdhgnkmgwaix.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5icGxkZnlpc2RoZ25rbWd3YWl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5NjY1MTUsImV4cCI6MjA2NjU0MjUxNX0.Pe4ImgTYLmRqOqG-RdhJI2SY0QPl_cyBENOxKvZB0DY';
+// Configuración de Supabase - ACTUALIZADA
+const SUPABASE_URL = 'https://zkbnpjmtwkhcvqizpmhj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprYm5wam10d2toY3ZxaXpwbWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTQyNDksImV4cCI6MjA2NjczMDI0OX0.McMyTT8-Myp6L0nIjTN4chedAPunB0dwymQKhiNp6uI';
 
 // Inicializar Supabase con manejo de errores
 let supabase;
@@ -9,7 +9,8 @@ try {
         throw new Error('Supabase library not loaded');
     }
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('Supabase client initialized successfully');
+    console.log('✅ Supabase client initialized successfully with new database');
+    console.log('🔗 New Supabase URL:', SUPABASE_URL);
 } catch (error) {
     console.error('Error initializing Supabase:', error);
     alert('Error al conectar con la base de datos. Por favor recargue la página.');
