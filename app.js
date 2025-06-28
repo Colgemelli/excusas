@@ -294,6 +294,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }, 10000);
         
+        // Inicializar datos vacíos solo si no existen datos de estudiantes
+        if (!window.studentsData) {
+            window.studentsData = [];
+        }
+        
         // Inicializar datos vacíos para que la app funcione
         window.studentsData = [];
         setupEventListeners();
