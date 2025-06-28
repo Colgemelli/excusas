@@ -206,6 +206,29 @@ function setupEventListeners() {
         card.addEventListener('click', (e) => {
             requestType = card.dataset.type;
             elements.formTitle.textContent = `Solicitud de ${requestType.charAt(0).toUpperCase() + requestType.slice(1)}`;
+            
+            // Mostrar/ocultar campos específicos según el tipo
+            const permissionFields = document.querySelector('.permission-fields');
+            const excuseFields = document.querySelector('.excuse-fields');
+            
+            if (requestType === 'permiso') {
+                permissionFields.style.display = 'grid';
+                excuseFields.style.display = 'none';
+                
+                // Hacer obligatorios los campos de permiso
+                document.getElementById('startTime').required = true;
+                document.getElementById('absenceDays').required = false;
+                document.getElementById('absenceMonth').required = false;
+            } else {
+                permissionFields.style.display = 'none';
+                excuseFields.style.display = 'grid';
+                
+                // Hacer obligatorios los campos de excusa
+                document.getElementById('startTime').required = false;
+                document.getElementById('absenceDays').required = true;
+                document.getElementById('absenceMonth').required = true;
+            }
+            
             showView('form');
         });
     });
@@ -242,10 +265,33 @@ function setupEventListeners() {
     
     // Consulta de radicado
     document.getElementById('consultBtn').addEventListener('click', consultFiling);
+    
+    // Botón de prueba de conexión
+    const testConnectionBtn = document.getElementById('testConnectionBtn');
+    if (testConnectionBtn) {
+        testConnectionBtn.addEventListener('click', async () => {
+            try {
+                showLoading();
+                const isConnected = await testSupabaseConnection();
+                if (isConnected) {
+                    alert('✅ Conexión exitosa con la base de datos');
+                } else {
+                    alert('❌ No se pudo conectar con la base de datos');
+                }
+            } catch (error) {
+                alert(`❌ Error de conexión: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        });
+    }
 }
 
 // Configurar validación del formulario
 function setupFormValidation() {
+    // Configurar fechas mínimas
+    setMinimumDates();
+    
     // Relación con estudiante
     document.getElementById('relationship').addEventListener('change', (e) => {
         const otherGroup = document.getElementById('otherRelationshipGroup');
@@ -276,8 +322,16 @@ function setupFormValidation() {
         }
     });
     
-    // Validación de fechas
-    document.getElementById('startDate').addEventListener('change', validateDates);
+    // Validación de fechas con actualización dinámica
+    document.getElementById('startDate').addEventListener('change', (e) => {
+        validateDates();
+        // Actualizar fecha mínima del campo endDate basado en startDate
+        const endDateInput = document.getElementById('endDate');
+        if (e.target.value) {
+            endDateInput.min = e.target.value;
+        }
+    });
+    
     document.getElementById('endDate').addEventListener('change', validateDates);
 }
 
@@ -424,21 +478,46 @@ function validateDates() {
     const startDate = new Date(document.getElementById('startDate').value);
     const endDate = new Date(document.getElementById('endDate').value);
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
     
+    // Establecer hora a medianoche para comparar solo fechas
+    today.setHours(0, 0, 0, 0);
+    startDate.setHours(0, 0, 0, 0);
+    
+    // Permitir fecha de hoy pero no fechas anteriores
     if (startDate < today) {
-        alert('La fecha de inicio no puede ser anterior a hoy');
+        alert('No se pueden registrar solicitudes para fechas anteriores a hoy. Solo se permiten solicitudes para hoy o fechas futuras.');
         document.getElementById('startDate').value = '';
+        document.getElementById('startDate').focus();
         return false;
     }
     
-    if (endDate && endDate < startDate) {
-        alert('La fecha de fin no puede ser anterior a la fecha de inicio');
-        document.getElementById('endDate').value = '';
-        return false;
+    if (endDate) {
+        endDate.setHours(0, 0, 0, 0);
+        if (endDate < startDate) {
+            alert('La fecha de fin no puede ser anterior a la fecha de inicio');
+            document.getElementById('endDate').value = '';
+            document.getElementById('endDate').focus();
+            return false;
+        }
     }
     
     return true;
+}
+
+// Configurar fecha mínima en los campos de fecha
+function setMinimumDates() {
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
+    
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    
+    if (startDateInput) {
+        startDateInput.min = todayString;
+    }
+    if (endDateInput) {
+        endDateInput.min = todayString;
+    }
 }
 
 // Navegación del stepper
@@ -524,7 +603,54 @@ function validateCurrentStep() {
     }
     
     if (currentStep === 4) {
-        return validateDates();
+        // Validaciones específicas para el paso 4
+        if (!validateDates()) {
+            return false;
+        }
+        
+        // Validaciones específicas para permisos
+        if (requestType === 'permiso') {
+            const startTime = document.getElementById('startTime').value;
+            if (!startTime.trim()) {
+                alert('La hora de salida es obligatoria para permisos');
+                document.getElementById('startTime').focus();
+                return false;
+            }
+        }
+        
+        // Validaciones específicas para excusas
+        if (requestType === 'excusa') {
+            const absenceDays = document.getElementById('absenceDays').value;
+            const absenceMonth = document.getElementById('absenceMonth').value;
+            
+            if (!absenceDays.trim()) {
+                alert('Los días de inasistencia son obligatorios para excusas');
+                document.getElementById('absenceDays').focus();
+                return false;
+            }
+            
+            if (!absenceMonth) {
+                alert('El mes de inasistencia es obligatorio para excusas');
+                document.getElementById('absenceMonth').focus();
+                return false;
+            }
+        }
+        
+        // Validación común: reason y description
+        const reason = document.getElementById('reason').value;
+        const description = document.getElementById('description').value;
+        
+        if (!reason) {
+            alert('Debe seleccionar un motivo para la solicitud');
+            document.getElementById('reason').focus();
+            return false;
+        }
+        
+        if (!description.trim()) {
+            alert('La descripción detallada es obligatoria');
+            document.getElementById('description').focus();
+            return false;
+        }
     }
     
     return true;
@@ -597,6 +723,22 @@ async function submitRequest() {
         const formData = getFormData();
         console.log('Submitting request:', formData);
         
+        // Validación final antes del envío
+        if (!formData.student_id || isNaN(formData.student_id)) {
+            throw new Error('Debe seleccionar un estudiante válido');
+        }
+        
+        if (!formData.data_protection_accepted) {
+            throw new Error('Debe aceptar el tratamiento de datos personales');
+        }
+        
+        // Limpiar campos vacíos
+        Object.keys(formData).forEach(key => {
+            if (formData[key] === '' || formData[key] === 'undefined') {
+                formData[key] = null;
+            }
+        });
+        
         const { data, error } = await supabase
             .from('excuse_permission_requests')
             .insert([formData])
@@ -613,6 +755,12 @@ async function submitRequest() {
         
         const filingNumber = data[0].filing_number || `RAD${Date.now()}`;
         console.log('Request submitted successfully:', filingNumber);
+        
+        // Ocultar debug info en caso de éxito
+        const debugInfo = document.getElementById('debugInfo');
+        if (debugInfo) {
+            debugInfo.style.display = 'none';
+        }
         
         elements.generatedFiling.textContent = filingNumber;
         elements.successModal.style.display = 'flex';
@@ -631,9 +779,34 @@ function resetForm() {
     elements.requestForm.reset();
     updateStepper();
     updateFormStep();
+    
+    // Limpiar campos específicos
     document.getElementById('otherRelationshipGroup').style.display = 'none';
     document.getElementById('studentSelect').disabled = true;
     document.getElementById('studentCode').value = '';
+    
+    // Ocultar campos específicos de tipo
+    document.querySelector('.permission-fields').style.display = 'none';
+    document.querySelector('.excuse-fields').style.display = 'none';
+    
+    // Ocultar debug info
+    const debugInfo = document.getElementById('debugInfo');
+    if (debugInfo) {
+        debugInfo.style.display = 'none';
+    }
+    
+    // Limpiar validaciones requeridas
+    document.getElementById('startTime').required = false;
+    document.getElementById('absenceDays').required = false;
+    document.getElementById('absenceMonth').required = false;
+    
+    // Reset checkboxes
+    document.getElementById('medicalCertificate').checked = false;
+    document.getElementById('incapacityCertificate').checked = false;
+    document.getElementById('dataProtection').checked = false;
+    
+    // Restablecer fechas mínimas
+    setMinimumDates();
 }
 
 // Consultar radicado
@@ -705,9 +878,9 @@ function displayConsultResult(data) {
         return `<span class="badge badge-${statusInfo.class}">${statusInfo.text}</span>`;
     };
     
-    resultDiv.innerHTML = `
+    let detailsHTML = `
         <div class="request-details">
-            <h3>Información de la Solicitud</h3>
+            <h3>📋 Información de la Solicitud</h3>
             <div class="detail-grid">
                 <div class="detail-item">
                     <strong>Radicado:</strong> ${data.filing_number}
@@ -724,6 +897,57 @@ function displayConsultResult(data) {
                 <div class="detail-item">
                     <strong>Fecha:</strong> ${data.start_date} ${data.end_date ? `- ${data.end_date}` : ''}
                 </div>
+    `;
+    
+    // Información específica para permisos
+    if (data.type === 'permiso') {
+        if (data.start_time) {
+            detailsHTML += `
+                <div class="detail-item">
+                    <strong>Hora de salida:</strong> ${data.start_time}
+                </div>
+            `;
+        }
+        if (data.end_time) {
+            detailsHTML += `
+                <div class="detail-item">
+                    <strong>Hora de regreso:</strong> ${data.end_time}
+                </div>
+            `;
+        }
+    }
+    
+    // Información específica para excusas
+    if (data.type === 'excusa') {
+        if (data.absence_days) {
+            detailsHTML += `
+                <div class="detail-item">
+                    <strong>Días de inasistencia:</strong> ${data.absence_days}
+                </div>
+            `;
+        }
+        if (data.absence_month) {
+            detailsHTML += `
+                <div class="detail-item">
+                    <strong>Mes:</strong> ${data.absence_month}
+                </div>
+            `;
+        }
+        
+        const certificates = [];
+        if (data.medical_certificate) certificates.push('Certificado médico');
+        if (data.incapacity_certificate) certificates.push('Incapacidad');
+        
+        if (certificates.length > 0) {
+            detailsHTML += `
+                <div class="detail-item">
+                    <strong>Documentos:</strong> ${certificates.join(', ')}
+                </div>
+            `;
+        }
+    }
+    
+    detailsHTML += `
                 <div class="detail-item">
                     <strong>Motivo:</strong> ${data.reason}
                 </div>
@@ -733,21 +957,35 @@ function displayConsultResult(data) {
             </div>
             
             <div class="status-section">
-                <h4>Estado de Aprobaciones</h4>
+                <h4>📊 Estado de Aprobaciones</h4>
                 <div class="status-grid">
                     <div class="status-item">
-                        <strong>Coordinación:</strong> ${getStatusBadge(data.coordinator_status)}
+                        <strong>Coordinación de Convivencia:</strong> ${getStatusBadge(data.coordinator_status)}
                         ${data.coordinator_comments ? `<p class="comments">${data.coordinator_comments}</p>` : ''}
+                        ${data.coordinator_date ? `<small>Fecha: ${new Date(data.coordinator_date).toLocaleDateString()}</small>` : ''}
+                    </div>
+                    <div class="status-item">
+                        <strong>Coordinación Académica:</strong> ${getStatusBadge(data.academic_coordinator_status || 'pending')}
+                        ${data.academic_coordinator_comments ? `<p class="comments">${data.academic_coordinator_comments}</p>` : ''}
+                        ${data.academic_coordinator_date ? `<small>Fecha: ${new Date(data.academic_coordinator_date).toLocaleDateString()}</small>` : ''}
                     </div>
                     <div class="status-item">
                         <strong>Docente:</strong> ${getStatusBadge(data.teacher_status)}
                         ${data.teacher_comments ? `<p class="comments">${data.teacher_comments}</p>` : ''}
                         ${data.teacher_assignments ? `<p class="assignments"><strong>Trabajos asignados:</strong> ${data.teacher_assignments}</p>` : ''}
+                        ${data.teacher_date ? `<small>Fecha: ${new Date(data.teacher_date).toLocaleDateString()}</small>` : ''}
+                    </div>
+                    <div class="status-item">
+                        <strong>Asesor de Grupo:</strong> ${getStatusBadge(data.group_advisor_status || 'pending')}
+                        ${data.group_advisor_comments ? `<p class="comments">${data.group_advisor_comments}</p>` : ''}
+                        ${data.group_advisor_date ? `<small>Fecha: ${new Date(data.group_advisor_date).toLocaleDateString()}</small>` : ''}
                     </div>
                 </div>
             </div>
         </div>
     `;
+    
+    resultDiv.innerHTML = detailsHTML;
 }
 
 // Login
