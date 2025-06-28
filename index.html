@@ -191,6 +191,17 @@
                     <!-- Step 3: Student Data -->
                     <div class="form-step" data-step="3">
                         <h3>Datos del Estudiante</h3>
+                        
+                        <!-- Indicador de datos fallback -->
+                        <div id="fallbackDataWarning" class="fallback-warning" style="display: none;">
+                            <div class="warning-icon">⚠️</div>
+                            <div class="warning-content">
+                                <strong>Usando datos de ejemplo</strong>
+                                <p>No se pudieron cargar los estudiantes desde la base de datos. Se están mostrando datos de ejemplo.</p>
+                                <button type="button" id="retryLoadStudents" class="btn-small btn-secondary">🔄 Reintentar</button>
+                            </div>
+                        </div>
+                        
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="studentGrade">Grado *</label>
