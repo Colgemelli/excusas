@@ -227,6 +227,9 @@ function setupEventListeners() {
                 document.getElementById('startTime').required = false;
                 document.getElementById('absenceDays').required = true;
                 document.getElementById('absenceMonth').required = true;
+                
+                // Actualizar meses disponibles inmediatamente
+                updateAvailableMonths();
             }
             
             showView('form');
@@ -329,6 +332,11 @@ function setupFormValidation() {
         const endDateInput = document.getElementById('endDate');
         if (e.target.value) {
             endDateInput.min = e.target.value;
+        }
+        
+        // Actualizar meses disponibles para excusas
+        if (requestType === 'excusa') {
+            updateAvailableMonths();
         }
     });
     
@@ -483,9 +491,9 @@ function validateDates() {
     today.setHours(0, 0, 0, 0);
     startDate.setHours(0, 0, 0, 0);
     
-    // Permitir fecha de hoy pero no fechas anteriores
+    // PERMITIR fecha de hoy y fechas futuras, pero NO fechas anteriores
     if (startDate < today) {
-        alert('No se pueden registrar solicitudes para fechas anteriores a hoy. Solo se permiten solicitudes para hoy o fechas futuras.');
+        alert('No se pueden registrar solicitudes para fechas pasadas. Puede registrar para HOY o fechas futuras.');
         document.getElementById('startDate').value = '';
         document.getElementById('startDate').focus();
         return false;
@@ -499,12 +507,65 @@ function validateDates() {
             document.getElementById('endDate').focus();
             return false;
         }
+        
+        // La fecha de fin tampoco puede ser anterior a hoy
+        if (endDate < today) {
+            alert('La fecha de fin no puede ser anterior a hoy');
+            document.getElementById('endDate').value = '';
+            document.getElementById('endDate').focus();
+            return false;
+        }
     }
     
     return true;
 }
 
-// Configurar fecha mínima en los campos de fecha
+// Actualizar meses disponibles basado en fecha de inicio
+function updateAvailableMonths() {
+    const startDate = document.getElementById('startDate').value;
+    const monthSelect = document.getElementById('absenceMonth');
+    
+    if (!startDate || !monthSelect) return;
+    
+    const selectedDate = new Date(startDate);
+    const currentDate = new Date();
+    
+    // Usar la fecha más temprana entre hoy y la fecha seleccionada
+    const referenceDate = selectedDate < currentDate ? selectedDate : currentDate;
+    const referenceMonth = referenceDate.getMonth(); // 0-11
+    
+    const months = [
+        { value: 'enero', index: 0 },
+        { value: 'febrero', index: 1 },
+        { value: 'marzo', index: 2 },
+        { value: 'abril', index: 3 },
+        { value: 'mayo', index: 4 },
+        { value: 'junio', index: 5 },
+        { value: 'julio', index: 6 },
+        { value: 'agosto', index: 7 },
+        { value: 'septiembre', index: 8 },
+        { value: 'octubre', index: 9 },
+        { value: 'noviembre', index: 10 },
+        { value: 'diciembre', index: 11 }
+    ];
+    
+    // Limpiar opciones existentes
+    monthSelect.innerHTML = '<option value="">Seleccione el mes...</option>';
+    
+    // Agregar solo los meses válidos (desde el mes de referencia hacia atrás hasta enero)
+    months.forEach(month => {
+        if (month.index <= referenceMonth) {
+            const option = document.createElement('option');
+            option.value = month.value;
+            option.textContent = month.value.charAt(0).toUpperCase() + month.value.slice(1);
+            monthSelect.appendChild(option);
+        }
+    });
+    
+    console.log(`Updated months for reference date: ${referenceDate.toLocaleDateString()}, available months: ${referenceMonth + 1}`);
+}
+
+// Configurar fecha mínima en los campos de fecha (HOY, no mañana)
 function setMinimumDates() {
     const today = new Date();
     const todayString = today.toISOString().split('T')[0];
@@ -513,10 +574,10 @@ function setMinimumDates() {
     const endDateInput = document.getElementById('endDate');
     
     if (startDateInput) {
-        startDateInput.min = todayString;
+        startDateInput.min = todayString; // Permite desde HOY
     }
     if (endDateInput) {
-        endDateInput.min = todayString;
+        endDateInput.min = todayString; // Permite desde HOY
     }
 }
 
@@ -596,10 +657,35 @@ function validateCurrentStep() {
     }
     
     if (currentStep === 3) {
-        if (!document.getElementById('studentSelect').value) {
-            alert('Debe seleccionar un estudiante');
+        const studentSelect = document.getElementById('studentSelect');
+        const studentGrade = document.getElementById('studentGrade');
+        
+        if (!studentGrade.value) {
+            alert('Debe seleccionar un grado');
+            studentGrade.focus();
             return false;
         }
+        
+        if (!studentSelect.value || studentSelect.value === '') {
+            alert('Debe seleccionar un estudiante de la lista');
+            studentSelect.focus();
+            return false;
+        }
+        
+        // Verificar que el estudiante seleccionado sea válido
+        const selectedOption = studentSelect.selectedOptions[0];
+        if (!selectedOption || !selectedOption.dataset.code) {
+            alert('La selección del estudiante no es válida. Por favor seleccione nuevamente.');
+            studentSelect.focus();
+            return false;
+        }
+        
+        console.log('Student validation passed:', {
+            grade: studentGrade.value,
+            studentId: studentSelect.value,
+            studentName: selectedOption.textContent,
+            studentCode: selectedOption.dataset.code
+        });
     }
     
     if (currentStep === 4) {
@@ -807,6 +893,27 @@ function resetForm() {
     
     // Restablecer fechas mínimas
     setMinimumDates();
+    
+    // Restablecer selector de meses al estado original
+    const monthSelect = document.getElementById('absenceMonth');
+    monthSelect.innerHTML = `
+        <option value="">Seleccione el mes...</option>
+        <option value="enero">Enero</option>
+        <option value="febrero">Febrero</option>
+        <option value="marzo">Marzo</option>
+        <option value="abril">Abril</option>
+        <option value="mayo">Mayo</option>
+        <option value="junio">Junio</option>
+        <option value="julio">Julio</option>
+        <option value="agosto">Agosto</option>
+        <option value="septiembre">Septiembre</option>
+        <option value="octubre">Octubre</option>
+        <option value="noviembre">Noviembre</option>
+        <option value="diciembre">Diciembre</option>
+    `;
+    
+    // Limpiar tipo de request
+    requestType = '';
 }
 
 // Consultar radicado
