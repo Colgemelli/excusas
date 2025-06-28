@@ -55,6 +55,27 @@ const elements = {
     generatedFiling: document.getElementById('generatedFiling')
 };
 
+// Función de test para verificar zona horaria y meses
+function testTimeZoneAndMonths() {
+    console.log('🧪 TESTING TIMEZONE AND MONTHS:');
+    console.log('Today in Colombia:', getTodayInColombia());
+    console.log('Current month index in Colombia:', getCurrentMonthInColombia());
+    
+    // Simular que estamos en 28 de junio
+    const testDate = '2024-06-28';
+    console.log(`📅 Testing with date: ${testDate}`);
+    
+    // Manualmente probar con junio (mes 5)
+    const june = 5;
+    const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    
+    console.log(`📅 Si estamos en ${monthNames[june]} (${june}), los meses disponibles serían:`);
+    const availableMonths = monthNames.slice(june + 1);
+    console.log('Meses disponibles:', availableMonths.join(', '));
+    
+    return availableMonths;
+}
+
 // Verificar estado de red
 function checkNetworkStatus() {
     if (!navigator.onLine) {
@@ -148,6 +169,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         setupEventListeners();
         setupFormValidation();
+        
+        // Log de fecha actual en Colombia
+        const todayInColombia = getTodayInColombia();
+        const currentMonthInColombia = getCurrentMonthInColombia();
+        const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        
+        console.log('🇨🇴 ZONA HORARIA COLOMBIANA (UTC-5):');
+        console.log('📅 Fecha actual en Colombia:', todayInColombia);
+        console.log('📅 Mes actual:', monthNames[currentMonthInColombia]);
+        console.log('📅 Meses que se mostrarán para excusas:', monthNames.slice(currentMonthInColombia + 1).join(', ') || 'enero-diciembre (siguiente año)');
+        console.log('🌐 Fecha UTC (referencia):', new Date().toISOString().split('T')[0]);
+        
+        // Ejecutar test automático
+        testTimeZoneAndMonths();
         
         // Intentar cargar estudiantes con timeout
         console.log('Loading students...');
@@ -275,9 +310,14 @@ function setupEventListeners() {
         testConnectionBtn.addEventListener('click', async () => {
             try {
                 showLoading();
+                
+                // Ejecutar tests
+                console.log('🔧 EJECUTANDO TESTS...');
+                testTimeZoneAndMonths();
+                
                 const isConnected = await testSupabaseConnection();
                 if (isConnected) {
-                    alert('✅ Conexión exitosa con la base de datos');
+                    alert('✅ Conexión exitosa con la base de datos\n\n📅 Fecha Colombia: ' + getTodayInColombia() + '\n📅 Mes actual: ' + ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][getCurrentMonthInColombia()]);
                 } else {
                     alert('❌ No se pudo conectar con la base de datos');
                 }
@@ -520,19 +560,23 @@ function validateDates() {
     return true;
 }
 
-// Actualizar meses disponibles basado en fecha de inicio
+// Actualizar meses disponibles para mostrar meses FUTUROS
 function updateAvailableMonths() {
     const startDate = document.getElementById('startDate').value;
     const monthSelect = document.getElementById('absenceMonth');
     
     if (!startDate || !monthSelect) return;
     
-    const selectedDate = new Date(startDate);
-    const currentDate = new Date();
+    const selectedDate = new Date(startDate + 'T00:00:00');
     
-    // Usar la fecha más temprana entre hoy y la fecha seleccionada
-    const referenceDate = selectedDate < currentDate ? selectedDate : currentDate;
-    const referenceMonth = referenceDate.getMonth(); // 0-11
+    // Obtener fecha y mes actual en Colombia
+    const todayString = getTodayInColombia();
+    const currentDate = new Date(todayString + 'T00:00:00');
+    const currentMonthInColombia = getCurrentMonthInColombia(); // 0-11
+    
+    // Usar la fecha más tardía entre hoy y la fecha seleccionada
+    const referenceDate = selectedDate > currentDate ? selectedDate : currentDate;
+    const referenceMonth = selectedDate > currentDate ? selectedDate.getMonth() : currentMonthInColombia;
     
     const months = [
         { value: 'enero', index: 0 },
@@ -552,9 +596,9 @@ function updateAvailableMonths() {
     // Limpiar opciones existentes
     monthSelect.innerHTML = '<option value="">Seleccione el mes...</option>';
     
-    // Agregar solo los meses válidos (desde el mes de referencia hacia atrás hasta enero)
+    // Agregar solo los meses FUTUROS (desde el mes siguiente hacia adelante)
     months.forEach(month => {
-        if (month.index <= referenceMonth) {
+        if (month.index > referenceMonth) {
             const option = document.createElement('option');
             option.value = month.value;
             option.textContent = month.value.charAt(0).toUpperCase() + month.value.slice(1);
@@ -562,7 +606,20 @@ function updateAvailableMonths() {
         }
     });
     
-    console.log(`Updated months for reference date: ${referenceDate.toLocaleDateString()}, available months: ${referenceMonth + 1}`);
+    // Si estamos en diciembre, mostrar todos los meses del año siguiente
+    if (referenceMonth === 11) {
+        // Agregar meses del año siguiente
+        months.forEach(month => {
+            const option = document.createElement('option');
+            option.value = month.value;
+            option.textContent = month.value.charAt(0).toUpperCase() + month.value.slice(1) + ' (siguiente año)';
+            monthSelect.appendChild(option);
+        });
+    }
+    
+    const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    console.log(`📅 Mes actual en Colombia: ${monthNames[currentMonthInColombia]} (${currentMonthInColombia})`);
+    console.log(`📅 Mostrando meses desde: ${monthNames[referenceMonth + 1] || 'enero (siguiente año)'} en adelante`);
 }
 
 // Configurar fecha mínima en los campos de fecha (HOY, no mañana)
@@ -891,7 +948,7 @@ function resetForm() {
     document.getElementById('incapacityCertificate').checked = false;
     document.getElementById('dataProtection').checked = false;
     
-    // Restablecer fechas mínimas
+    // Restablecer fechas mínimas (usando zona horaria colombiana)
     setMinimumDates();
     
     // Restablecer selector de meses al estado original
@@ -914,6 +971,8 @@ function resetForm() {
     
     // Limpiar tipo de request
     requestType = '';
+    
+    console.log('Form reset completed, today in Colombia:', getTodayInColombia());
 }
 
 // Consultar radicado
