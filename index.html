@@ -97,13 +97,60 @@
                 <form id="requestForm" class="request-form">
                     <!-- Step 1: Data Protection -->
                     <div class="form-step active" data-step="1">
-                        <h3>Protección de Datos Personales</h3>
+                        <h3>Autorización para el Tratamiento de Datos Personales</h3>
+                        <div class="institution-header">
+                            <h4>🏫 COLEGIO GEMELLI FRANCISCANOS</h4>
+                            <p><strong>Formando Hombres y Mujeres de Paz y Bien</strong></p>
+                            <p>Manizales, Caldas - Colombia</p>
+                        </div>
+                        
                         <div class="data-protection">
-                            <p>El colegio se compromete a proteger y tratar de manera responsable los datos personales recopilados. Los datos serán utilizados exclusivamente para gestión académica y comunicación institucional, conforme a la Ley 1581 de 2012. Sus datos no serán compartidos con terceros sin su consentimiento expreso.</p>
+                            <div class="legal-framework">
+                                <h5>📋 Marco Legal</h5>
+                                <p>En cumplimiento de la <strong>Ley 1581 de 2012</strong> y el <strong>Decreto 1377 de 2013</strong> sobre protección de datos personales, el Colegio Gemelli Franciscanos informa:</p>
+                            </div>
+                            
+                            <div class="treatment-purposes">
+                                <h5>🎯 Propósitos del Tratamiento</h5>
+                                <ul>
+                                    <li>Gestión académica y administrativa</li>
+                                    <li>Comunicación institucional con padres de familia</li>
+                                    <li>Seguimiento y control de excusas y permisos estudiantiles</li>
+                                    <li>Archivo y consulta de registros académicos</li>
+                                    <li>Cumplimiento de obligaciones legales educativas</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="rights-section">
+                                <h5>⚖️ Sus Derechos como Titular</h5>
+                                <ul>
+                                    <li><strong>Conocer:</strong> Información sobre el uso de sus datos</li>
+                                    <li><strong>Actualizar:</strong> Modificar datos inexactos o incompletos</li>
+                                    <li><strong>Rectificar:</strong> Corregir información errónea</li>
+                                    <li><strong>Suprimir:</strong> Solicitar eliminación cuando sea procedente</li>
+                                    <li><strong>Revocar:</strong> Retirar autorización en casos permitidos por ley</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="security-measures">
+                                <h5>🔒 Medidas de Seguridad</h5>
+                                <p>El colegio implementa medidas técnicas, humanas y administrativas para proteger la información personal contra pérdida, alteración, tratamiento o acceso no autorizado.</p>
+                            </div>
+                            
+                            <div class="validity-section">
+                                <h5>📅 Vigencia de la Autorización</h5>
+                                <p>Esta autorización permanecerá vigente hasta que el titular solicite su revocación o finalice la relación con la institución educativa.</p>
+                            </div>
+                            
+                            <div class="contact-info">
+                                <h5>📞 Contacto para Ejercer Derechos</h5>
+                                <p>Para ejercer sus derechos, contacte al colegio a través de los canales oficiales de comunicación institucional.</p>
+                            </div>
+                            
                             <label class="checkbox-label">
                                 <input type="checkbox" id="dataProtection" required>
                                 <span class="checkmark"></span>
-                                Acepto el tratamiento de mis datos personales según la política institucional
+                                <strong>Autorizo de manera libre, previa, expresa e informada al Colegio Gemelli Franciscanos para el tratamiento de mis datos personales conforme a la política institucional</strong>
                             </label>
                         </div>
                     </div>
@@ -189,8 +236,64 @@
                             <div class="form-group" id="endDateGroup">
                                 <label for="endDate">Fecha de fin</label>
                                 <input type="date" id="endDate">
-                                <small>Opcional para permisos de un solo día</small>
+                                <small>Para permisos de varios días</small>
                             </div>
+                            
+                            <!-- Campos específicos para PERMISOS -->
+                            <div class="permission-fields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="startTime">Hora de salida *</label>
+                                    <input type="time" id="startTime">
+                                </div>
+                                <div class="form-group">
+                                    <label for="endTime">Hora de regreso</label>
+                                    <input type="time" id="endTime">
+                                    <small>Si aplica</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Campos específicos para EXCUSAS -->
+                            <div class="excuse-fields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="absenceDays">Día(s) de inasistencia *</label>
+                                    <input type="text" id="absenceDays" placeholder="Ej: 15, 16 y 17">
+                                    <small>Especifique los días exactos</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="absenceMonth">Mes de inasistencia *</label>
+                                    <select id="absenceMonth">
+                                        <option value="">Seleccione el mes...</option>
+                                        <option value="enero">Enero</option>
+                                        <option value="febrero">Febrero</option>
+                                        <option value="marzo">Marzo</option>
+                                        <option value="abril">Abril</option>
+                                        <option value="mayo">Mayo</option>
+                                        <option value="junio">Junio</option>
+                                        <option value="julio">Julio</option>
+                                        <option value="agosto">Agosto</option>
+                                        <option value="septiembre">Septiembre</option>
+                                        <option value="octubre">Octubre</option>
+                                        <option value="noviembre">Noviembre</option>
+                                        <option value="diciembre">Diciembre</option>
+                                    </select>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>Documentos de soporte</label>
+                                    <div class="checkbox-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="medicalCertificate">
+                                            <span class="checkmark"></span>
+                                            Certificado médico
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="incapacityCertificate">
+                                            <span class="checkmark"></span>
+                                            Incapacidad
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="form-group full-width">
                                 <label for="reason">Motivo *</label>
                                 <select id="reason" required>
@@ -200,11 +303,12 @@
                                     <option value="calamidad_domestica">Calamidad doméstica</option>
                                     <option value="viaje_familiar">Viaje familiar</option>
                                     <option value="tramites_personales">Trámites personales</option>
+                                    <option value="actividad_familiar">Actividad familiar</option>
                                     <option value="otro">Otro</option>
                                 </select>
                             </div>
                             <div class="form-group full-width">
-                                <label for="description">Descripción detallada *</label>
+                                <label for="description">Descripción detallada del motivo *</label>
                                 <textarea id="description" rows="4" required placeholder="Proporcione detalles específicos sobre el motivo de la solicitud..."></textarea>
                             </div>
                         </div>
