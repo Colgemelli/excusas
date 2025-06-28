@@ -5,13 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Excusas y Permisos - Colegio</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.38.0/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <!-- Loading Screen -->
     <div id="loading" class="loading">
         <div class="spinner"></div>
         <p>Cargando...</p>
+        <button id="reloadBtn" onclick="window.location.reload()" style="
+            margin-top: 20px; padding: 10px 20px; background: #007bff; 
+            color: white; border: none; border-radius: 5px; cursor: pointer;
+            display: none;
+        ">🔄 Recargar Página</button>
     </div>
 
     <!-- Header -->
