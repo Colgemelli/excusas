@@ -67,6 +67,26 @@ body {
     font-weight: 600;
 }
 
+/* Indicador de estado de la aplicación */
+.app-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.app-status span {
+    font-weight: 500;
+}
+
+#statusIcon {
+    font-size: 1rem;
+}
+
 .header nav {
     display: flex;
     align-items: center;
