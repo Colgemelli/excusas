@@ -1,3 +1,13 @@
+// Configuración de Supabase
+const SUPABASE_URL =
+    (typeof process !== 'undefined' && process.env && process.env.SUPABASE_URL) ||
+    (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.SUPABASE_URL) ||
+    '';
+const SUPABASE_ANON_KEY =
+    (typeof process !== 'undefined' && process.env && process.env.SUPABASE_ANON_KEY) ||
+    (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.SUPABASE_ANON_KEY) ||
+    '';
+
 // Configuración de Supabase - ACTUALIZADA
 const SUPABASE_URL = 'https://zkbnpjmtwkhcvqizpmhj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprYm5wam10d2toY3ZxaXpwbWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTQyNDksImV4cCI6MjA2NjczMDI0OX0.McMyTT8-Myp6L0nIjTN4chedAPunB0dwymQKhiNp6uI';
@@ -108,13 +118,15 @@ function showNetworkError(message) {
 }
 
 // Escuchar eventos de red (simplificado)
-window.addEventListener('online', () => {
-    console.log('🌐 Conexión restaurada');
-});
+if (typeof window.addEventListener === 'function') {
+    window.addEventListener('online', () => {
+        console.log('🌐 Conexión restaurada');
+    });
 
 window.addEventListener('offline', () => {
-    console.log('📴 Conexión perdida');
-});
+        console.log('📴 Conexión perdida');
+    });
+}
 
 // Inicialización de la aplicación
 document.addEventListener('DOMContentLoaded', async () => {
@@ -542,8 +554,16 @@ function hideLoading() {
 
 // Navegación entre vistas
 function showView(viewName) {
-    document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(view => {
+        if (view.classList && typeof view.classList.remove === 'function') {
+            view.classList.remove('active');
+        }
+    });
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        if (btn.classList && typeof btn.classList.remove === 'function') {
+            btn.classList.remove('active');
+        }
+    });
     
     switch(viewName) {
         case 'home':
@@ -1386,14 +1406,27 @@ async function handleLogin(e) {
 }
 
 // Logout
-function logout() {
+async function logout() {
+    if (supabase && supabase.auth && typeof supabase.auth.signOut === 'function') {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            alert(`Error al cerrar sesión: ${error.message}`);
+        }
+    }
+
     currentUser = null;
     currentRole = null;
-    elements.userInfo.style.display = 'none';
-    elements.loginBtn.style.display = 'block';
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
-    showView('home');
+    if (elements.userInfo) elements.userInfo.style.display = 'none';
+    if (elements.loginBtn) elements.loginBtn.style.display = 'block';
+    if (typeof document !== 'undefined') {
+        const userInput = document.getElementById('username');
+        if (userInput) userInput.value = '';
+        const passInput = document.getElementById('password');
+        if (passInput) passInput.value = '';
+    }
+    if (typeof showView === 'function' && elements.homeView && elements.homeView.classList) {
+        showView('home');
+    }
 }
 
 // Cargar dashboard
@@ -1621,3 +1654,7 @@ window.reviewRequest = async function(requestId) {
 
 // Inicializar role por defecto
 currentRole = 'coordinator';
+
+
+// Export funciones para pruebas
+export { logout };
