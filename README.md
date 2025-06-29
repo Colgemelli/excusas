@@ -23,3 +23,14 @@ Sistema de permisos y excusas basado en Supabase.
    enlace mágico. Al autenticarse se creará (si es necesario) un registro en la
    tabla `usuarios` con tu `auth_id`.
 6. Al registrar permisos o excusas se enviará automáticamente tu `usuario_id`.
+
+
+## Pruebas
+
+Este proyecto incluye un test de Node.js para la función de cierre de sesión.
+No se requieren dependencias adicionales, solo tener instalado Node.js.
+
+```bash
+npm install    # instala dependencias si las hubiera
+npm test       # ejecuta test/logout.test.js
+```
