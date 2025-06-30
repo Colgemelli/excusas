@@ -682,6 +682,14 @@ body {
     font-weight: 500;
 }
 
+.loading-message {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: var(--font-size-sm);
+    color: var(--info-color);
+    font-weight: 500;
+}
+
 /* Loading States */
 .stepper-form.loading {
     opacity: 0.7;
