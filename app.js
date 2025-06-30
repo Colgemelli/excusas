@@ -130,12 +130,16 @@ class SistemaExcusas {
         const select = document.getElementById(selectId);
         const infoContainer = document.getElementById(infoContainerId);
         
-        if (!select) {
-            return;
-        }
-        
+        if (!select) return;
+
         select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
         
+        if (!grado || !this.estudiantesPorGrado[grado]) {
+            select.disabled = true;
+            if (infoContainer) infoContainer.style.display = 'none';
+            return;
+        }
+
         let estudiantes = [];
         if (SUPABASE_CONFIG.useLocal) {
             estudiantes = this.estudiantesPorGrado[grado] || [];
@@ -511,6 +515,15 @@ class SistemaExcusas {
         document.getElementById('numeroRadicado').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.consultarRadicado();
         });
+
+        document.getElementById('gradoExcusa')
+            .addEventListener('change', e => this.loadStudentsByGrade(e.target.value, 'estudianteExcusa', 'estudianteInfo'));
+        document.getElementById('gradoPermiso')
+            .addEventListener('change', e => this.loadStudentsByGrade(e.target.value, 'estudiantePermiso', 'estudianteInfoPermiso'));
+        document.getElementById('estudianteExcusa')
+            .addEventListener('change', e => this.showStudentInfo(e.target.value, 'estudianteInfo', document.getElementById('gradoExcusa').value));
+        document.getElementById('estudiantePermiso')
+            .addEventListener('change', e => this.showStudentInfo(e.target.value, 'estudianteInfoPermiso', document
 
         // Modal protección de datos
         document.getElementById('aceptoProteccion').addEventListener('change', this.toggleProteccionButton);
@@ -1645,6 +1658,15 @@ class SistemaExcusas {
             if (e.key === 'Enter') this.consultarRadicado();
         });
 
+        document.getElementById('gradoExcusa')
+            .addEventListener('change', e => this.loadStudentsByGrade(e.target.value, 'estudianteExcusa', 'estudianteInfo'));
+        document.getElementById('gradoPermiso')
+            .addEventListener('change', e => this.loadStudentsByGrade(e.target.value, 'estudiantePermiso', 'estudianteInfoPermiso'));
+        document.getElementById('estudianteExcusa')
+            .addEventListener('change', e => this.showStudentInfo(e.target.value, 'estudianteInfo', document.getElementById('gradoExcusa').value));
+        document.getElementById('estudiantePermiso')
+            .addEventListener('change', e => this.showStudentInfo(e.target.value, 'estudianteInfoPermiso', document.getElementById('gradoPermiso').value));
+            
         // Modal protección de datos
         document.getElementById('aceptoProteccion').addEventListener('change', this.toggleProteccionButton);
         document.getElementById('menorEdad').addEventListener('change', this.toggleProteccionButton);
