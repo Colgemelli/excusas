@@ -179,14 +179,15 @@ Implementar hashing de contraseñas:
 En el código JavaScript, usar una librería como bcrypt.js
 Hashear contraseñas antes de compararlas
 Variables de Entorno
-Para mayor seguridad, usar variables de entorno:
+Define `SUPABASE_URL` y `SUPABASE_ANON_KEY` en tu entorno y ejecuta el script
+de construcción para generar `env.js`
 
-javascript
-const SUPABASE_CONFIG = {
-    url: process.env.VITE_SUPABASE_URL || 'TU_URL_AQUI',
-    key: process.env.VITE_SUPABASE_ANON_KEY || 'TU_CLAVE_AQUI',
-    useLocal: process.env.NODE_ENV !== 'production'
-};
+```bash
+./build.sh
+```
+
+El archivo `env.js` se carga antes de `app.js` y expone los valores mediante
+`window.process.env`.
 🌐 Despliegue
 GitHub + Netlify (Recomendado)
 Crear repositorio en GitHub:
