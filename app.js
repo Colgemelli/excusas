@@ -853,6 +853,7 @@ class SistemaExcusas {
         const recoge = escapeHTML(solicitud.personaRecoge || solicitud.persona_recoge || '');
         const radicado = escapeHTML(solicitud.radicado);
         const observaciones = escapeHTML(solicitud.observaciones || '');
+        const validadoPor = escapeHTML(solicitud.validadoPor || solicitud.validado_por || '');
 
         return `
             <div class="solicitud-detalle">
@@ -867,6 +868,7 @@ class SistemaExcusas {
                     <p><strong>Fecha de solicitud:</strong> ${new Date(fecha).toLocaleString()}</p>
                     ${recoge ? `<p><strong>Recoge:</strong> ${recoge}</p>` : ''}
                     ${solicitud.observaciones ? `<p><strong>Observaciones:</strong> ${observaciones}</p>` : ''}
+                    ${validadoPor ? `<p><strong>Docente que validó:</strong> ${validadoPor}</p>` : ''}
                 </div>
             </div>
         `;
@@ -1189,8 +1191,18 @@ class SistemaExcusas {
             return;
         }
 
+        this.showModalConfirmacion(
+            'Validar Solicitud',
+            '¿Está seguro de que desea validar esta solicitud?',
+            () => this.ejecutarValidacion(id),
+            true
+        );
+    }
+
+    async ejecutarValidacion(id) {
         try {
-            await this.updateSolicitudEstado(id, 'validado');
+            const observaciones = document.getElementById('observaciones').value;
+            await this.updateSolicitudEstado(id, 'validado', observaciones);
             await this.loadDocenteDashboard();
             this.updateStatus('🟢 Solicitud validada exitosamente');
         } catch (error) {
