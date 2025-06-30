@@ -1302,7 +1302,7 @@ class SistemaExcusas {
         }
     }
 
-    // Navegación entre vistas (actualizada con reconfiguración de eventos)
+    // Navegación entre vistas (SIMPLIFICADA)
     showView(viewId) {
         console.log(`Cambiando a vista: ${viewId}`);
         
@@ -1334,16 +1334,8 @@ class SistemaExcusas {
         // Resetear steppers si se va a una vista de formulario
         if (viewId === 'excusaView') {
             this.resetStepper('excusa');
-            // Reconfigurar eventos después de mostrar la vista
-            setTimeout(() => {
-                this.setupStepperEvents();
-            }, 100);
         } else if (viewId === 'permisoView') {
             this.resetStepper('permiso');
-            // Reconfigurar eventos después de mostrar la vista
-            setTimeout(() => {
-                this.setupStepperEvents();
-            }, 100);
         }
 
         // Actualizar navegación
