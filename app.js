@@ -523,7 +523,13 @@ class SistemaExcusas {
         document.getElementById('estudianteExcusa')
             .addEventListener('change', e => this.showStudentInfo(e.target.value, 'estudianteInfo', document.getElementById('gradoExcusa').value));
         document.getElementById('estudiantePermiso')
-            .addEventListener('change', e => this.showStudentInfo(e.target.value, 'estudianteInfoPermiso', document
+            .addEventListener('change', e =>
+                this.showStudentInfo(
+                    e.target.value,
+                    'estudianteInfoPermiso',
+                    document.getElementById('gradoPermiso').value
+                )
+            );
 
         // Modal protección de datos
         document.getElementById('aceptoProteccion').addEventListener('change', this.toggleProteccionButton);
@@ -1666,7 +1672,7 @@ class SistemaExcusas {
             .addEventListener('change', e => this.showStudentInfo(e.target.value, 'estudianteInfo', document.getElementById('gradoExcusa').value));
         document.getElementById('estudiantePermiso')
             .addEventListener('change', e => this.showStudentInfo(e.target.value, 'estudianteInfoPermiso', document.getElementById('gradoPermiso').value));
-            
+
         // Modal protección de datos
         document.getElementById('aceptoProteccion').addEventListener('change', this.toggleProteccionButton);
         document.getElementById('menorEdad').addEventListener('change', this.toggleProteccionButton);
