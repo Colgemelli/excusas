@@ -470,7 +470,8 @@ class SistemaExcusas {
     }
 
     updateSolicitudEstadoLocal(solicitudId, nuevoEstado, observaciones = '') {
-        const solicitud = this.solicitudes.find(s => s.id === solicitudId);
+        const id = Number(solicitudId);
+        const solicitud = this.solicitudes.find(s => Number(s.id) === id);
         if (solicitud) {
             solicitud.estado = nuevoEstado;
             solicitud.observaciones = observaciones;
@@ -825,6 +826,7 @@ class SistemaExcusas {
         const grado = solicitud.grado || 'No especificado';
         const fecha = solicitud.fecha || solicitud.fecha_solicitud || new Date().toISOString();
         const tipo = solicitud.tipo || solicitud.tipo_solicitud || 'solicitud';
+        const recoge = solicitud.personaRecoge || solicitud.persona_recoge || '';
 
         return `
             <div class="solicitud-detalle">
@@ -837,6 +839,7 @@ class SistemaExcusas {
                     <p><strong>Estudiante:</strong> ${nombreEstudiante}</p>
                     <p><strong>Grado:</strong> ${grado}</p>
                     <p><strong>Fecha de solicitud:</strong> ${new Date(fecha).toLocaleString()}</p>
+                    ${recoge ? `<p><strong>Recoge:</strong> ${recoge}</p>` : ''}
                     ${solicitud.observaciones ? `<p><strong>Observaciones:</strong> ${solicitud.observaciones}</p>` : ''}
                 </div>
             </div>
@@ -1029,6 +1032,7 @@ class SistemaExcusas {
             const grado = solicitud.grado || 'No especificado';
             const fecha = solicitud.fecha || solicitud.fecha_solicitud || new Date().toISOString();
             const radicado = solicitud.radicado || 'Sin radicado';
+            const recoge = solicitud.personaRecoge || solicitud.persona_recoge || '';
             
             return `
                 <div class="solicitud-card" data-id="${solicitud.id}">
@@ -1037,6 +1041,7 @@ class SistemaExcusas {
                         <p><strong>Estudiante:</strong> ${estudiante} (${grado})</p>
                         <p><strong>Fecha:</strong> ${new Date(fecha).toLocaleString()}</p>
                         <p><strong>Motivo:</strong> ${motivo}</p>
+                        ${recoge ? `<p><strong>Recoge:</strong> ${recoge}</p>` : ''}
                     </div>
                     <div class="solicitud-actions">
                         <button class="btn-success" onclick="sistema.aprobarSolicitud('${solicitud.id}')">
@@ -1469,7 +1474,7 @@ class SistemaExcusas {
         if (prevBtn) prevBtn.style.display = step === 1 ? 'none' : 'inline-block';
         if (nextBtn) nextBtn.style.display = step === this.maxSteps ? 'none' : 'inline-block';
         if (submitBtn) submitBtn.style.display = step === this.maxSteps ? 'inline-block' : 'none';
-        
+
         // Llenar la sección de confirmación con los datos ingresados
         if (step === this.maxSteps) {
             this.updateReview(tipo);
