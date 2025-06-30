@@ -435,19 +435,51 @@ class SistemaExcusas {
     }
 
     toggleProteccionButton() {
-        const checkbox = document.getElementById('aceptoProteccion');
+        const checkboxProteccion = document.getElementById('aceptoProteccion');
+        const checkboxMenor = document.getElementById('menorEdad');
         const button = document.getElementById('aceptarProteccion');
-        button.disabled = !checkbox.checked;
+        
+        // Ambos checkboxes deben estar marcados para habilitar el botón
+        const todosAceptados = checkboxProteccion.checked && checkboxMenor.checked;
+        button.disabled = !todosAceptados;
+        
+        // Cambiar texto del botón según el estado
+        if (todosAceptados) {
+            button.innerHTML = '<i class="fas fa-check"></i> Acepto y Continúo';
+        } else {
+            button.innerHTML = '<i class="fas fa-check"></i> Acepto y Continúo';
+        }
     }
 
     cerrarModalProteccion() {
         document.getElementById('modalProteccionDatos').style.display = 'none';
         document.getElementById('aceptoProteccion').checked = false;
+        document.getElementById('menorEdad').checked = false;
         document.getElementById('aceptarProteccion').disabled = true;
     }
 
     aceptarProteccion() {
+        // Validar que ambos checkboxes estén marcados
+        const checkboxProteccion = document.getElementById('aceptoProteccion');
+        const checkboxMenor = document.getElementById('menorEdad');
+        
+        if (!checkboxProteccion.checked || !checkboxMenor.checked) {
+            alert('Debe aceptar ambas declaraciones para continuar');
+            return;
+        }
+        
+        // Registrar la aceptación con timestamp
+        const aceptacion = {
+            fecha: new Date().toISOString(),
+            ip: 'sistema_local', // En producción obtener IP real
+            tipoSolicitud: this.tipoSolicitud
+        };
+        
+        // Guardar registro de aceptación
+        this.saveToStorage('ultimaAceptacionDatos', aceptacion);
+        
         this.cerrarModalProteccion();
+        
         if (this.tipoSolicitud === 'excusa') {
             this.showView('excusaView');
         } else if (this.tipoSolicitud === 'permiso') {
@@ -1106,6 +1138,7 @@ class SistemaExcusas {
 
         // Modal protección de datos
         document.getElementById('aceptoProteccion').addEventListener('change', this.toggleProteccionButton);
+        document.getElementById('menorEdad').addEventListener('change', this.toggleProteccionButton);
         document.getElementById('cancelarProteccion').addEventListener('click', () => this.cerrarModalProteccion());
         document.getElementById('aceptarProteccion').addEventListener('click', () => this.aceptarProteccion());
 
