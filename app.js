@@ -1469,8 +1469,7 @@ class SistemaExcusas {
         if (prevBtn) prevBtn.style.display = step === 1 ? 'none' : 'inline-block';
         if (nextBtn) nextBtn.style.display = step === this.maxSteps ? 'none' : 'inline-block';
         if (submitBtn) submitBtn.style.display = step === this.maxSteps ? 'inline-block' : 'none';
-    }
-    
+        
         // Llenar la sección de confirmación con los datos ingresados
         if (step === this.maxSteps) {
             this.updateReview(tipo);
