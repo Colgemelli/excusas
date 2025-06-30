@@ -3,8 +3,8 @@
 
 // Configuración de Supabase
 const SUPABASE_CONFIG = {
-    url: 'https://zkbnpjmtwkhcvqizpmhj.supabase.co', // Reemplazar con tu URL de Supabase
-    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprYm5wam10d2toY3ZxaXpwbWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTQyNDksImV4cCI6MjA2NjczMDI0OX0.McMyTT8-Myp6L0nIjTN4chedAPunB0dwymQKhiNp6uI', // Reemplazar con tu clave anónima
+    url: window.process?.env?.SUPABASE_URL || '',
+    key: window.process?.env?.SUPABASE_ANON_KEY || '',
     useLocal: false // Cambiar a false cuando tengas Supabase configurado
 };
 
@@ -230,7 +230,7 @@ class SistemaExcusas {
                 SUPABASE_CONFIG.useLocal = true;
             }
         }
-        
+
         if (SUPABASE_CONFIG.useLocal) {
             console.log('Usando almacenamiento local para desarrollo');
             await this.loadLocalData();
