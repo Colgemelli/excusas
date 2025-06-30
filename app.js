@@ -160,7 +160,15 @@ class SistemaExcusas {
 
         select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
         
-        if (!grado || !this.estudiantesPorGrado[grado]) {
+        // Validar grado seleccionado
+        if (!grado) {
+            select.disabled = true;
+            if (infoContainer) infoContainer.style.display = 'none';
+            return;
+        }
+
+        // Si se usan datos locales, verificar que exista información
+        if (SUPABASE_CONFIG.useLocal && !this.estudiantesPorGrado[grado]) {
             select.disabled = true;
             if (infoContainer) infoContainer.style.display = 'none';
             return;
