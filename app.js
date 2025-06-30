@@ -8,6 +8,16 @@ const SUPABASE_CONFIG = {
     useLocal: false // Cambiar a false cuando tengas Supabase configurado
 };
 
+// Sanitiza texto para evitar inyecciones al usar innerHTML
+function escapeHTML(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 class SistemaExcusas {
     constructor() {
         this.currentView = 'homeView';
@@ -769,6 +779,8 @@ class SistemaExcusas {
             return;
         }
 
+        const safeRadicado = escapeHTML(numeroRadicado);
+
         const resultadoDiv = document.getElementById('resultadoConsulta');
         
         try {
@@ -798,7 +810,7 @@ class SistemaExcusas {
                     <div class="no-encontrado">
                         <i class="fas fa-search"></i>
                         <h3>No se encontró la solicitud</h3>
-                        <p>El número de radicado <strong>${numeroRadicado}</strong> no existe en nuestros registros.</p>
+                        <p>El número de radicado <strong>${safeRadicado}</strong> no existe en nuestros registros.</p>
                     </div>
                 `;
                 resultadoDiv.style.display = 'block';
@@ -833,12 +845,14 @@ class SistemaExcusas {
             'validado': 'Validado por docente'
         };
 
-        const estado = solicitud.estado || solicitud.estado_actual || 'pendiente';
-        const nombreEstudiante = solicitud.nombreEstudiante || solicitud.nombre_estudiante || 'No especificado';
-        const grado = solicitud.grado || 'No especificado';
+        const estado = escapeHTML(solicitud.estado || solicitud.estado_actual || 'pendiente');
+        const nombreEstudiante = escapeHTML(solicitud.nombreEstudiante || solicitud.nombre_estudiante || 'No especificado');
+        const grado = escapeHTML(solicitud.grado || 'No especificado');
         const fecha = solicitud.fecha || solicitud.fecha_solicitud || new Date().toISOString();
-        const tipo = solicitud.tipo || solicitud.tipo_solicitud || 'solicitud';
-        const recoge = solicitud.personaRecoge || solicitud.persona_recoge || '';
+        const tipo = escapeHTML(solicitud.tipo || solicitud.tipo_solicitud || 'solicitud');
+        const recoge = escapeHTML(solicitud.personaRecoge || solicitud.persona_recoge || '');
+        const radicado = escapeHTML(solicitud.radicado);
+        const observaciones = escapeHTML(solicitud.observaciones || '');
 
         return `
             <div class="solicitud-detalle">
@@ -847,12 +861,12 @@ class SistemaExcusas {
                     <span class="estado ${estadoClass[estado]}">${estadoTexto[estado]}</span>
                 </div>
                 <div class="solicitud-info">
-                    <p><strong>Radicado:</strong> ${solicitud.radicado}</p>
+                    <p><strong>Radicado:</strong> ${radicado}</p>
                     <p><strong>Estudiante:</strong> ${nombreEstudiante}</p>
                     <p><strong>Grado:</strong> ${grado}</p>
                     <p><strong>Fecha de solicitud:</strong> ${new Date(fecha).toLocaleString()}</p>
                     ${recoge ? `<p><strong>Recoge:</strong> ${recoge}</p>` : ''}
-                    ${solicitud.observaciones ? `<p><strong>Observaciones:</strong> ${solicitud.observaciones}</p>` : ''}
+                    ${solicitud.observaciones ? `<p><strong>Observaciones:</strong> ${observaciones}</p>` : ''}
                 </div>
             </div>
         `;
@@ -1038,13 +1052,13 @@ class SistemaExcusas {
         }
 
         container.innerHTML = solicitudes.map(solicitud => {
-            const motivo = solicitud.motivo || solicitud.motivoInasistencia || solicitud.motivoPermiso || 'No especificado';
-            const tipo = solicitud.tipo || solicitud.tipo_solicitud || 'solicitud';
-            const estudiante = solicitud.nombreEstudiante || solicitud.nombre_estudiante || 'No especificado';
-            const grado = solicitud.grado || 'No especificado';
+            const motivo = escapeHTML(solicitud.motivo || solicitud.motivoInasistencia || solicitud.motivoPermiso || 'No especificado');
+            const tipo = escapeHTML(solicitud.tipo || solicitud.tipo_solicitud || 'solicitud');
+            const estudiante = escapeHTML(solicitud.nombreEstudiante || solicitud.nombre_estudiante || 'No especificado');
+            const grado = escapeHTML(solicitud.grado || 'No especificado');
             const fecha = solicitud.fecha || solicitud.fecha_solicitud || new Date().toISOString();
-            const radicado = solicitud.radicado || 'Sin radicado';
-            const recoge = solicitud.personaRecoge || solicitud.persona_recoge || '';
+            const radicado = escapeHTML(solicitud.radicado || 'Sin radicado');
+            const recoge = escapeHTML(solicitud.personaRecoge || solicitud.persona_recoge || '');
             
             return `
                 <div class="solicitud-card" data-id="${solicitud.id}">
@@ -1145,11 +1159,11 @@ class SistemaExcusas {
         }
 
         container.innerHTML = solicitudes.map(solicitud => {
-            const motivo = solicitud.motivo || solicitud.motivoInasistencia || solicitud.motivoPermiso || 'No especificado';
-            const tipo = solicitud.tipo || solicitud.tipo_solicitud || 'solicitud';
-            const estudiante = solicitud.nombreEstudiante || solicitud.nombre_estudiante || 'No especificado';
-            const aprobadoPor = solicitud.aprobadoPor || solicitud.aprobado_por || 'Sistema';
-            const radicado = solicitud.radicado || 'Sin radicado';
+            const motivo = escapeHTML(solicitud.motivo || solicitud.motivoInasistencia || solicitud.motivoPermiso || 'No especificado');
+            const tipo = escapeHTML(solicitud.tipo || solicitud.tipo_solicitud || 'solicitud');
+            const estudiante = escapeHTML(solicitud.nombreEstudiante || solicitud.nombre_estudiante || 'No especificado');
+            const aprobadoPor = escapeHTML(solicitud.aprobadoPor || solicitud.aprobado_por || 'Sistema');
+            const radicado = escapeHTML(solicitud.radicado || 'Sin radicado');
             
             return `
                 <div class="solicitud-card" data-id="${solicitud.id}">
@@ -1241,7 +1255,7 @@ class SistemaExcusas {
             .slice(0, 5)
             .map(([grado, count]) => `
                 <div class="chart-bar">
-                    <span class="chart-label">${grado}</span>
+                    <span class="chart-label">${escapeHTML(grado)}</span>
                     <div class="chart-value">${count}</div>
                 </div>
             `).join('');
@@ -1259,7 +1273,7 @@ class SistemaExcusas {
             .slice(-6)
             .map(([mes, count]) => `
                 <div class="chart-bar">
-                    <span class="chart-label">${mes}</span>
+                    <span class="chart-label">${escapeHTML(mes)}</span>
                     <div class="chart-value">${count}</div>
                 </div>
             `).join('');
