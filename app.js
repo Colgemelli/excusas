@@ -53,120 +53,105 @@ class SistemaExcusas {
         });
     }
 
-    // Base de datos de estudiantes por grado
+    // Base de datos de estudiantes por grado (solo para desarrollo local)
     initStudentDatabase() {
+         if (!SUPABASE_CONFIG.useLocal) {
+            this.estudiantesPorGrado = {};
+            return;
+        }
+
         this.estudiantesPorGrado = {
             'Preescolar': [
-                { codigo: 'PRE001', nombre: 'Ana Sofía Pérez', apellidos: 'Pérez García' },
-                { codigo: 'PRE002', nombre: 'Carlos Andrés', apellidos: 'López Martínez' },
-                { codigo: 'PRE003', nombre: 'María José', apellidos: 'Rodríguez Silva' },
-                { codigo: 'PRE004', nombre: 'Diego Alejandro', apellidos: 'Gómez Torres' },
-                { codigo: 'PRE005', nombre: 'Valentina', apellidos: 'Hernández López' }
+                { codigo: 'PRE001', nombre: 'Ana', apellidos: 'Pérez' },
+                { codigo: 'PRE002', nombre: 'Carlos', apellidos: 'López' }
             ],
             '1°': [
-                { codigo: '1A001', nombre: 'Isabella', apellidos: 'Moreno Ruiz' },
-                { codigo: '1A002', nombre: 'Sebastián', apellidos: 'Castro Díaz' },
-                { codigo: '1A003', nombre: 'Camila Andrea', apellidos: 'Vargas Peña' },
-                { codigo: '1A004', nombre: 'Juan Pablo', apellidos: 'Jiménez Cruz' },
-                { codigo: '1A005', nombre: 'Sophia', apellidos: 'Mendoza Reyes' }
+                { codigo: '1A001', nombre: 'Isabella', apellidos: 'Moreno' },
+                { codigo: '1A002', nombre: 'Sebastián', apellidos: 'Castro' }
             ],
             '2°': [
-                { codigo: '2A001', nombre: 'Mateo', apellidos: 'Fernández Soto' },
-                { codigo: '2A002', nombre: 'Lucía', apellidos: 'Ramírez Vega' },
-                { codigo: '2A003', nombre: 'Nicolás', apellidos: 'Torres Aguilar' },
-                { codigo: '2A004', nombre: 'Emma', apellidos: 'Salazar Ortiz' },
-                { codigo: '2A005', nombre: 'Santiago', apellidos: 'Guerrero Luna' }
+                { codigo: '2A001', nombre: 'Mateo', apellidos: 'Fernández' },
+                { codigo: '2A002', nombre: 'Lucía', apellidos: 'Ramírez' }
             ],
             '3°': [
-                { codigo: '3A001', nombre: 'Valeria', apellidos: 'Ruiz Morales' },
-                { codigo: '3A002', nombre: 'Daniel', apellidos: 'Cortés Rojas' },
-                { codigo: '3A003', nombre: 'Martina', apellidos: 'Delgado Herrera' },
-                { codigo: '3A004', nombre: 'Alejandro', apellidos: 'Medina Castro' },
-                { codigo: '3A005', nombre: 'Zoe', apellidos: 'Paredes Silva' }
+                { codigo: '3A001', nombre: 'Valeria', apellidos: 'Ruiz' },
+                { codigo: '3A002', nombre: 'Daniel', apellidos: 'Cortés' }
             ],
             '4°': [
-                { codigo: '4A001', nombre: 'Samuel', apellidos: 'Vásquez Torres' },
-                { codigo: '4A002', nombre: 'Antonella', apellidos: 'Ramos Figueroa' },
-                { codigo: '4A003', nombre: 'Emilio', apellidos: 'Sandoval Peña' },
-                { codigo: '4A004', nombre: 'Renata', apellidos: 'Espinoza Morales' },
-                { codigo: '4A005', nombre: 'Joaquín', apellidos: 'Cabrera León' }
+                { codigo: '4A001', nombre: 'Samuel', apellidos: 'Vásquez' },
+                { codigo: '4A002', nombre: 'Antonella', apellidos: 'Ramos' }
             ],
             '5°': [
-                { codigo: '5A001', nombre: 'Gabriela', apellidos: 'Molina Vargas' },
-                { codigo: '5A002', nombre: 'Maximiliano', apellidos: 'Contreras Ruiz' },
-                { codigo: '5A003', nombre: 'Regina', apellidos: 'Campos Sánchez' },
-                { codigo: '5A004', nombre: 'Benjamín', apellidos: 'Acosta Ramírez' },
-                { codigo: '5A005', nombre: 'Violeta', apellidos: 'Navarro Cruz' }
+                { codigo: '5A001', nombre: 'Gabriela', apellidos: 'Molina' },
+                { codigo: '5A002', nombre: 'Maximiliano', apellidos: 'Contreras' }
             ],
             '6°': [
-                { codigo: '6A001', nombre: 'Adrián', apellidos: 'Peña Gutiérrez' },
-                { codigo: '6A002', nombre: 'Juliana', apellidos: 'Ríos Mendoza' },
-                { codigo: '6A003', nombre: 'Leonardo', apellidos: 'Serrano López' },
-                { codigo: '6A004', nombre: 'Mariana', apellidos: 'Aguilera Torres' },
-                { codigo: '6A005', nombre: 'Rodrigo', apellidos: 'Lozano Díaz' }
+                { codigo: '6A001', nombre: 'Adrián', apellidos: 'Peña' },
+                { codigo: '6A002', nombre: 'Juliana', apellidos: 'Ríos' }
             ],
             '7°': [
-                { codigo: '7A001', nombre: 'Ariadna', apellidos: 'Becerra Silva' },
-                { codigo: '7A002', nombre: 'Emiliano', apellidos: 'Vega Morales' },
-                { codigo: '7A003', nombre: 'Paloma', apellidos: 'Cordero Ruiz' },
-                { codigo: '7A004', nombre: 'Tomás', apellidos: 'Herrera Castro' },
-                { codigo: '7A005', nombre: 'Constanza', apellidos: 'Ibarra Vásquez' }
+                { codigo: '7A001', nombre: 'Ariadna', apellidos: 'Becerra' },
+                { codigo: '7A002', nombre: 'Emiliano', apellidos: 'Vega' }
             ],
             '8°': [
-                { codigo: '8A001', nombre: 'Gonzalo', apellidos: 'Moya Fernández' },
-                { codigo: '8A002', nombre: 'Esperanza', apellidos: 'Ulloa Jiménez' },
-                { codigo: '8A003', nombre: 'Patricio', apellidos: 'Maldonado Rojas' },
-                { codigo: '8A004', nombre: 'Francisca', apellidos: 'Valdés Moreno' },
-                { codigo: '8A005', nombre: 'Ignacio', apellidos: 'Ponce Guerrero' }
+                { codigo: '8A001', nombre: 'Gonzalo', apellidos: 'Moya' },
+                { codigo: '8A002', nombre: 'Esperanza', apellidos: 'Ulloa' }
             ],
             '9°': [
-                { codigo: '9A001', nombre: 'Catalina', apellidos: 'Fuentes Delgado' },
-                { codigo: '9A002', nombre: 'Andrés', apellidos: 'Carrasco Herrera' },
-                { codigo: '9A003', nombre: 'Isadora', apellidos: 'Tapia Medina' },
-                { codigo: '9A004', nombre: 'Felipe', apellidos: 'Montoya Paredes' },
-                { codigo: '9A005', nombre: 'Almudena', apellidos: 'Figueroa Sandoval' }
+                { codigo: '9A001', nombre: 'Catalina', apellidos: 'Fuentes' },
+                { codigo: '9A002', nombre: 'Andrés', apellidos: 'Carrasco' }
             ],
             '10°': [
-                { codigo: '10A001', nombre: 'Ricardo', apellidos: 'Espejo Ramos' },
-                { codigo: '10A002', nombre: 'Macarena', apellidos: 'Solís Cabrera' },
-                { codigo: '10A003', nombre: 'Esteban', apellidos: 'Pereira Molina' },
-                { codigo: '10A004', nombre: 'Javiera', apellidos: 'Cáceres Contreras' },
-                { codigo: '10A005', nombre: 'Cristóbal', apellidos: 'Henríquez Campos' }
+                { codigo: '10A001', nombre: 'Ricardo', apellidos: 'Espejo' },
+                { codigo: '10A002', nombre: 'Macarena', apellidos: 'Solís' }
             ],
             '11°': [
-                { codigo: '11A001', nombre: 'Fernanda', apellidos: 'Morales Acosta' },
-                { codigo: '11A002', nombre: 'Álvaro', apellidos: 'Saavedra Navarro' },
-                { codigo: '11A003', nombre: 'Antonia', apellidos: 'Restrepo Peña' },
-                { codigo: '11A004', nombre: 'Matías', apellidos: 'Quintero Ríos' },
-                { codigo: '11A005', nombre: 'Sofía', apellidos: 'Cardenas Serrano' }
+                { codigo: '11A001', nombre: 'Fernanda', apellidos: 'Morales' },
+                { codigo: '11A002', nombre: 'Álvaro', apellidos: 'Saavedra' }
             ]
         };
     }
 
+    async fetchStudentsByGrade(grado) {
+        const { data, error } = await this.supabase
+            .from('vista_estudiantes_grados')
+            .select('codigo,nombres,apellidos')
+            .eq('grado_nombre', grado)
+            .order('apellidos', { ascending: true });
+        if (error) {
+            console.error('Error cargando estudiantes', error);
+            return [];
+        }
+        return data.map(e => ({ codigo: e.codigo, nombre: e.nombres, apellidos: e.apellidos }));
+    }
+
     // Cargar estudiantes por grado
-    loadStudentsByGrade(grado, selectId, infoContainerId) {
+    async loadStudentsByGrade(grado, selectId, infoContainerId) {
         const select = document.getElementById(selectId);
         const infoContainer = document.getElementById(infoContainerId);
         
-        if (!select || !this.estudiantesPorGrado[grado]) {
+        if (!select) {
             return;
         }
         
-        // Limpiar opciones anteriores
         select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
         
-        // Agregar estudiantes del grado seleccionado
-        this.estudiantesPorGrado[grado].forEach(estudiante => {
+        let estudiantes = [];
+        if (SUPABASE_CONFIG.useLocal) {
+            estudiantes = this.estudiantesPorGrado[grado] || [];
+        } else {
+            estudiantes = await this.fetchStudentsByGrade(grado);
+        }
+
+        estudiantes.forEach(estudiante => {
             const option = document.createElement('option');
             option.value = JSON.stringify(estudiante);
             option.textContent = `${estudiante.nombre} ${estudiante.apellidos}`;
             select.appendChild(option);
         });
         
-        // Habilitar el select
         select.disabled = false;
         
-        // Ocultar info del estudiante
         if (infoContainer) {
             infoContainer.style.display = 'none';
         }
