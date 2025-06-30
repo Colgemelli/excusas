@@ -71,90 +71,308 @@
                     <h2>Formato Único de Excusa</h2>
                 </div>
                 
-                <form id="excusaForm" class="form-container">
-                    <div class="form-group">
-                        <label for="fechaExcusa">Fecha:</label>
-                        <input type="date" id="fechaExcusa" required>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="nombreEstudianteExcusa">Nombre del Estudiante:</label>
-                            <input type="text" id="nombreEstudianteExcusa" required>
+                <div class="stepper-container">
+                    <!-- Stepper Header -->
+                    <div class="stepper-header">
+                        <div class="step-item active" data-step="1">
+                            <div class="step-circle">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="step-content">
+                                <span class="step-title">Acudiente</span>
+                                <span class="step-description">Información personal</span>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="gradoExcusa">Grado:</label>
-                            <select id="gradoExcusa" required>
-                                <option value="">Seleccionar...</option>
-                                <option value="Preescolar">Preescolar</option>
-                                <option value="1°">1°</option>
-                                <option value="2°">2°</option>
-                                <option value="3°">3°</option>
-                                <option value="4°">4°</option>
-                                <option value="5°">5°</option>
-                                <option value="6°">6°</option>
-                                <option value="7°">7°</option>
-                                <option value="8°">8°</option>
-                                <option value="9°">9°</option>
-                                <option value="10°">10°</option>
-                                <option value="11°">11°</option>
-                            </select>
+                        <div class="step-connector"></div>
+                        <div class="step-item" data-step="2">
+                            <div class="step-circle">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="step-content">
+                                <span class="step-title">Estudiante</span>
+                                <span class="step-description">Grado y estudiante</span>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="diasInasistencia">Día(s) de inasistencia:</label>
-                            <input type="text" id="diasInasistencia" placeholder="Ej: 15, 16" required>
+                        <div class="step-connector"></div>
+                        <div class="step-item" data-step="3">
+                            <div class="step-circle">
+                                <i class="fas fa-file-medical"></i>
+                            </div>
+                            <div class="step-content">
+                                <span class="step-title">Excusa</span>
+                                <span class="step-description">Detalles y motivo</span>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="mesInasistencia">Mes:</label>
-                            <select id="mesInasistencia" required>
-                                <option value="">Seleccionar...</option>
-                                <option value="Enero">Enero</option>
-                                <option value="Febrero">Febrero</option>
-                                <option value="Marzo">Marzo</option>
-                                <option value="Abril">Abril</option>
-                                <option value="Mayo">Mayo</option>
-                                <option value="Junio">Junio</option>
-                                <option value="Julio">Julio</option>
-                                <option value="Agosto">Agosto</option>
-                                <option value="Septiembre">Septiembre</option>
-                                <option value="Octubre">Octubre</option>
-                                <option value="Noviembre">Noviembre</option>
-                                <option value="Diciembre">Diciembre</option>
-                            </select>
+                        <div class="step-connector"></div>
+                        <div class="step-item" data-step="4">
+                            <div class="step-circle">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="step-content">
+                                <span class="step-title">Confirmación</span>
+                                <span class="step-description">Revisar y enviar</span>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="motivoInasistencia">Motivo de la inasistencia:</label>
-                        <textarea id="motivoInasistencia" rows="4" required></textarea>
-                    </div>
-                    
-                    <div class="form-row checkbox-row">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="certificadoMedico">
-                            <label for="certificadoMedico">Certificado Médico</label>
+
+                    <!-- Stepper Content -->
+                    <form id="excusaForm" class="stepper-form">
+                        <!-- Paso 1: Información del Acudiente -->
+                        <div class="step-panel active" data-step="1">
+                            <div class="panel-header">
+                                <h3>👨‍👩‍👧‍👦 Información del Acudiente</h3>
+                                <p>Por favor, proporcione sus datos como padre de familia o acudiente</p>
+                            </div>
+                            
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="nombreAcudiente">Nombre completo *</label>
+                                    <input type="text" id="nombreAcudiente" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="emailAcudiente">Correo electrónico *</label>
+                                    <input type="email" id="emailAcudiente" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="telefonoAcudiente">Teléfono de contacto *</label>
+                                    <input type="tel" id="telefonoAcudiente" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="perfilAcudiente">Perfil/Relación con el estudiante *</label>
+                                    <select id="perfilAcudiente" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="padre">Padre</option>
+                                        <option value="madre">Madre</option>
+                                        <option value="abuelo">Abuelo/a</option>
+                                        <option value="tio">Tío/a</option>
+                                        <option value="tutor">Tutor Legal</option>
+                                        <option value="otro">Otro Familiar</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group span-2">
+                                    <label for="documentoAcudiente">Número de documento de identidad *</label>
+                                    <input type="text" id="documentoAcudiente" required>
+                                </div>
+                            </div>
                         </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="incapacidad">
-                            <label for="incapacidad">Incapacidad</label>
+
+                        <!-- Paso 2: Información del Estudiante -->
+                        <div class="step-panel" data-step="2">
+                            <div class="panel-header">
+                                <h3>🎓 Información del Estudiante</h3>
+                                <p>Seleccione el grado y el estudiante para quien solicita la excusa</p>
+                            </div>
+                            
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="gradoExcusa">Grado *</label>
+                                    <select id="gradoExcusa" required>
+                                        <option value="">Seleccionar grado...</option>
+                                        <option value="Preescolar">Preescolar</option>
+                                        <option value="1°">1°</option>
+                                        <option value="2°">2°</option>
+                                        <option value="3°">3°</option>
+                                        <option value="4°">4°</option>
+                                        <option value="5°">5°</option>
+                                        <option value="6°">6°</option>
+                                        <option value="7°">7°</option>
+                                        <option value="8°">8°</option>
+                                        <option value="9°">9°</option>
+                                        <option value="10°">10°</option>
+                                        <option value="11°">11°</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="estudianteExcusa">Estudiante *</label>
+                                    <select id="estudianteExcusa" required disabled>
+                                        <option value="">Primero seleccione un grado</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div id="estudianteInfo" class="estudiante-info" style="display: none;">
+                                <div class="info-card">
+                                    <h4>📋 Información del Estudiante</h4>
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <span class="info-label">Nombre:</span>
+                                            <span class="info-value" id="infoNombre">-</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Grado:</span>
+                                            <span class="info-value" id="infoGrado">-</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Código:</span>
+                                            <span class="info-value" id="infoCodigo">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="form-group" id="archivoGroup" style="display: none;">
-                        <label for="archivoAdjunto">Adjuntar documento:</label>
-                        <input type="file" id="archivoAdjunto" accept=".pdf,.jpg,.jpeg,.png">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="firmaPadreExcusa">Nombre y firma del padre de familia y/o acudiente:</label>
-                        <input type="text" id="firmaPadreExcusa" required>
-                    </div>
-                    
-                    <button type="submit" class="btn-primary">Generar Excusa</button>
-                </form>
+
+                        <!-- Paso 3: Detalles de la Excusa -->
+                        <div class="step-panel" data-step="3">
+                            <div class="panel-header">
+                                <h3>📝 Detalles de la Excusa</h3>
+                                <p>Proporcione la información específica sobre la ausencia</p>
+                            </div>
+                            
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="fechaExcusa">Fecha de solicitud *</label>
+                                    <input type="date" id="fechaExcusa" required>
+                                    <small class="form-help">Solo se permiten fechas de hoy en adelante</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="mesInasistencia">Mes de inasistencia *</label>
+                                    <select id="mesInasistencia" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Enero">Enero</option>
+                                        <option value="Febrero">Febrero</option>
+                                        <option value="Marzo">Marzo</option>
+                                        <option value="Abril">Abril</option>
+                                        <option value="Mayo">Mayo</option>
+                                        <option value="Junio">Junio</option>
+                                        <option value="Julio">Julio</option>
+                                        <option value="Agosto">Agosto</option>
+                                        <option value="Septiembre">Septiembre</option>
+                                        <option value="Octubre">Octubre</option>
+                                        <option value="Noviembre">Noviembre</option>
+                                        <option value="Diciembre">Diciembre</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group span-2">
+                                    <label for="diasInasistencia">Día(s) de inasistencia *</label>
+                                    <input type="text" id="diasInasistencia" placeholder="Ejemplo: 15, 16, 17 o 20-25" required>
+                                    <small class="form-help">Indique los días separados por comas o use guión para rangos</small>
+                                </div>
+                                
+                                <div class="form-group span-2">
+                                    <label for="motivoInasistencia">Motivo de la inasistencia *</label>
+                                    <textarea id="motivoInasistencia" rows="4" required placeholder="Describa detalladamente el motivo de la ausencia..."></textarea>
+                                </div>
+                                
+                                <div class="form-group span-2">
+                                    <label class="checkbox-section-label">Documentos de soporte</label>
+                                    <div class="checkbox-grid">
+                                        <div class="checkbox-group">
+                                            <input type="checkbox" id="certificadoMedico">
+                                            <label for="certificadoMedico">
+                                                <i class="fas fa-file-medical"></i>
+                                                Certificado Médico
+                                            </label>
+                                        </div>
+                                        <div class="checkbox-group">
+                                            <input type="checkbox" id="incapacidad">
+                                            <label for="incapacidad">
+                                                <i class="fas fa-bed"></i>
+                                                Incapacidad Médica
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group span-2" id="archivoGroup" style="display: none;">
+                                    <label for="archivoAdjunto">Adjuntar documento *</label>
+                                    <input type="file" id="archivoAdjunto" accept=".pdf,.jpg,.jpeg,.png">
+                                    <small class="form-help">Formatos permitidos: PDF, JPG, PNG (máximo 5MB)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Paso 4: Confirmación -->
+                        <div class="step-panel" data-step="4">
+                            <div class="panel-header">
+                                <h3>✅ Revisar y Confirmar</h3>
+                                <p>Verifique que toda la información sea correcta antes de enviar</p>
+                            </div>
+                            
+                            <div class="review-section">
+                                <div class="review-card">
+                                    <h4><i class="fas fa-user"></i> Información del Acudiente</h4>
+                                    <div class="review-grid">
+                                        <div class="review-item">
+                                            <span class="review-label">Nombre:</span>
+                                            <span class="review-value" id="reviewNombreAcudiente">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Email:</span>
+                                            <span class="review-value" id="reviewEmailAcudiente">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Teléfono:</span>
+                                            <span class="review-value" id="reviewTelefonoAcudiente">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Perfil:</span>
+                                            <span class="review-value" id="reviewPerfilAcudiente">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="review-card">
+                                    <h4><i class="fas fa-graduation-cap"></i> Información del Estudiante</h4>
+                                    <div class="review-grid">
+                                        <div class="review-item">
+                                            <span class="review-label">Estudiante:</span>
+                                            <span class="review-value" id="reviewEstudiante">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Grado:</span>
+                                            <span class="review-value" id="reviewGrado">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="review-card">
+                                    <h4><i class="fas fa-file-medical"></i> Detalles de la Excusa</h4>
+                                    <div class="review-grid">
+                                        <div class="review-item">
+                                            <span class="review-label">Fecha de solicitud:</span>
+                                            <span class="review-value" id="reviewFecha">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Período de ausencia:</span>
+                                            <span class="review-value" id="reviewPeriodo">-</span>
+                                        </div>
+                                        <div class="review-item span-2">
+                                            <span class="review-label">Motivo:</span>
+                                            <span class="review-value" id="reviewMotivo">-</span>
+                                        </div>
+                                        <div class="review-item span-2">
+                                            <span class="review-label">Documentos:</span>
+                                            <span class="review-value" id="reviewDocumentos">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Navegación -->
+                        <div class="stepper-navigation">
+                            <button type="button" id="prevStepBtn" class="btn-secondary" style="display: none;">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </button>
+                            <div class="step-indicator">
+                                <span id="currentStepText">Paso 1 de 4</span>
+                            </div>
+                            <button type="button" id="nextStepBtn" class="btn-primary">
+                                Siguiente <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button type="submit" id="submitFormBtn" class="btn-success" style="display: none;">
+                                <i class="fas fa-paper-plane"></i> Enviar Excusa
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </section>
 
@@ -168,60 +386,293 @@
                     <h2>Formato de Permisos y Autorizaciones</h2>
                 </div>
                 
-                <form id="permisoForm" class="form-container">
-                    <div class="form-group">
-                        <label for="fechaPermiso">Fecha:</label>
-                        <input type="date" id="fechaPermiso" required>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="nombreEstudiantePermiso">Nombre del Estudiante:</label>
-                            <input type="text" id="nombreEstudiantePermiso" required>
+                <div class="stepper-container">
+                    <!-- Stepper Header -->
+                    <div class="stepper-header">
+                        <div class="step-item active" data-step="1">
+                            <div class="step-circle">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="step-content">
+                                <span class="step-title">Acudiente</span>
+                                <span class="step-description">Información personal</span>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="gradoPermiso">Grado:</label>
-                            <select id="gradoPermiso" required>
-                                <option value="">Seleccionar...</option>
-                                <option value="Preescolar">Preescolar</option>
-                                <option value="1°">1°</option>
-                                <option value="2°">2°</option>
-                                <option value="3°">3°</option>
-                                <option value="4°">4°</option>
-                                <option value="5°">5°</option>
-                                <option value="6°">6°</option>
-                                <option value="7°">7°</option>
-                                <option value="8°">8°</option>
-                                <option value="9°">9°</option>
-                                <option value="10°">10°</option>
-                                <option value="11°">11°</option>
-                            </select>
+                        <div class="step-connector"></div>
+                        <div class="step-item" data-step="2">
+                            <div class="step-circle">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="step-content">
+                                <span class="step-title">Estudiante</span>
+                                <span class="step-description">Grado y estudiante</span>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="motivoPermiso">Motivo del permiso o autorización:</label>
-                        <textarea id="motivoPermiso" rows="4" required></textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="horaSalida">Hora de salida:</label>
-                            <input type="time" id="horaSalida" required>
+                        <div class="step-connector"></div>
+                        <div class="step-item" data-step="3">
+                            <div class="step-circle">
+                                <i class="fas fa-file-signature"></i>
+                            </div>
+                            <div class="step-content">
+                                <span class="step-title">Permiso</span>
+                                <span class="step-description">Detalles y horarios</span>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="horaRegreso">Hora de regreso (si aplica):</label>
-                            <input type="time" id="horaRegreso">
+                        <div class="step-connector"></div>
+                        <div class="step-item" data-step="4">
+                            <div class="step-circle">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="step-content">
+                                <span class="step-title">Confirmación</span>
+                                <span class="step-description">Revisar y enviar</span>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="firmaPadrePermiso">Nombre y firma del padre de familia y/o acudiente:</label>
-                        <input type="text" id="firmaPadrePermiso" required>
-                    </div>
-                    
-                    <button type="submit" class="btn-primary">Generar Permiso</button>
-                </form>
+
+                    <!-- Stepper Content -->
+                    <form id="permisoForm" class="stepper-form">
+                        <!-- Paso 1: Información del Acudiente -->
+                        <div class="step-panel active" data-step="1">
+                            <div class="panel-header">
+                                <h3>👨‍👩‍👧‍👦 Información del Acudiente</h3>
+                                <p>Por favor, proporcione sus datos como padre de familia o acudiente</p>
+                            </div>
+                            
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="nombreAcudientePermiso">Nombre completo *</label>
+                                    <input type="text" id="nombreAcudientePermiso" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="emailAcudientePermiso">Correo electrónico *</label>
+                                    <input type="email" id="emailAcudientePermiso" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="telefonoAcudientePermiso">Teléfono de contacto *</label>
+                                    <input type="tel" id="telefonoAcudientePermiso" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="perfilAcudientePermiso">Perfil/Relación con el estudiante *</label>
+                                    <select id="perfilAcudientePermiso" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="padre">Padre</option>
+                                        <option value="madre">Madre</option>
+                                        <option value="abuelo">Abuelo/a</option>
+                                        <option value="tio">Tío/a</option>
+                                        <option value="tutor">Tutor Legal</option>
+                                        <option value="otro">Otro Familiar</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group span-2">
+                                    <label for="documentoAcudientePermiso">Número de documento de identidad *</label>
+                                    <input type="text" id="documentoAcudientePermiso" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Paso 2: Información del Estudiante -->
+                        <div class="step-panel" data-step="2">
+                            <div class="panel-header">
+                                <h3>🎓 Información del Estudiante</h3>
+                                <p>Seleccione el grado y el estudiante para quien solicita el permiso</p>
+                            </div>
+                            
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="gradoPermiso">Grado *</label>
+                                    <select id="gradoPermiso" required>
+                                        <option value="">Seleccionar grado...</option>
+                                        <option value="Preescolar">Preescolar</option>
+                                        <option value="1°">1°</option>
+                                        <option value="2°">2°</option>
+                                        <option value="3°">3°</option>
+                                        <option value="4°">4°</option>
+                                        <option value="5°">5°</option>
+                                        <option value="6°">6°</option>
+                                        <option value="7°">7°</option>
+                                        <option value="8°">8°</option>
+                                        <option value="9°">9°</option>
+                                        <option value="10°">10°</option>
+                                        <option value="11°">11°</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="estudiantePermiso">Estudiante *</label>
+                                    <select id="estudiantePermiso" required disabled>
+                                        <option value="">Primero seleccione un grado</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div id="estudianteInfoPermiso" class="estudiante-info" style="display: none;">
+                                <div class="info-card">
+                                    <h4>📋 Información del Estudiante</h4>
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <span class="info-label">Nombre:</span>
+                                            <span class="info-value" id="infoNombrePermiso">-</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Grado:</span>
+                                            <span class="info-value" id="infoGradoPermiso">-</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Código:</span>
+                                            <span class="info-value" id="infoCodigoPermiso">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Paso 3: Detalles del Permiso -->
+                        <div class="step-panel" data-step="3">
+                            <div class="panel-header">
+                                <h3>🕐 Detalles del Permiso</h3>
+                                <p>Proporcione la información específica sobre el permiso solicitado</p>
+                            </div>
+                            
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="fechaPermiso">Fecha del permiso *</label>
+                                    <input type="date" id="fechaPermiso" required>
+                                    <small class="form-help">Solo se permiten fechas de hoy en adelante</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="tipoPermiso">Tipo de permiso *</label>
+                                    <select id="tipoPermiso" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="salida_anticipada">Salida Anticipada</option>
+                                        <option value="llegada_tardia">Llegada Tardía</option>
+                                        <option value="ausencia_parcial">Ausencia Parcial</option>
+                                        <option value="ausencia_completa">Ausencia Día Completo</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="horaSalida">Hora de salida *</label>
+                                    <input type="time" id="horaSalida" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="horaRegreso">Hora de regreso</label>
+                                    <input type="time" id="horaRegreso">
+                                    <small class="form-help">Solo si aplica (ausencia parcial)</small>
+                                </div>
+                                
+                                <div class="form-group span-2">
+                                    <label for="motivoPermiso">Motivo del permiso *</label>
+                                    <textarea id="motivoPermiso" rows="4" required placeholder="Describa detalladamente el motivo del permiso..."></textarea>
+                                </div>
+                                
+                                <div class="form-group span-2">
+                                    <label for="lugarDestino">Lugar de destino</label>
+                                    <input type="text" id="lugarDestino" placeholder="¿A dónde se dirige el estudiante?">
+                                </div>
+                                
+                                <div class="form-group span-2">
+                                    <label for="personaRecoge">Persona que recoge al estudiante</label>
+                                    <input type="text" id="personaRecoge" placeholder="Nombre completo de quien recogerá al estudiante">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Paso 4: Confirmación -->
+                        <div class="step-panel" data-step="4">
+                            <div class="panel-header">
+                                <h3>✅ Revisar y Confirmar</h3>
+                                <p>Verifique que toda la información sea correcta antes de enviar</p>
+                            </div>
+                            
+                            <div class="review-section">
+                                <div class="review-card">
+                                    <h4><i class="fas fa-user"></i> Información del Acudiente</h4>
+                                    <div class="review-grid">
+                                        <div class="review-item">
+                                            <span class="review-label">Nombre:</span>
+                                            <span class="review-value" id="reviewNombreAcudientePermiso">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Email:</span>
+                                            <span class="review-value" id="reviewEmailAcudientePermiso">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Teléfono:</span>
+                                            <span class="review-value" id="reviewTelefonoAcudientePermiso">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Perfil:</span>
+                                            <span class="review-value" id="reviewPerfilAcudientePermiso">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="review-card">
+                                    <h4><i class="fas fa-graduation-cap"></i> Información del Estudiante</h4>
+                                    <div class="review-grid">
+                                        <div class="review-item">
+                                            <span class="review-label">Estudiante:</span>
+                                            <span class="review-value" id="reviewEstudiantePermiso">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Grado:</span>
+                                            <span class="review-value" id="reviewGradoPermiso">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="review-card">
+                                    <h4><i class="fas fa-file-signature"></i> Detalles del Permiso</h4>
+                                    <div class="review-grid">
+                                        <div class="review-item">
+                                            <span class="review-label">Fecha:</span>
+                                            <span class="review-value" id="reviewFechaPermiso">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Tipo:</span>
+                                            <span class="review-value" id="reviewTipoPermiso">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Horario:</span>
+                                            <span class="review-value" id="reviewHorarioPermiso">-</span>
+                                        </div>
+                                        <div class="review-item">
+                                            <span class="review-label">Persona que recoge:</span>
+                                            <span class="review-value" id="reviewPersonaRecoge">-</span>
+                                        </div>
+                                        <div class="review-item span-2">
+                                            <span class="review-label">Motivo:</span>
+                                            <span class="review-value" id="reviewMotivoPermiso">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Navegación -->
+                        <div class="stepper-navigation">
+                            <button type="button" id="prevStepBtnPermiso" class="btn-secondary" style="display: none;">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </button>
+                            <div class="step-indicator">
+                                <span id="currentStepTextPermiso">Paso 1 de 4</span>
+                            </div>
+                            <button type="button" id="nextStepBtnPermiso" class="btn-primary">
+                                Siguiente <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button type="submit" id="submitFormBtnPermiso" class="btn-success" style="display: none;">
+                                <i class="fas fa-paper-plane"></i> Enviar Permiso
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </section>
 
