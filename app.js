@@ -518,7 +518,6 @@ class SistemaExcusas {
         this.radicadoCounter += 1;
         return `RAD-${this.radicadoCounter}`;
     }
-
     setupEventListeners() {
         // Navegación principal
         document.getElementById('inicioBtn').addEventListener('click', () => this.showView('homeView'));
@@ -1471,10 +1470,11 @@ class SistemaExcusas {
         if (nextBtn) nextBtn.style.display = step === this.maxSteps ? 'none' : 'inline-block';
         if (submitBtn) submitBtn.style.display = step === this.maxSteps ? 'inline-block' : 'none';
     }
-
-    // Llenar la sección de confirmación con los datos ingresados
-    if (step === this.maxSteps) {
+    
+        // Llenar la sección de confirmación con los datos ingresados
+        if (step === this.maxSteps) {
             this.updateReview(tipo);
+        }
     }
 
     // Validar campos requeridos de un paso
@@ -1866,9 +1866,5 @@ class SistemaExcusas {
 
 // Inicializar sistema cuando se carga la página
 document.addEventListener('DOMContentLoaded', () => {
-
-// Instanciar el sistema una vez que el DOM esté listo
     window.sistema = new SistemaExcusas();
 });
-
-// "sistema" queda disponible de forma global tras la carga del DOM
