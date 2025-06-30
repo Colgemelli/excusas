@@ -543,6 +543,9 @@ class SistemaExcusas {
         // Modal confirmación
         document.getElementById('cancelarAccion').addEventListener('click', this.cerrarModalConfirmacion);
         document.getElementById('confirmarAccion').addEventListener('click', this.ejecutarAccionConfirmacion);
+
+        // Eventos para el stepper
+        this.setupStepperEvents();
     }
 
     // Navegación entre vistas
@@ -1358,6 +1361,96 @@ class SistemaExcusas {
         }
     }
 
+    // Configurar eventos de los steppers
+    setupStepperEvents() {
+        const nextExcusa = document.getElementById('nextStepBtn');
+        const prevExcusa = document.getElementById('prevStepBtn');
+        const nextPermiso = document.getElementById('nextStepBtnPermiso');
+        const prevPermiso = document.getElementById('prevStepBtnPermiso');
+
+        nextExcusa?.addEventListener('click', () => {
+            if (!this.validateStep('excusa', this.currentStepExcusa)) return;
+            if (this.currentStepExcusa < this.maxSteps) {
+                this.currentStepExcusa++;
+                this.showStep('excusa', this.currentStepExcusa);
+            }
+        });
+
+        prevExcusa?.addEventListener('click', () => {
+            if (this.currentStepExcusa > 1) {
+                this.currentStepExcusa--;
+                this.showStep('excusa', this.currentStepExcusa);
+            }
+        });
+
+        nextPermiso?.addEventListener('click', () => {
+            if (!this.validateStep('permiso', this.currentStepPermiso)) return;
+            if (this.currentStepPermiso < this.maxSteps) {
+                this.currentStepPermiso++;
+                this.showStep('permiso', this.currentStepPermiso);
+            }
+        });
+
+        prevPermiso?.addEventListener('click', () => {
+            if (this.currentStepPermiso > 1) {
+                this.currentStepPermiso--;
+                this.showStep('permiso', this.currentStepPermiso);
+            }
+        });
+    }
+
+    // Mostrar panel de un paso específico
+    showStep(tipo, step) {
+        const formId = tipo === 'excusa' ? 'excusaForm' : 'permisoForm';
+        const container = document.getElementById(formId)?.closest('.stepper-container');
+        if (!container) return;
+
+        container.querySelectorAll('.step-panel').forEach(p => {
+            p.classList.toggle('active', parseInt(p.dataset.step) === step);
+        });
+
+        container.querySelectorAll('.step-item').forEach(item => {
+            const s = parseInt(item.dataset.step);
+            item.classList.remove('active', 'completed');
+            if (s < step) item.classList.add('completed');
+            else if (s === step) item.classList.add('active');
+        });
+
+        const indicatorId = tipo === 'excusa' ? 'currentStepText' : 'currentStepTextPermiso';
+        const prevId = tipo === 'excusa' ? 'prevStepBtn' : 'prevStepBtnPermiso';
+        const nextId = tipo === 'excusa' ? 'nextStepBtn' : 'nextStepBtnPermiso';
+        const submitId = tipo === 'excusa' ? 'submitFormBtn' : 'submitFormBtnPermiso';
+
+        document.getElementById(indicatorId).textContent = `Paso ${step} de ${this.maxSteps}`;
+        const prevBtn = document.getElementById(prevId);
+        const nextBtn = document.getElementById(nextId);
+        const submitBtn = document.getElementById(submitId);
+
+        if (prevBtn) prevBtn.style.display = step === 1 ? 'none' : 'inline-block';
+        if (nextBtn) nextBtn.style.display = step === this.maxSteps ? 'none' : 'inline-block';
+        if (submitBtn) submitBtn.style.display = step === this.maxSteps ? 'inline-block' : 'none';
+    }
+
+    // Validar campos requeridos de un paso
+    validateStep(tipo, step) {
+        const formId = tipo === 'excusa' ? 'excusaForm' : 'permisoForm';
+        const panel = document.querySelector(`#${formId} .step-panel[data-step="${step}"]`);
+        if (!panel) return true;
+
+        let valid = true;
+        panel.querySelectorAll('input[required], select[required], textarea[required]').forEach(el => {
+            const group = el.closest('.form-group');
+            const ok = el.type === 'checkbox' ? el.checked : el.value.trim() !== '';
+            if (!ok) {
+                group?.classList.add('error');
+                valid = false;
+            } else {
+                group?.classList.remove('error');
+            }
+        });
+        return valid;
+    }
+
     // Actualizar getExcusaFormData (sin documento)
     getExcusaFormData() {
         // Obtener información del estudiante seleccionado
@@ -1584,6 +1677,9 @@ class SistemaExcusas {
         // Modal confirmación
         document.getElementById('cancelarAccion').addEventListener('click', () => this.cerrarModalConfirmacion());
         document.getElementById('confirmarAccion').addEventListener('click', () => this.ejecutarAccionConfirmacion());
+
+        // Eventos para el stepper
+        this.setupStepperEvents();
     }
 
     // Navegación entre vistas
