@@ -1302,8 +1302,10 @@ class SistemaExcusas {
         }
     }
 
-    // Navegación entre vistas (actualizada para stepper)
+    // Navegación entre vistas (actualizada con reconfiguración de eventos)
     showView(viewId) {
+        console.log(`Cambiando a vista: ${viewId}`);
+        
         // Verificar permisos para vistas protegidas
         if (viewId === 'coordinadorView' && (!this.currentUser || !this.hasPermission('ver_dashboard'))) {
             this.showView('loginView');
@@ -1332,8 +1334,16 @@ class SistemaExcusas {
         // Resetear steppers si se va a una vista de formulario
         if (viewId === 'excusaView') {
             this.resetStepper('excusa');
+            // Reconfigurar eventos después de mostrar la vista
+            setTimeout(() => {
+                this.setupStepperEvents();
+            }, 100);
         } else if (viewId === 'permisoView') {
             this.resetStepper('permiso');
+            // Reconfigurar eventos después de mostrar la vista
+            setTimeout(() => {
+                this.setupStepperEvents();
+            }, 100);
         }
 
         // Actualizar navegación
