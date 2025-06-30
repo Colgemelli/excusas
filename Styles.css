@@ -349,6 +349,7 @@ body {
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(4px);
+    padding: 1rem;
 }
 
 .modal-content {
@@ -360,6 +361,11 @@ body {
     overflow-y: auto;
     box-shadow: var(--shadow-lg);
     animation: modalSlideIn 0.3s ease;
+}
+
+.modal-large {
+    max-width: 800px;
+    width: 95%;
 }
 
 @keyframes modalSlideIn {
@@ -375,16 +381,27 @@ body {
 
 .modal-header {
     padding: 1.5rem 1.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
 }
 
 .modal-header h3 {
     font-size: var(--font-size-xl);
     font-weight: 600;
     color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.modal-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin: 0;
 }
 
 .modal-body {
     padding: 1.5rem;
+    line-height: 1.6;
 }
 
 .modal-footer {
@@ -392,6 +409,116 @@ body {
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
+}
+
+/* Política de Protección de Datos */
+.politica-container {
+    margin-bottom: 2rem;
+}
+
+.politica-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.politica-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.politica-section h4 {
+    font-size: var(--font-size-lg);
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.politica-section p {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.politica-section ul {
+    margin: 0.5rem 0 0 1.5rem;
+    color: var(--text-primary);
+}
+
+.politica-section li {
+    margin-bottom: 0.25rem;
+    font-size: var(--font-size-sm);
+}
+
+.autorizacion-final {
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    border: 2px solid var(--primary-color);
+}
+
+.checkbox-group-large {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.checkbox-group-large:last-child {
+    margin-bottom: 0;
+}
+
+.checkbox-group-large input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+}
+
+.checkbox-group-large label {
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.checkbox-group-large label strong {
+    color: var(--primary-color);
+}
+
+/* Destacar información importante */
+.politica-section p strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.politica-section ul li strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Efecto de scroll suave en el modal */
+.modal-content {
+    scroll-behavior: smooth;
+}
+
+.modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+    background: #4f46e5;
 }
 
 /* Radicado Modal */
@@ -745,6 +872,36 @@ body {
     
     .search-box {
         flex-direction: column;
+    }
+    
+    /* Modal responsivo */
+    .modal {
+        padding: 0.5rem;
+    }
+    
+    .modal-large {
+        width: 98%;
+        max-height: 95vh;
+    }
+    
+    .modal-header {
+        padding: 1rem 1rem 0;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .modal-footer {
+        padding: 0 1rem 1rem;
+    }
+    
+    .politica-section h4 {
+        font-size: var(--font-size-base);
+    }
+    
+    .checkbox-group-large {
+        align-items: flex-start;
     }
 }
 
