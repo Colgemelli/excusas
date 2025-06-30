@@ -41,17 +41,43 @@ class SistemaExcusas {
     // Inicializar validación de fechas
     initDateValidation() {
         const today = new Date().toISOString().split('T')[0];
-        
-        // Establecer fecha mínima para todos los campos de fecha
-        const fechaInputs = ['fechaExcusa', 'fechaPermiso'];
-        fechaInputs.forEach(id => {
-            const input = document.getElementById(id);
+
+    // Establecer fecha mínima para todos los campos de fecha
+    const fechaInputs = ['fechaExcusa', 'fechaPermiso'];
+    fechaInputs.forEach(id => {
+        const input = document.getElementById(id);
             if (input) {
                 input.min = today;
                 input.value = today;
             }
         });
+    
+        this.updateMesInasistencia();
     }
+
+    // Actualizar opciones de mes según la fecha de solicitud
+    updateMesInasistencia() {
+        const fechaInput = document.getElementById('fechaExcusa');
+        const selectMes = document.getElementById('mesInasistencia');
+        if (!fechaInput || !selectMes) return;
+
+        const meses = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+
+        const fecha = fechaInput.value ? new Date(fechaInput.value) : new Date();
+        const start = fecha.getMonth();
+
+        selectMes.innerHTML = '<option value="">Seleccionar...</option>';
+        for (let i = start; i < meses.length; i++) {
+            const opt = document.createElement('option');
+            opt.value = meses[i];
+            opt.textContent = meses[i];
+            selectMes.appendChild(opt);
+        }
+    }
+
 
     // Base de datos de estudiantes por grado (solo para desarrollo local)
     initStudentDatabase() {
@@ -486,6 +512,13 @@ class SistemaExcusas {
         const estados = { 'pendiente': 1, 'aprobado': 2, 'rechazado': 3, 'validado': 4 };
         return estados[nombreEstado] || 1;
     }
+
+    // Generar número de radicado incremental
+    generateRadicado() {
+        this.radicadoCounter += 1;
+        return `RAD-${this.radicadoCounter}`;
+    }
+
     setupEventListeners() {
         // Navegación principal
         document.getElementById('inicioBtn').addEventListener('click', () => this.showView('homeView'));
@@ -515,6 +548,10 @@ class SistemaExcusas {
         document.getElementById('numeroRadicado').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.consultarRadicado();
         });
+
+        // Actualizar meses de inasistencia según la fecha seleccionada
+        document.getElementById('fechaExcusa')
+            .addEventListener('change', () => this.updateMesInasistencia());
 
         document.getElementById('gradoExcusa')
             .addEventListener('change', e => this.loadStudentsByGrade(e.target.value, 'estudianteExcusa', 'estudianteInfo'));
@@ -1435,6 +1472,11 @@ class SistemaExcusas {
         if (submitBtn) submitBtn.style.display = step === this.maxSteps ? 'inline-block' : 'none';
     }
 
+    // Llenar la sección de confirmación con los datos ingresados
+    if (step === this.maxSteps) {
+            this.updateReview(tipo);
+    }
+
     // Validar campos requeridos de un paso
     validateStep(tipo, step) {
         const formId = tipo === 'excusa' ? 'excusaForm' : 'permisoForm';
@@ -1663,7 +1705,8 @@ class SistemaExcusas {
         document.getElementById('numeroRadicado').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.consultarRadicado();
         });
-
+        document.getElementById('fechaExcusa')
+            .addEventListener('change', () => this.updateMesInasistencia());
         document.getElementById('gradoExcusa')
             .addEventListener('change', e => this.loadStudentsByGrade(e.target.value, 'estudianteExcusa', 'estudianteInfo'));
         document.getElementById('gradoPermiso')
@@ -1823,10 +1866,9 @@ class SistemaExcusas {
 
 // Inicializar sistema cuando se carga la página
 document.addEventListener('DOMContentLoaded', () => {
+
+// Instanciar el sistema una vez que el DOM esté listo
     window.sistema = new SistemaExcusas();
 });
 
-// Exponer globalmente para eventos onclick
-if (typeof window !== 'undefined') {
-    window.sistema = new SistemaExcusas();
-}
+// "sistema" queda disponible de forma global tras la carga del DOM
