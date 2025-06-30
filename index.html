@@ -3,48 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Excusas y Permisos - Colegio</title>
+    <title>Sistema de Excusas y Permisos - Colegio Gemelli Franciscanos</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Supabase -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.38.0/supabase.min.js"></script>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loading" class="loading">
-        <div class="spinner"></div>
-        <p>Cargando...</p>
-        <button id="reloadBtn" onclick="window.location.reload()" style="
-            margin-top: 20px; padding: 10px 20px; background: #007bff; 
-            color: white; border: none; border-radius: 5px; cursor: pointer;
-            display: none;
-        ">🔄 Recargar Página</button>
-    </div>
-
     <!-- Header -->
     <header class="header">
         <div class="container">
-            <h1>🏫 Sistema de Excusas y Permisos</h1>
-            
-            <!-- Indicador de estado de la aplicación -->
-            <div id="appStatus" class="app-status">
-                <span id="statusIcon">🟡</span>
-                <span id="statusText">Inicializando...</span>
+            <div class="logo-section">
+                <i class="fas fa-graduation-cap"></i>
+                <h1>Sistema de Excusas y Permisos</h1>
             </div>
-            
-            <nav>
-                <button id="homeBtn" class="nav-btn active">Inicio</button>
-                <button id="consultBtn" class="nav-btn">Consultar Radicado</button>
-                <button id="loginBtn" class="nav-btn">Acceso Docentes</button>
-                <div id="userInfo" class="user-info" style="display: none;">
-                    <span id="userName"></span>
-                    <button id="logoutBtn" class="logout-btn">Cerrar Sesión</button>
-                </div>
+            <nav class="nav-buttons">
+                <button id="inicioBtn" class="nav-btn active">Inicio</button>
+                <button id="consultarBtn" class="nav-btn">Consultar Radicado</button>
+                <button id="docentesBtn" class="nav-btn">Acceso Docentes</button>
+                <button id="loginBtn" class="nav-btn">Login</button>
             </nav>
+            <div class="status-indicator">
+                <span id="statusText">🟡 Inicializando...</span>
+            </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="main">
-        <!-- Home View -->
+    <main class="main-content">
+        <!-- Vista Principal (Padres de Familia) -->
         <section id="homeView" class="view active">
             <div class="container">
                 <div class="welcome-section">
@@ -52,404 +39,417 @@
                     <p>Selecciona el tipo de solicitud que deseas realizar:</p>
                 </div>
                 
-                <div class="options-grid">
-                    <div class="option-card" data-type="excusa">
-                        <div class="option-icon">📋</div>
+                <div class="request-options">
+                    <div class="option-card" id="excusaCard">
+                        <div class="option-icon">
+                            <i class="fas fa-file-medical"></i>
+                        </div>
                         <h3>Excusa</h3>
                         <p>Para justificar ausencias por motivos de salud, citas médicas o situaciones familiares</p>
-                        <button class="option-btn">Solicitar Excusa</button>
+                        <button class="btn-primary">Solicitar Excusa</button>
                     </div>
                     
-                    <div class="option-card" data-type="permiso">
-                        <div class="option-icon">🎫</div>
+                    <div class="option-card" id="permisoCard">
+                        <div class="option-icon">
+                            <i class="fas fa-file-signature"></i>
+                        </div>
                         <h3>Permiso</h3>
                         <p>Para solicitar autorización de salida anticipada o ausencia programada</p>
-                        <button class="option-btn">Solicitar Permiso</button>
+                        <button class="btn-primary">Solicitar Permiso</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Form View -->
-        <section id="formView" class="view">
+        <!-- Vista Formulario Excusa -->
+        <section id="excusaView" class="view">
             <div class="container">
                 <div class="form-header">
-                    <button id="backToHome" class="back-btn">← Volver al inicio</button>
-                    <h2 id="formTitle">Solicitud de Excusa</h2>
+                    <button id="backToHome" class="btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                    <h2>Formato Único de Excusa</h2>
                 </div>
-
-                <div class="stepper">
-                    <div class="step active" data-step="1">
-                        <div class="step-number">1</div>
-                        <span>Protección de Datos</span>
+                
+                <form id="excusaForm" class="form-container">
+                    <div class="form-group">
+                        <label for="fechaExcusa">Fecha:</label>
+                        <input type="date" id="fechaExcusa" required>
                     </div>
-                    <div class="step" data-step="2">
-                        <div class="step-number">2</div>
-                        <span>Datos del Solicitante</span>
-                    </div>
-                    <div class="step" data-step="3">
-                        <div class="step-number">3</div>
-                        <span>Datos del Estudiante</span>
-                    </div>
-                    <div class="step" data-step="4">
-                        <div class="step-number">4</div>
-                        <span>Detalles de la Solicitud</span>
-                    </div>
-                    <div class="step" data-step="5">
-                        <div class="step-number">5</div>
-                        <span>Confirmación</span>
-                    </div>
-                </div>
-
-                <form id="requestForm" class="request-form">
-                    <!-- Step 1: Data Protection -->
-                    <div class="form-step active" data-step="1">
-                        <h3>Autorización para el Tratamiento de Datos Personales</h3>
-                        <div class="institution-header">
-                            <h4>🏫 COLEGIO GEMELLI FRANCISCANOS</h4>
-                            <p><strong>Formando Hombres y Mujeres de Paz y Bien</strong></p>
-                            <p>Manizales, Caldas - Colombia</p>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nombreEstudianteExcusa">Nombre del Estudiante:</label>
+                            <input type="text" id="nombreEstudianteExcusa" required>
                         </div>
-                        
-                        <div class="data-protection">
-                            <div class="legal-framework">
-                                <h5>📋 Marco Legal</h5>
-                                <p>En cumplimiento de la <strong>Ley 1581 de 2012</strong> y el <strong>Decreto 1377 de 2013</strong> sobre protección de datos personales, el Colegio Gemelli Franciscanos informa:</p>
-                            </div>
-                            
-                            <div class="treatment-purposes">
-                                <h5>🎯 Propósitos del Tratamiento</h5>
-                                <ul>
-                                    <li>Gestión académica y administrativa</li>
-                                    <li>Comunicación institucional con padres de familia</li>
-                                    <li>Seguimiento y control de excusas y permisos estudiantiles</li>
-                                    <li>Archivo y consulta de registros académicos</li>
-                                    <li>Cumplimiento de obligaciones legales educativas</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="rights-section">
-                                <h5>⚖️ Sus Derechos como Titular</h5>
-                                <ul>
-                                    <li><strong>Conocer:</strong> Información sobre el uso de sus datos</li>
-                                    <li><strong>Actualizar:</strong> Modificar datos inexactos o incompletos</li>
-                                    <li><strong>Rectificar:</strong> Corregir información errónea</li>
-                                    <li><strong>Suprimir:</strong> Solicitar eliminación cuando sea procedente</li>
-                                    <li><strong>Revocar:</strong> Retirar autorización en casos permitidos por ley</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="security-measures">
-                                <h5>🔒 Medidas de Seguridad</h5>
-                                <p>El colegio implementa medidas técnicas, humanas y administrativas para proteger la información personal contra pérdida, alteración, tratamiento o acceso no autorizado.</p>
-                            </div>
-                            
-                            <div class="validity-section">
-                                <h5>📅 Vigencia de la Autorización</h5>
-                                <p>Esta autorización permanecerá vigente hasta que el titular solicite su revocación o finalice la relación con la institución educativa.</p>
-                            </div>
-                            
-                            <div class="contact-info">
-                                <h5>📞 Contacto para Ejercer Derechos</h5>
-                                <p>Para ejercer sus derechos, contacte al colegio a través de los canales oficiales de comunicación institucional.</p>
-                            </div>
-                            
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="dataProtection" required>
-                                <span class="checkmark"></span>
-                                <strong>Autorizo de manera libre, previa, expresa e informada al Colegio Gemelli Franciscanos para el tratamiento de mis datos personales conforme a la política institucional</strong>
-                            </label>
+                        <div class="form-group">
+                            <label for="gradoExcusa">Grado:</label>
+                            <select id="gradoExcusa" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="Preescolar">Preescolar</option>
+                                <option value="1°">1°</option>
+                                <option value="2°">2°</option>
+                                <option value="3°">3°</option>
+                                <option value="4°">4°</option>
+                                <option value="5°">5°</option>
+                                <option value="6°">6°</option>
+                                <option value="7°">7°</option>
+                                <option value="8°">8°</option>
+                                <option value="9°">9°</option>
+                                <option value="10°">10°</option>
+                                <option value="11°">11°</option>
+                            </select>
                         </div>
                     </div>
-
-                    <!-- Step 2: Registrant Data -->
-                    <div class="form-step" data-step="2">
-                        <h3>Datos del Solicitante</h3>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="registrantName">Nombre completo *</label>
-                                <input type="text" id="registrantName" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="registrantEmail">Correo electrónico *</label>
-                                <input type="email" id="registrantEmail" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="registrantPhone">Teléfono *</label>
-                                <input type="tel" id="registrantPhone" required minlength="10" pattern="[0-9]{10,}">
-                                <small>Mínimo 10 dígitos</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="relationship">Relación con el estudiante *</label>
-                                <select id="relationship" required>
-                                    <option value="">Seleccione...</option>
-                                    <option value="madre">Madre</option>
-                                    <option value="padre">Padre</option>
-                                    <option value="otro">Otro</option>
-                                </select>
-                            </div>
-                            <div class="form-group" id="otherRelationshipGroup" style="display: none;">
-                                <label for="otherRelationship">Especifique la relación *</label>
-                                <input type="text" id="otherRelationship">
-                            </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="diasInasistencia">Día(s) de inasistencia:</label>
+                            <input type="text" id="diasInasistencia" placeholder="Ej: 15, 16" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="mesInasistencia">Mes:</label>
+                            <select id="mesInasistencia" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="Enero">Enero</option>
+                                <option value="Febrero">Febrero</option>
+                                <option value="Marzo">Marzo</option>
+                                <option value="Abril">Abril</option>
+                                <option value="Mayo">Mayo</option>
+                                <option value="Junio">Junio</option>
+                                <option value="Julio">Julio</option>
+                                <option value="Agosto">Agosto</option>
+                                <option value="Septiembre">Septiembre</option>
+                                <option value="Octubre">Octubre</option>
+                                <option value="Noviembre">Noviembre</option>
+                                <option value="Diciembre">Diciembre</option>
+                            </select>
                         </div>
                     </div>
-
-                    <!-- Step 3: Student Data -->
-                    <div class="form-step" data-step="3">
-                        <h3>Datos del Estudiante</h3>
-                        
-                        <!-- Indicador de datos fallback -->
-                        <div id="fallbackDataWarning" class="fallback-warning" style="display: none;">
-                            <div class="warning-icon">⚠️</div>
-                            <div class="warning-content">
-                                <strong>Usando datos de ejemplo</strong>
-                                <p>No se pudieron cargar los estudiantes desde la base de datos. Se están mostrando datos de ejemplo.</p>
-                                <button type="button" id="retryLoadStudents" class="btn-small btn-secondary">🔄 Reintentar</button>
-                            </div>
+                    
+                    <div class="form-group">
+                        <label for="motivoInasistencia">Motivo de la inasistencia:</label>
+                        <textarea id="motivoInasistencia" rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="form-row checkbox-row">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="certificadoMedico">
+                            <label for="certificadoMedico">Certificado Médico</label>
                         </div>
-                        
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="studentGrade">Grado *</label>
-                                <select id="studentGrade" required>
-                                    <option value="">Seleccione el grado...</option>
-                                    <option value="pre-jardín">Pre-jardín</option>
-                                    <option value="jardín">Jardín</option>
-                                    <option value="transición">Transición</option>
-                                    <option value="primero">Primero</option>
-                                    <option value="segundo">Segundo</option>
-                                    <option value="tercero">Tercero</option>
-                                    <option value="cuarto">Cuarto</option>
-                                    <option value="quinto">Quinto</option>
-                                    <option value="sexto">Sexto</option>
-                                    <option value="séptimo">Séptimo</option>
-                                    <option value="octavo">Octavo</option>
-                                    <option value="noveno">Noveno</option>
-                                    <option value="décimo">Décimo</option>
-                                    <option value="undécimo">Undécimo</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="studentSelect">Estudiante *</label>
-                                <select id="studentSelect" required disabled>
-                                    <option value="">Primero seleccione el grado</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="studentCode">Código del estudiante</label>
-                                <input type="text" id="studentCode" readonly>
-                            </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="incapacidad">
+                            <label for="incapacidad">Incapacidad</label>
                         </div>
                     </div>
-
-                    <!-- Step 4: Request Details -->
-                    <div class="form-step" data-step="4">
-                        <h3>Detalles de la Solicitud</h3>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="startDate">Fecha de inicio *</label>
-                                <input type="date" id="startDate" required>
-                            </div>
-                            <div class="form-group" id="endDateGroup">
-                                <label for="endDate">Fecha de fin</label>
-                                <input type="date" id="endDate">
-                                <small>Para permisos de varios días</small>
-                            </div>
-                            
-                            <!-- Campos específicos para PERMISOS -->
-                            <div class="permission-fields" style="display: none;">
-                                <div class="form-group">
-                                    <label for="startTime">Hora de salida *</label>
-                                    <input type="time" id="startTime">
-                                </div>
-                                <div class="form-group">
-                                    <label for="endTime">Hora de regreso</label>
-                                    <input type="time" id="endTime">
-                                    <small>Si aplica</small>
-                                </div>
-                            </div>
-                            
-                            <!-- Campos específicos para EXCUSAS -->
-                            <div class="excuse-fields" style="display: none;">
-                                <div class="form-group">
-                                    <label for="absenceDays">Día(s) de inasistencia *</label>
-                                    <input type="text" id="absenceDays" placeholder="Ej: 15, 16 y 17">
-                                    <small>Especifique los días exactos</small>
-                                </div>
-                                <div class="form-group">
-                                    <label for="absenceMonth">Mes de inasistencia *</label>
-                                    <select id="absenceMonth">
-                                        <option value="">Seleccione el mes...</option>
-                                        <option value="enero">Enero</option>
-                                        <option value="febrero">Febrero</option>
-                                        <option value="marzo">Marzo</option>
-                                        <option value="abril">Abril</option>
-                                        <option value="mayo">Mayo</option>
-                                        <option value="junio">Junio</option>
-                                        <option value="julio">Julio</option>
-                                        <option value="agosto">Agosto</option>
-                                        <option value="septiembre">Septiembre</option>
-                                        <option value="octubre">Octubre</option>
-                                        <option value="noviembre">Noviembre</option>
-                                        <option value="diciembre">Diciembre</option>
-                                    </select>
-                                    <small>Se mostrarán solo los meses futuros a partir del mes siguiente</small>
-                                </div>
-                                <div class="form-group full-width">
-                                    <label>Documentos de soporte</label>
-                                    <div class="checkbox-group">
-                                        <label class="checkbox-label">
-                                            <input type="checkbox" id="medicalCertificate">
-                                            <span class="checkmark"></span>
-                                            Certificado médico
-                                        </label>
-                                        <label class="checkbox-label">
-                                            <input type="checkbox" id="incapacityCertificate">
-                                            <span class="checkmark"></span>
-                                            Incapacidad
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group full-width">
-                                <label for="reason">Motivo *</label>
-                                <select id="reason" required>
-                                    <option value="">Seleccione el motivo...</option>
-                                    <option value="cita_medica">Cita médica</option>
-                                    <option value="enfermedad">Enfermedad</option>
-                                    <option value="calamidad_domestica">Calamidad doméstica</option>
-                                    <option value="viaje_familiar">Viaje familiar</option>
-                                    <option value="tramites_personales">Trámites personales</option>
-                                    <option value="actividad_familiar">Actividad familiar</option>
-                                    <option value="otro">Otro</option>
-                                </select>
-                            </div>
-                            <div class="form-group full-width">
-                                <label for="description">Descripción detallada del motivo *</label>
-                                <textarea id="description" rows="4" required placeholder="Proporcione detalles específicos sobre el motivo de la solicitud..."></textarea>
-                            </div>
-                        </div>
+                    
+                    <div class="form-group" id="archivoGroup" style="display: none;">
+                        <label for="archivoAdjunto">Adjuntar documento:</label>
+                        <input type="file" id="archivoAdjunto" accept=".pdf,.jpg,.jpeg,.png">
                     </div>
-
-                    <!-- Step 5: Confirmation -->
-                    <div class="form-step" data-step="5">
-                        <h3>Confirmación de Solicitud</h3>
-                        <div class="confirmation-summary">
-                            <h4>Resumen de la solicitud:</h4>
-                            <div id="summaryContent"></div>
-                            <p class="important-note">
-                                <strong>Importante:</strong> Una vez enviada la solicitud, recibirá un número de radicado para hacer seguimiento del estado de su petición.
-                            </p>
-                        </div>
+                    
+                    <div class="form-group">
+                        <label for="firmaPadreExcusa">Nombre y firma del padre de familia y/o acudiente:</label>
+                        <input type="text" id="firmaPadreExcusa" required>
                     </div>
-
-                    <div class="form-actions">
-                        <button type="button" id="prevBtn" class="btn-secondary" style="display: none;">Anterior</button>
-                        <button type="button" id="nextBtn" class="btn-primary">Siguiente</button>
-                        <button type="submit" id="submitBtn" class="btn-success" style="display: none;">Enviar Solicitud</button>
-                    </div>
+                    
+                    <button type="submit" class="btn-primary">Generar Excusa</button>
                 </form>
             </div>
         </section>
 
-        <!-- Consult View -->
-        <section id="consultView" class="view">
+        <!-- Vista Formulario Permiso -->
+        <section id="permisoView" class="view">
             <div class="container">
-                <h2>Consultar Estado de Radicado</h2>
-                <div class="consult-form">
-                    <div class="form-group">
-                        <label for="filingNumber">Número de radicado</label>
-                        <input type="text" id="filingNumber" placeholder="Ej: RAD202406280001">
-                    </div>
-                    <button id="consultBtn" class="btn-primary">Consultar</button>
+                <div class="form-header">
+                    <button id="backToHomePermiso" class="btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                    <h2>Formato de Permisos y Autorizaciones</h2>
                 </div>
-                <div id="consultResult" class="consult-result"></div>
+                
+                <form id="permisoForm" class="form-container">
+                    <div class="form-group">
+                        <label for="fechaPermiso">Fecha:</label>
+                        <input type="date" id="fechaPermiso" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nombreEstudiantePermiso">Nombre del Estudiante:</label>
+                            <input type="text" id="nombreEstudiantePermiso" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gradoPermiso">Grado:</label>
+                            <select id="gradoPermiso" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="Preescolar">Preescolar</option>
+                                <option value="1°">1°</option>
+                                <option value="2°">2°</option>
+                                <option value="3°">3°</option>
+                                <option value="4°">4°</option>
+                                <option value="5°">5°</option>
+                                <option value="6°">6°</option>
+                                <option value="7°">7°</option>
+                                <option value="8°">8°</option>
+                                <option value="9°">9°</option>
+                                <option value="10°">10°</option>
+                                <option value="11°">11°</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="motivoPermiso">Motivo del permiso o autorización:</label>
+                        <textarea id="motivoPermiso" rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="horaSalida">Hora de salida:</label>
+                            <input type="time" id="horaSalida" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="horaRegreso">Hora de regreso (si aplica):</label>
+                            <input type="time" id="horaRegreso">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="firmaPadrePermiso">Nombre y firma del padre de familia y/o acudiente:</label>
+                        <input type="text" id="firmaPadrePermiso" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Generar Permiso</button>
+                </form>
             </div>
         </section>
 
-        <!-- Login View -->
+        <!-- Vista Consultar Radicado -->
+        <section id="consultarView" class="view">
+            <div class="container">
+                <div class="form-header">
+                    <h2>Consultar por Número de Radicado</h2>
+                </div>
+                
+                <div class="search-container">
+                    <div class="search-box">
+                        <input type="text" id="numeroRadicado" placeholder="Ingrese el número de radicado">
+                        <button id="buscarBtn" class="btn-primary">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="resultadoConsulta" class="resultado-container" style="display: none;">
+                    <!-- Aquí se mostrará el resultado de la consulta -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Vista Login -->
         <section id="loginView" class="view">
             <div class="container">
                 <div class="login-container">
                     <h2>Acceso al Sistema</h2>
-                    <div class="login-tabs">
-                        <button class="tab-btn active" data-role="coordinator">Coordinador</button>
-                        <button class="tab-btn" data-role="teacher">Docente</button>
-                        <button class="tab-btn" data-role="admin">Administrador</button>
-                    </div>
-                    <form id="loginForm" class="login-form">
+                    <form id="loginForm">
                         <div class="form-group">
-                            <label for="username">Usuario</label>
-                            <input type="text" id="username" required>
+                            <label for="usuario">Usuario:</label>
+                            <input type="text" id="usuario" required>
                         </div>
+                        
                         <div class="form-group">
-                            <label for="password">Contraseña</label>
+                            <label for="password">Contraseña:</label>
                             <input type="password" id="password" required>
                         </div>
+                        
+                        <div class="form-group">
+                            <label for="tipoUsuario">Tipo de Usuario:</label>
+                            <select id="tipoUsuario" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="coordinador">Coordinador/Directora Académica</option>
+                                <option value="docente">Docente</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                        </div>
+                        
                         <button type="submit" class="btn-primary">Iniciar Sesión</button>
                     </form>
                 </div>
             </div>
         </section>
 
-        <!-- Dashboard View -->
-        <section id="dashboardView" class="view">
+        <!-- Vista Dashboard Coordinador -->
+        <section id="coordinadorView" class="view">
             <div class="container">
                 <div class="dashboard-header">
-                    <h2>Panel de Control</h2>
-                    <div class="dashboard-stats">
-                        <div class="stat-card">
-                            <h3 id="todayRequests">0</h3>
-                            <p>Solicitudes Hoy</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3 id="pendingRequests">0</h3>
-                            <p>Pendientes</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3 id="approvedRequests">0</h3>
-                            <p>Aprobadas</p>
-                        </div>
+                    <h2>Panel de Coordinación</h2>
+                    <button id="logoutBtn" class="btn-secondary">Cerrar Sesión</button>
+                </div>
+                
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <h3>Solicitudes Pendientes</h3>
+                        <span class="stat-number" id="pendientesCount">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Aprobadas Hoy</h3>
+                        <span class="stat-number" id="aprobadasHoy">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total del Mes</h3>
+                        <span class="stat-number" id="totalMes">0</span>
                     </div>
                 </div>
-
-                <div class="dashboard-content">
-                    <div class="requests-table">
-                        <h3>Solicitudes Pendientes</h3>
-                        <div id="requestsList" class="table-container"></div>
-                    </div>
-
-                    <div class="charts-section">
-                        <div class="chart-container">
-                            <h3>Solicitudes por Grado</h3>
-                            <canvas id="gradeChart"></canvas>
-                        </div>
+                
+                <div class="solicitudes-list">
+                    <h3>Solicitudes Pendientes de Revisión</h3>
+                    <div id="listaSolicitudes">
+                        <!-- Aquí se cargarán las solicitudes -->
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Success Modal -->
-        <div id="successModal" class="modal">
-            <div class="modal-content">
-                <h3>✅ Solicitud Enviada Exitosamente</h3>
-                <p>Su radicado es: <strong id="generatedFiling"></strong></p>
-                <p>Puede consultar el estado de su solicitud usando este número.</p>
-                <button id="closeModal" class="btn-primary">Cerrar</button>
+        <!-- Vista Dashboard Docente -->
+        <section id="docenteView" class="view">
+            <div class="container">
+                <div class="dashboard-header">
+                    <h2>Panel de Validación Docente</h2>
+                    <button id="logoutDocenteBtn" class="btn-secondary">Cerrar Sesión</button>
+                </div>
+                
+                <div class="docente-filters">
+                    <select id="filtroGrado">
+                        <option value="">Todos los grados</option>
+                        <option value="Preescolar">Preescolar</option>
+                        <option value="1°">1°</option>
+                        <option value="2°">2°</option>
+                        <option value="3°">3°</option>
+                        <option value="4°">4°</option>
+                        <option value="5°">5°</option>
+                        <option value="6°">6°</option>
+                        <option value="7°">7°</option>
+                        <option value="8°">8°</option>
+                        <option value="9°">9°</option>
+                        <option value="10°">10°</option>
+                        <option value="11°">11°</option>
+                    </select>
+                </div>
+                
+                <div class="solicitudes-docente" id="solicitudesDocente">
+                    <!-- Aquí se cargarán las solicitudes aprobadas para validación -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Vista Dashboard Admin -->
+        <section id="adminView" class="view">
+            <div class="container">
+                <div class="dashboard-header">
+                    <h2>Panel de Administración</h2>
+                    <button id="logoutAdminBtn" class="btn-secondary">Cerrar Sesión</button>
+                </div>
+                
+                <div class="admin-stats">
+                    <div class="stat-card">
+                        <h3>Total Solicitudes</h3>
+                        <span class="stat-number" id="totalSolicitudes">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Tasa de Aprobación</h3>
+                        <span class="stat-number" id="tasaAprobacion">0%</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Promedio Diario</h3>
+                        <span class="stat-number" id="promedioDiario">0</span>
+                    </div>
+                </div>
+                
+                <div class="admin-charts">
+                    <div class="chart-container">
+                        <h3>Grados con más solicitudes</h3>
+                        <div id="gradosChart"></div>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Histórico mensual</h3>
+                        <div id="historicoChart"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modales -->
+    <!-- Modal Protección de Datos -->
+    <div id="modalProteccionDatos" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔐 Protección de Datos Personales</h3>
+            </div>
+            <div class="modal-body">
+                <p>En cumplimiento de la Ley 1581 de 2012 y el Decreto 1377 de 2013, autorizo al <strong>Colegio Gemelli Franciscanos</strong> para el tratamiento de mis datos personales con fines académicos y administrativos.</p>
+                
+                <p>Se garantizan medidas de seguridad adecuadas y se reconocen mis derechos como titular de la información. Esta autorización tendrá vigencia mientras se mantenga la relación con la institución.</p>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="aceptoProteccion">
+                    <label for="aceptoProteccion">Acepto el tratamiento de mis datos personales</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelarProteccion" class="btn-secondary">Cancelar</button>
+                <button id="aceptarProteccion" class="btn-primary" disabled>Continuar</button>
             </div>
         </div>
-    </main>
+    </div>
+
+    <!-- Modal Radicado Generado -->
+    <div id="modalRadicado" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✅ Solicitud Enviada Exitosamente</h3>
+            </div>
+            <div class="modal-body">
+                <div class="radicado-info">
+                    <p>Su solicitud ha sido registrada con el siguiente número de radicado:</p>
+                    <div class="radicado-number" id="numeroRadicadoGenerado"></div>
+                    <p>Guarde este número para consultar el estado de su solicitud.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cerrarModalRadicado" class="btn-primary">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmación Coordinador -->
+    <div id="modalConfirmacion" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="tituloConfirmacion">Confirmar Acción</h3>
+            </div>
+            <div class="modal-body">
+                <p id="mensajeConfirmacion"></p>
+                <div class="form-group" id="observacionesGroup" style="display: none;">
+                    <label for="observaciones">Observaciones:</label>
+                    <textarea id="observaciones" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelarAccion" class="btn-secondary">Cancelar</button>
+                <button id="confirmarAccion" class="btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 Sistema de Excusas y Permisos - Colegio</p>
+            <p>© 2025 Sistema de Excusas y Permisos - Colegio Gemelli Franciscanos</p>
         </div>
     </footer>
 
-    <script src="config.js"></script>
-    <script type="module" src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
