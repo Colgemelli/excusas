@@ -1874,22 +1874,29 @@ class SistemaExcusas {
     // Utilidades de almacenamiento
     saveToStorage(key, data) {
         try {
-            // Usar almacenamiento en memoria para el entorno de Claude
-            if (!window.sistemaStorage) {
-                window.sistemaStorage = {};
-            }
-            window.sistemaStorage[key] = JSON.parse(JSON.stringify(data));
+    if (typeof localStorage !== 'undefined') {
+                localStorage.setItem(key, JSON.stringify(data));
+            } else {
+                if (!window.sistemaStorage) window.sistemaStorage = {};
+                window.sistemaStorage[key] = JSON.parse(JSON.stringify(data));
+        }
         } catch (error) {
-            console.warn('No se pudo guardar en almacenamiento:', error);
+            console.warn('No se pudo guardar en localStorage:', error);
+            if (!window.sistemaStorage) window.sistemaStorage = {};
+            window.sistemaStorage[key] = JSON.parse(JSON.stringify(data));
         }
     }
 
     loadFromStorage(key) {
         try {
+            if (typeof localStorage !== 'undefined') {
+                const item = localStorage.getItem(key);
+                if (item) return JSON.parse(item);
+            }
             return window.sistemaStorage?.[key] || null;
         } catch (error) {
             console.warn('No se pudo cargar del almacenamiento:', error);
-            return null;
+            return window.sistemaStorage?.[key] || null;
         }
     }
 }
