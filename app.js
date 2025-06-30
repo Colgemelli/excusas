@@ -23,9 +23,173 @@ class SistemaExcusas {
     async init() {
         await this.initSupabase();
         this.setupEventListeners();
+        this.initSteppers();
+        this.initDateValidation();
+        this.initStudentDatabase();
         await this.checkAuthStatus();
         this.updateStatus('🟢 Sistema listo');
         this.showView('homeView');
+    }
+
+    // Inicializar steppers
+    initSteppers() {
+        this.currentStepExcusa = 1;
+        this.currentStepPermiso = 1;
+        this.maxSteps = 4;
+    }
+
+    // Inicializar validación de fechas
+    initDateValidation() {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Establecer fecha mínima para todos los campos de fecha
+        const fechaInputs = ['fechaExcusa', 'fechaPermiso'];
+        fechaInputs.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.min = today;
+                input.value = today;
+            }
+        });
+    }
+
+    // Base de datos de estudiantes por grado
+    initStudentDatabase() {
+        this.estudiantesPorGrado = {
+            'Preescolar': [
+                { codigo: 'PRE001', nombre: 'Ana Sofía Pérez', apellidos: 'Pérez García' },
+                { codigo: 'PRE002', nombre: 'Carlos Andrés', apellidos: 'López Martínez' },
+                { codigo: 'PRE003', nombre: 'María José', apellidos: 'Rodríguez Silva' },
+                { codigo: 'PRE004', nombre: 'Diego Alejandro', apellidos: 'Gómez Torres' },
+                { codigo: 'PRE005', nombre: 'Valentina', apellidos: 'Hernández López' }
+            ],
+            '1°': [
+                { codigo: '1A001', nombre: 'Isabella', apellidos: 'Moreno Ruiz' },
+                { codigo: '1A002', nombre: 'Sebastián', apellidos: 'Castro Díaz' },
+                { codigo: '1A003', nombre: 'Camila Andrea', apellidos: 'Vargas Peña' },
+                { codigo: '1A004', nombre: 'Juan Pablo', apellidos: 'Jiménez Cruz' },
+                { codigo: '1A005', nombre: 'Sophia', apellidos: 'Mendoza Reyes' }
+            ],
+            '2°': [
+                { codigo: '2A001', nombre: 'Mateo', apellidos: 'Fernández Soto' },
+                { codigo: '2A002', nombre: 'Lucía', apellidos: 'Ramírez Vega' },
+                { codigo: '2A003', nombre: 'Nicolás', apellidos: 'Torres Aguilar' },
+                { codigo: '2A004', nombre: 'Emma', apellidos: 'Salazar Ortiz' },
+                { codigo: '2A005', nombre: 'Santiago', apellidos: 'Guerrero Luna' }
+            ],
+            '3°': [
+                { codigo: '3A001', nombre: 'Valeria', apellidos: 'Ruiz Morales' },
+                { codigo: '3A002', nombre: 'Daniel', apellidos: 'Cortés Rojas' },
+                { codigo: '3A003', nombre: 'Martina', apellidos: 'Delgado Herrera' },
+                { codigo: '3A004', nombre: 'Alejandro', apellidos: 'Medina Castro' },
+                { codigo: '3A005', nombre: 'Zoe', apellidos: 'Paredes Silva' }
+            ],
+            '4°': [
+                { codigo: '4A001', nombre: 'Samuel', apellidos: 'Vásquez Torres' },
+                { codigo: '4A002', nombre: 'Antonella', apellidos: 'Ramos Figueroa' },
+                { codigo: '4A003', nombre: 'Emilio', apellidos: 'Sandoval Peña' },
+                { codigo: '4A004', nombre: 'Renata', apellidos: 'Espinoza Morales' },
+                { codigo: '4A005', nombre: 'Joaquín', apellidos: 'Cabrera León' }
+            ],
+            '5°': [
+                { codigo: '5A001', nombre: 'Gabriela', apellidos: 'Molina Vargas' },
+                { codigo: '5A002', nombre: 'Maximiliano', apellidos: 'Contreras Ruiz' },
+                { codigo: '5A003', nombre: 'Regina', apellidos: 'Campos Sánchez' },
+                { codigo: '5A004', nombre: 'Benjamín', apellidos: 'Acosta Ramírez' },
+                { codigo: '5A005', nombre: 'Violeta', apellidos: 'Navarro Cruz' }
+            ],
+            '6°': [
+                { codigo: '6A001', nombre: 'Adrián', apellidos: 'Peña Gutiérrez' },
+                { codigo: '6A002', nombre: 'Juliana', apellidos: 'Ríos Mendoza' },
+                { codigo: '6A003', nombre: 'Leonardo', apellidos: 'Serrano López' },
+                { codigo: '6A004', nombre: 'Mariana', apellidos: 'Aguilera Torres' },
+                { codigo: '6A005', nombre: 'Rodrigo', apellidos: 'Lozano Díaz' }
+            ],
+            '7°': [
+                { codigo: '7A001', nombre: 'Ariadna', apellidos: 'Becerra Silva' },
+                { codigo: '7A002', nombre: 'Emiliano', apellidos: 'Vega Morales' },
+                { codigo: '7A003', nombre: 'Paloma', apellidos: 'Cordero Ruiz' },
+                { codigo: '7A004', nombre: 'Tomás', apellidos: 'Herrera Castro' },
+                { codigo: '7A005', nombre: 'Constanza', apellidos: 'Ibarra Vásquez' }
+            ],
+            '8°': [
+                { codigo: '8A001', nombre: 'Gonzalo', apellidos: 'Moya Fernández' },
+                { codigo: '8A002', nombre: 'Esperanza', apellidos: 'Ulloa Jiménez' },
+                { codigo: '8A003', nombre: 'Patricio', apellidos: 'Maldonado Rojas' },
+                { codigo: '8A004', nombre: 'Francisca', apellidos: 'Valdés Moreno' },
+                { codigo: '8A005', nombre: 'Ignacio', apellidos: 'Ponce Guerrero' }
+            ],
+            '9°': [
+                { codigo: '9A001', nombre: 'Catalina', apellidos: 'Fuentes Delgado' },
+                { codigo: '9A002', nombre: 'Andrés', apellidos: 'Carrasco Herrera' },
+                { codigo: '9A003', nombre: 'Isadora', apellidos: 'Tapia Medina' },
+                { codigo: '9A004', nombre: 'Felipe', apellidos: 'Montoya Paredes' },
+                { codigo: '9A005', nombre: 'Almudena', apellidos: 'Figueroa Sandoval' }
+            ],
+            '10°': [
+                { codigo: '10A001', nombre: 'Ricardo', apellidos: 'Espejo Ramos' },
+                { codigo: '10A002', nombre: 'Macarena', apellidos: 'Solís Cabrera' },
+                { codigo: '10A003', nombre: 'Esteban', apellidos: 'Pereira Molina' },
+                { codigo: '10A004', nombre: 'Javiera', apellidos: 'Cáceres Contreras' },
+                { codigo: '10A005', nombre: 'Cristóbal', apellidos: 'Henríquez Campos' }
+            ],
+            '11°': [
+                { codigo: '11A001', nombre: 'Fernanda', apellidos: 'Morales Acosta' },
+                { codigo: '11A002', nombre: 'Álvaro', apellidos: 'Saavedra Navarro' },
+                { codigo: '11A003', nombre: 'Antonia', apellidos: 'Restrepo Peña' },
+                { codigo: '11A004', nombre: 'Matías', apellidos: 'Quintero Ríos' },
+                { codigo: '11A005', nombre: 'Sofía', apellidos: 'Cardenas Serrano' }
+            ]
+        };
+    }
+
+    // Cargar estudiantes por grado
+    loadStudentsByGrade(grado, selectId, infoContainerId) {
+        const select = document.getElementById(selectId);
+        const infoContainer = document.getElementById(infoContainerId);
+        
+        if (!select || !this.estudiantesPorGrado[grado]) {
+            return;
+        }
+        
+        // Limpiar opciones anteriores
+        select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+        
+        // Agregar estudiantes del grado seleccionado
+        this.estudiantesPorGrado[grado].forEach(estudiante => {
+            const option = document.createElement('option');
+            option.value = JSON.stringify(estudiante);
+            option.textContent = `${estudiante.nombre} ${estudiante.apellidos}`;
+            select.appendChild(option);
+        });
+        
+        // Habilitar el select
+        select.disabled = false;
+        
+        // Ocultar info del estudiante
+        if (infoContainer) {
+            infoContainer.style.display = 'none';
+        }
+    }
+
+    // Mostrar información del estudiante seleccionado
+    showStudentInfo(estudianteData, infoContainerId, grado) {
+        const infoContainer = document.getElementById(infoContainerId);
+        
+        if (!infoContainer || !estudianteData) {
+            return;
+        }
+        
+        const estudiante = JSON.parse(estudianteData);
+        
+        // Actualizar información
+        const prefix = infoContainerId.includes('Permiso') ? 'Permiso' : '';
+        document.getElementById(`infoNombre${prefix}`).textContent = `${estudiante.nombre} ${estudiante.apellidos}`;
+        document.getElementById(`infoGrado${prefix}`).textContent = grado;
+        document.getElementById(`infoCodigo${prefix}`).textContent = estudiante.codigo;
+        
+        // Mostrar contenedor
+        infoContainer.style.display = 'block';
     }
 
     // Inicializar Supabase
@@ -1041,41 +1205,315 @@ class SistemaExcusas {
             `).join('');
     }
 
+    // Actualizar sección de revisión
+    updateReview(tipo) {
+        if (tipo === 'excusa') {
+            // Información del acudiente
+            document.getElementById('reviewNombreAcudiente').textContent = 
+                document.getElementById('nombreAcudiente').value || '-';
+            document.getElementById('reviewEmailAcudiente').textContent = 
+                document.getElementById('emailAcudiente').value || '-';
+            document.getElementById('reviewTelefonoAcudiente').textContent = 
+                document.getElementById('telefonoAcudiente').value || '-';
+            
+            const perfilSelect = document.getElementById('perfilAcudiente');
+            document.getElementById('reviewPerfilAcudiente').textContent = 
+                perfilSelect.options[perfilSelect.selectedIndex]?.text || '-';
+
+            // Información del estudiante
+            const estudianteSelect = document.getElementById('estudianteExcusa');
+            if (estudianteSelect.value) {
+                const estudiante = JSON.parse(estudianteSelect.value);
+                document.getElementById('reviewEstudiante').textContent = 
+                    `${estudiante.nombre} ${estudiante.apellidos}`;
+            } else {
+                document.getElementById('reviewEstudiante').textContent = '-';
+            }
+            document.getElementById('reviewGrado').textContent = 
+                document.getElementById('gradoExcusa').value || '-';
+
+            // Detalles de la excusa
+            const fecha = document.getElementById('fechaExcusa').value;
+            document.getElementById('reviewFecha').textContent = 
+                fecha ? new Date(fecha).toLocaleDateString('es-CO') : '-';
+            
+            const dias = document.getElementById('diasInasistencia').value;
+            const mes = document.getElementById('mesInasistencia').value;
+            document.getElementById('reviewPeriodo').textContent = 
+                (dias && mes) ? `${dias} de ${mes}` : '-';
+            
+            document.getElementById('reviewMotivo').textContent = 
+                document.getElementById('motivoInasistencia').value || '-';
+
+            // Documentos
+            const certificado = document.getElementById('certificadoMedico').checked;
+            const incapacidad = document.getElementById('incapacidad').checked;
+            let documentos = [];
+            if (certificado) documentos.push('Certificado Médico');
+            if (incapacidad) documentos.push('Incapacidad');
+            document.getElementById('reviewDocumentos').textContent = 
+                documentos.length > 0 ? documentos.join(', ') : 'Ninguno';
+
+        } else if (tipo === 'permiso') {
+            // Información del acudiente
+            document.getElementById('reviewNombreAcudientePermiso').textContent = 
+                document.getElementById('nombreAcudientePermiso').value || '-';
+            document.getElementById('reviewEmailAcudientePermiso').textContent = 
+                document.getElementById('emailAcudientePermiso').value || '-';
+            document.getElementById('reviewTelefonoAcudientePermiso').textContent = 
+                document.getElementById('telefonoAcudientePermiso').value || '-';
+            
+            const perfilSelect = document.getElementById('perfilAcudientePermiso');
+            document.getElementById('reviewPerfilAcudientePermiso').textContent = 
+                perfilSelect.options[perfilSelect.selectedIndex]?.text || '-';
+
+            // Información del estudiante
+            const estudianteSelect = document.getElementById('estudiantePermiso');
+            if (estudianteSelect.value) {
+                const estudiante = JSON.parse(estudianteSelect.value);
+                document.getElementById('reviewEstudiantePermiso').textContent = 
+                    `${estudiante.nombre} ${estudiante.apellidos}`;
+            } else {
+                document.getElementById('reviewEstudiantePermiso').textContent = '-';
+            }
+            document.getElementById('reviewGradoPermiso').textContent = 
+                document.getElementById('gradoPermiso').value || '-';
+
+            // Detalles del permiso
+            const fecha = document.getElementById('fechaPermiso').value;
+            document.getElementById('reviewFechaPermiso').textContent = 
+                fecha ? new Date(fecha).toLocaleDateString('es-CO') : '-';
+            
+            const tipoSelect = document.getElementById('tipoPermiso');
+            document.getElementById('reviewTipoPermiso').textContent = 
+                tipoSelect.options[tipoSelect.selectedIndex]?.text || '-';
+
+            const horaSalida = document.getElementById('horaSalida').value;
+            const horaRegreso = document.getElementById('horaRegreso').value;
+            let horario = horaSalida ? `Salida: ${horaSalida}` : '';
+            if (horaRegreso) horario += ` - Regreso: ${horaRegreso}`;
+            document.getElementById('reviewHorarioPermiso').textContent = horario || '-';
+
+            document.getElementById('reviewPersonaRecoge').textContent = 
+                document.getElementById('personaRecoge').value || '-';
+            
+            document.getElementById('reviewMotivoPermiso').textContent = 
+                document.getElementById('motivoPermiso').value || '-';
+        }
+    }
+
+    // Navegación entre vistas (actualizada para stepper)
+    showView(viewId) {
+        // Verificar permisos para vistas protegidas
+        if (viewId === 'coordinadorView' && (!this.currentUser || !this.hasPermission('ver_dashboard'))) {
+            this.showView('loginView');
+            return;
+        }
+        
+        if (viewId === 'docenteView' && (!this.currentUser || !this.hasPermission('validar_solicitudes'))) {
+            this.showView('loginView');
+            return;
+        }
+        
+        if (viewId === 'adminView' && (!this.currentUser || !this.hasPermission('ver_estadisticas'))) {
+            this.showView('loginView');
+            return;
+        }
+
+        // Ocultar todas las vistas
+        document.querySelectorAll('.view').forEach(view => {
+            view.classList.remove('active');
+        });
+
+        // Mostrar vista seleccionada
+        document.getElementById(viewId).classList.add('active');
+        this.currentView = viewId;
+
+        // Resetear steppers si se va a una vista de formulario
+        if (viewId === 'excusaView') {
+            this.resetStepper('excusa');
+        } else if (viewId === 'permisoView') {
+            this.resetStepper('permiso');
+        }
+
+        // Actualizar navegación
+        this.updateNavigation(viewId);
+
+        // Cargar datos específicos de la vista
+        if (viewId === 'coordinadorView') this.loadCoordinadorDashboard();
+        if (viewId === 'docenteView') this.loadDocenteDashboard();
+        if (viewId === 'adminView') this.loadAdminDashboard();
+    }
+
+    // Resetear stepper
+    resetStepper(tipo) {
+        if (tipo === 'excusa') {
+            this.currentStepExcusa = 1;
+            this.showStep('excusa', 1);
+        } else {
+            this.currentStepPermiso = 1;
+            this.showStep('permiso', 1);
+        }
+    }
+
+    // Actualizar getExcusaFormData
     getExcusaFormData() {
+        // Obtener información del estudiante seleccionado
+        const estudianteSelect = document.getElementById('estudianteExcusa');
+        let estudianteData = null;
+        if (estudianteSelect.value) {
+            estudianteData = JSON.parse(estudianteSelect.value);
+        }
+
         return {
-            fechaExcusa: document.getElementById('fechaExcusa').value,
-            nombreEstudiante: document.getElementById('nombreEstudianteExcusa').value,
+            // Información del acudiente
+            nombreAcudiente: document.getElementById('nombreAcudiente').value,
+            emailAcudiente: document.getElementById('emailAcudiente').value,
+            telefonoAcudiente: document.getElementById('telefonoAcudiente').value,
+            perfilAcudiente: document.getElementById('perfilAcudiente').value,
+            documentoAcudiente: document.getElementById('documentoAcudiente').value,
+            
+            // Información del estudiante
+            nombreEstudiante: estudianteData ? `${estudianteData.nombre} ${estudianteData.apellidos}` : '',
+            codigoEstudiante: estudianteData ? estudianteData.codigo : '',
             grado: document.getElementById('gradoExcusa').value,
+            
+            // Detalles de la excusa
+            fechaExcusa: document.getElementById('fechaExcusa').value,
             diasInasistencia: document.getElementById('diasInasistencia').value,
             mesInasistencia: document.getElementById('mesInasistencia').value,
             motivoInasistencia: document.getElementById('motivoInasistencia').value,
             certificadoMedico: document.getElementById('certificadoMedico').checked,
-            incapacidad: document.getElementById('incapacidad').checked,
-            firmaPadre: document.getElementById('firmaPadreExcusa').value
+            incapacidad: document.getElementById('incapacidad').checked
         };
     }
 
+    // Actualizar getPermisoFormData
     getPermisoFormData() {
+        // Obtener información del estudiante seleccionado
+        const estudianteSelect = document.getElementById('estudiantePermiso');
+        let estudianteData = null;
+        if (estudianteSelect.value) {
+            estudianteData = JSON.parse(estudianteSelect.value);
+        }
+
         return {
-            fechaPermiso: document.getElementById('fechaPermiso').value,
-            nombreEstudiante: document.getElementById('nombreEstudiantePermiso').value,
+            // Información del acudiente
+            nombreAcudiente: document.getElementById('nombreAcudientePermiso').value,
+            emailAcudiente: document.getElementById('emailAcudientePermiso').value,
+            telefonoAcudiente: document.getElementById('telefonoAcudientePermiso').value,
+            perfilAcudiente: document.getElementById('perfilAcudientePermiso').value,
+            documentoAcudiente: document.getElementById('documentoAcudientePermiso').value,
+            
+            // Información del estudiante
+            nombreEstudiante: estudianteData ? `${estudianteData.nombre} ${estudianteData.apellidos}` : '',
+            codigoEstudiante: estudianteData ? estudianteData.codigo : '',
             grado: document.getElementById('gradoPermiso').value,
+            
+            // Detalles del permiso
+            fechaPermiso: document.getElementById('fechaPermiso').value,
+            tipoPermiso: document.getElementById('tipoPermiso').value,
             motivoPermiso: document.getElementById('motivoPermiso').value,
             horaSalida: document.getElementById('horaSalida').value,
             horaRegreso: document.getElementById('horaRegreso').value,
-            firmaPadre: document.getElementById('firmaPadrePermiso').value
+            lugarDestino: document.getElementById('lugarDestino').value,
+            personaRecoge: document.getElementById('personaRecoge').value
         };
     }
 
-    generateRadicado() {
-        const fecha = new Date();
-        const year = fecha.getFullYear();
-        const month = String(fecha.getMonth() + 1).padStart(2, '0');
-        const prefix = `GEM${year}${month}`;
-        const numero = String(this.radicadoCounter++).padStart(4, '0');
-        return `${prefix}${numero}`;
+    // Limpiar formularios
+    clearForm(formId) {
+        const form = document.getElementById(formId);
+        if (form) {
+            form.reset();
+            
+            // Resetear selectores de estudiante
+            if (formId === 'excusaForm') {
+                document.getElementById('estudianteExcusa').disabled = true;
+                document.getElementById('estudianteInfo').style.display = 'none';
+                document.getElementById('archivoGroup').style.display = 'none';
+                this.resetStepper('excusa');
+            } else if (formId === 'permisoForm') {
+                document.getElementById('estudiantePermiso').disabled = true;
+                document.getElementById('estudianteInfoPermiso').style.display = 'none';
+                this.resetStepper('permiso');
+            }
+            
+            // Limpiar errores
+            form.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+            
+            // Resetear fecha mínima
+            this.initDateValidation();
+        }
     }
 
+    // Toggle file upload (actualizado)
+    toggleFileUpload() {
+        const certificado = document.getElementById('certificadoMedico').checked;
+        const incapacidad = document.getElementById('incapacidad').checked;
+        const archivoGroup = document.getElementById('archivoGroup');
+        
+        if (certificado || incapacidad) {
+            archivoGroup.style.display = 'block';
+            document.getElementById('archivoAdjunto').required = true;
+        } else {
+            archivoGroup.style.display = 'none';
+            document.getElementById('archivoAdjunto').required = false;
+        }
+    }
+
+    // Manejar envío de formularios (actualizado)
+    async handleExcusaSubmit(e) {
+        e.preventDefault();
+        
+        // Validar paso final
+        if (!this.validateStep('excusa', 4)) {
+            return;
+        }
+        
+        try {
+            const formData = this.getExcusaFormData();
+            const solicitud = await this.createSolicitud({
+                ...formData,
+                tipo: 'excusa'
+            });
+            
+            this.showModalRadicado(solicitud.radicado);
+            this.clearForm('excusaForm');
+            this.updateStatus('🟢 Excusa enviada exitosamente');
+        } catch (error) {
+            console.error('Error al enviar excusa:', error);
+            this.updateStatus('🔴 Error al enviar excusa');
+            alert('Error al enviar la excusa. Intente nuevamente.');
+        }
+    }
+
+    async handlePermisoSubmit(e) {
+        e.preventDefault();
+        
+        // Validar paso final
+        if (!this.validateStep('permiso', 4)) {
+            return;
+        }
+        
+        try {
+            const formData = this.getPermisoFormData();
+            const solicitud = await this.createSolicitud({
+                ...formData,
+                tipo: 'permiso'
+            });
+            
+            this.showModalRadicado(solicitud.radicado);
+            this.clearForm('permisoForm');
+            this.updateStatus('🟢 Permiso enviado exitosamente');
+        } catch (error) {
+            console.error('Error al enviar permiso:', error);
+            this.updateStatus('🔴 Error al enviar permiso');
+            alert('Error al enviar el permiso. Intente nuevamente.');
+        }
+    }
+
+    // Función para mostrar modal de radicado y volver a home
     showModalRadicado(radicado) {
         document.getElementById('numeroRadicadoGenerado').textContent = radicado;
         document.getElementById('modalRadicado').style.display = 'flex';
@@ -1084,13 +1522,6 @@ class SistemaExcusas {
     cerrarModalRadicado() {
         document.getElementById('modalRadicado').style.display = 'none';
         this.showView('homeView');
-    }
-
-    clearForm(formId) {
-        document.getElementById(formId).reset();
-        if (formId === 'excusaForm') {
-            document.getElementById('archivoGroup').style.display = 'none';
-        }
     }
 
     // Event Listeners
