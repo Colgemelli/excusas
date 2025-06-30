@@ -217,10 +217,14 @@ class SistemaExcusas {
 
     // Inicializar Supabase
     async initSupabase() {
-        if (!SUPABASE_CONFIG.useLocal && typeof createClient !== 'undefined') {
+        if (!SUPABASE_CONFIG.useLocal) {
             try {
-                this.supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
-                console.log('Supabase inicializado correctamente');
+                if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+                    this.supabase = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+                    console.log('Supabase inicializado correctamente');
+                } else {
+                    throw new Error('Supabase library not loaded');
+                }
             } catch (error) {
                 console.warn('Error al inicializar Supabase, usando almacenamiento local:', error);
                 SUPABASE_CONFIG.useLocal = true;
