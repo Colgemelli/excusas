@@ -383,23 +383,104 @@
     <!-- Modales -->
     <!-- Modal Protección de Datos -->
     <div id="modalProteccionDatos" class="modal">
-        <div class="modal-content">
+        <div class="modal-content modal-large">
             <div class="modal-header">
-                <h3>🔐 Protección de Datos Personales</h3>
+                <h3>🔐 Autorización de Tratamiento de Datos Personales</h3>
+                <p class="modal-subtitle">Colegio Franciscano Agustín Gemelli</p>
             </div>
             <div class="modal-body">
-                <p>En cumplimiento de la Ley 1581 de 2012 y el Decreto 1377 de 2013, autorizo al <strong>Colegio Gemelli Franciscanos</strong> para el tratamiento de mis datos personales con fines académicos y administrativos.</p>
+                <div class="politica-container">
+                    <div class="politica-section">
+                        <h4>📋 Identificación del Responsable</h4>
+                        <p><strong>Razón Social:</strong> Colegio Franciscano Agustín Gemelli</p>
+                        <p><strong>Dirección:</strong> Carrera 13 # 03-90, Barrio La Francia, Manizales, Caldas</p>
+                        <p><strong>Teléfono:</strong> +57 (6) 888-4616</p>
+                        <p><strong>Correo:</strong> rectoriagemelli@colegiosfranciscanos.com</p>
+                    </div>
+
+                    <div class="politica-section">
+                        <h4>🎯 Finalidades del Tratamiento</h4>
+                        <p>Los datos personales recolectados serán utilizados para:</p>
+                        <ul>
+                            <li>Gestionar solicitudes de excusas y permisos estudiantiles</li>
+                            <li>Realizar seguimiento académico y de convivencia</li>
+                            <li>Comunicación con padres de familia y acudientes</li>
+                            <li>Cumplimiento de obligaciones legales y contractuales</li>
+                            <li>Archivo y conservación histórica institucional</li>
+                        </ul>
+                    </div>
+
+                    <div class="politica-section">
+                        <h4>⚖️ Base Legal</h4>
+                        <p>El tratamiento se fundamenta en:</p>
+                        <ul>
+                            <li>Ley 1581 de 2012 de Protección de Datos Personales</li>
+                            <li>Decreto 1377 de 2013</li>
+                            <li>Ley 1098 de 2006 (Código de Infancia y Adolescencia)</li>
+                            <li>Consentimiento libre, previo, expreso e informado</li>
+                        </ul>
+                    </div>
+
+                    <div class="politica-section">
+                        <h4>👨‍👩‍👧‍👦 Tratamiento de Datos de Menores</h4>
+                        <p>Para estudiantes menores de edad, el tratamiento requiere autorización de padres o representantes legales, garantizando el interés superior del menor y sus derechos fundamentales.</p>
+                    </div>
+
+                    <div class="politica-section">
+                        <h4>📅 Conservación de Datos</h4>
+                        <p>Los datos se conservarán durante la relación educativa y hasta 10 años posteriores para cumplir obligaciones legales, contables y de archivo histórico institucional.</p>
+                    </div>
+
+                    <div class="politica-section">
+                        <h4>🛡️ Sus Derechos como Titular</h4>
+                        <p>Usted tiene derecho a:</p>
+                        <ul>
+                            <li><strong>Conocer, actualizar y rectificar</strong> sus datos personales</li>
+                            <li><strong>Solicitar prueba</strong> de la autorización otorgada</li>
+                            <li><strong>Ser informado</strong> sobre el uso dado a sus datos</li>
+                            <li><strong>Presentar quejas</strong> ante la Superintendencia de Industria y Comercio</li>
+                            <li><strong>Revocar la autorización</strong> y solicitar supresión cuando sea procedente</li>
+                            <li><strong>Acceder gratuitamente</strong> a sus datos personales</li>
+                        </ul>
+                    </div>
+
+                    <div class="politica-section">
+                        <h4>📞 Ejercicio de Derechos</h4>
+                        <p>Para ejercer sus derechos, diríjase a:</p>
+                        <p><strong>Correo:</strong> habeasdata@colegiosfranciscanos.com</p>
+                        <p><strong>Dirección:</strong> Carrera 13 # 03-90, Manizales, Caldas</p>
+                        <p><strong>Horario:</strong> Lunes a viernes de 7:00 AM a 4:00 PM</p>
+                    </div>
+
+                    <div class="politica-section">
+                        <h4>🔒 Medidas de Seguridad</h4>
+                        <p>Implementamos medidas técnicas, humanas y administrativas para proteger sus datos contra pérdida, alteración, acceso no autorizado o uso fraudulento.</p>
+                    </div>
+                </div>
                 
-                <p>Se garantizan medidas de seguridad adecuadas y se reconocen mis derechos como titular de la información. Esta autorización tendrá vigencia mientras se mantenga la relación con la institución.</p>
-                
-                <div class="checkbox-group">
-                    <input type="checkbox" id="aceptoProteccion">
-                    <label for="aceptoProteccion">Acepto el tratamiento de mis datos personales</label>
+                <div class="autorizacion-final">
+                    <div class="checkbox-group-large">
+                        <input type="checkbox" id="aceptoProteccion">
+                        <label for="aceptoProteccion">
+                            <strong>Declaro que:</strong> He leído, entendido y acepto la presente política de tratamiento de datos personales. Autorizo de manera libre, previa, expresa e informada al Colegio Franciscano Agustín Gemelli para el tratamiento de mis datos personales y los del estudiante (si soy su representante legal) conforme a las finalidades aquí descritas.
+                        </label>
+                    </div>
+                    
+                    <div class="checkbox-group-large">
+                        <input type="checkbox" id="menorEdad">
+                        <label for="menorEdad">
+                            Si el estudiante es menor de edad, confirmo que actúo como padre, madre o representante legal y tengo la facultad para otorgar esta autorización en representación del menor.
+                        </label>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="cancelarProteccion" class="btn-secondary">Cancelar</button>
-                <button id="aceptarProteccion" class="btn-primary" disabled>Continuar</button>
+                <button id="cancelarProteccion" class="btn-secondary">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button id="aceptarProteccion" class="btn-primary" disabled>
+                    <i class="fas fa-check"></i> Acepto y Continúo
+                </button>
             </div>
         </div>
     </div>
