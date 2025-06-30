@@ -1,1656 +1,1259 @@
+// Sistema de Excusas y Permisos - Colegio Gemelli Franciscanos
+// app.js - Lógica Principal con Supabase
+
 // Configuración de Supabase
-const SUPABASE_URL =
-    (typeof process !== 'undefined' && process.env && process.env.SUPABASE_URL) ||
-    (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.SUPABASE_URL) ||
-    '';
-const SUPABASE_ANON_KEY =
-    (typeof process !== 'undefined' && process.env && process.env.SUPABASE_ANON_KEY) ||
-    (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.SUPABASE_ANON_KEY) ||
-    '';
-
-// Variables de control global
-window.APP_INITIALIZED = false;
-window.PREVENT_ERROR_POPUP = true; // Prevenir popup de error genérico
-
-// Inicializar Supabase con manejo de errores
-let supabase;
-try {
-    if (typeof window.supabase === 'undefined') {
-        throw new Error('Supabase library not loaded');
-    }
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('✅ Supabase client initialized successfully with new database');
-    console.log('🔗 New Supabase URL:', SUPABASE_URL);
-} catch (error) {
-    console.error('Error initializing Supabase:', error);
-    // NO mostrar alert aquí, solo log
-    console.log('🔄 App will continue with fallback data');
-}
-
-// Estado global de la aplicación
-let currentStep = 1;
-let currentUser = null;
-let currentRole = null;
-let requestType = '';
-
-// Elementos del DOM
-const elements = {
-    loading: document.getElementById('loading'),
-    homeBtn: document.getElementById('homeBtn'),
-    consultBtn: document.getElementById('consultBtn'),
-    loginBtn: document.getElementById('loginBtn'),
-    userInfo: document.getElementById('userInfo'),
-    userName: document.getElementById('userName'),
-    logoutBtn: document.getElementById('logoutBtn'),
-    
-    // Views
-    homeView: document.getElementById('homeView'),
-    formView: document.getElementById('formView'),
-    consultView: document.getElementById('consultView'),
-    loginView: document.getElementById('loginView'),
-    dashboardView: document.getElementById('dashboardView'),
-    
-    // Form elements
-    requestForm: document.getElementById('requestForm'),
-    formTitle: document.getElementById('formTitle'),
-    backToHome: document.getElementById('backToHome'),
-    prevBtn: document.getElementById('prevBtn'),
-    nextBtn: document.getElementById('nextBtn'),
-    submitBtn: document.getElementById('submitBtn'),
-    
-    // Login elements
-    loginForm: document.getElementById('loginForm'),
-    
-    // Modal
-    successModal: document.getElementById('successModal'),
-    closeModal: document.getElementById('closeModal'),
-    generatedFiling: document.getElementById('generatedFiling')
+const SUPABASE_CONFIG = {
+    url: 'TU_SUPABASE_URL', // Reemplazar con tu URL de Supabase
+    key: 'TU_SUPABASE_ANON_KEY', // Reemplazar con tu clave anónima
+    useLocal: true // Cambiar a false cuando tengas Supabase configurado
 };
 
-// Función de test para verificar zona horaria y meses
-function testTimeZoneAndMonths() {
-    console.log('🧪 TESTING TIMEZONE AND MONTHS:');
-    console.log('Today in Colombia:', getTodayInColombia());
-    console.log('Current month index in Colombia:', getCurrentMonthInColombia());
-    
-    // Simular que estamos en 28 de junio
-    const testDate = '2024-06-28';
-    console.log(`📅 Testing with date: ${testDate}`);
-    
-    // Manualmente probar con junio (mes 5)
-    const june = 5;
-    const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    
-    console.log(`📅 Si estamos en ${monthNames[june]} (${june}), los meses disponibles serían:`);
-    const availableMonths = monthNames.slice(june + 1);
-    console.log('Meses disponibles:', availableMonths.join(', '));
-    
-    return availableMonths;
-}
-
-// Test de conexión simplificado
-async function testSupabaseConnection() {
-    try {
-        if (!supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
-            return false;
-        }
+class SistemaExcusas {
+    constructor() {
+        this.currentView = 'homeView';
+        this.currentUser = null;
+        this.tipoSolicitud = null;
+        this.solicitudes = [];
+        this.radicadoCounter = 1000;
+        this.supabase = null;
         
-        const { error } = await supabase
-            .from('students')
-            .select('count')
-            .limit(1);
-        
-        return !error;
-        
-    } catch (error) {
-        console.error('Test de conexión falló:', error.message);
-        return false;
+        this.init();
     }
-}
 
-function showNetworkError(message) {
-    console.log('ℹ️ Network info:', message);
-    // Solo log, no popup
-}
-
-// Escuchar eventos de red (simplificado)
-if (typeof window.addEventListener === 'function') {
-    window.addEventListener('online', () => {
-        console.log('🌐 Conexión restaurada');
-    });
-
-window.addEventListener('offline', () => {
-        console.log('📴 Conexión perdida');
-    });
-}
-
-// Inicialización de la aplicación
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOM loaded, initializing app...');
-    
-    try {
-        // Verificar que Supabase esté disponible
-        if (!supabase) {
-            throw new Error('Supabase not initialized');
-        }
-        
-        // Probar conexión
-        const connectionOk = await Promise.race([
-            testSupabaseConnection(),
-            new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Connection timeout')), 5000)
-            )
-        ]);
-        
-        if (!connectionOk) {
-            throw new Error('Database connection failed');
-        }
-        
-        setupEventListeners();
-        setupFormValidation();
-        
-        // Log de fecha actual en Colombia
-        const todayInColombia = getTodayInColombia();
-        const currentMonthInColombia = getCurrentMonthInColombia();
-        const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-        
-        console.log('🇨🇴 ZONA HORARIA COLOMBIANA (UTC-5):');
-        console.log('📅 Fecha actual en Colombia:', todayInColombia);
-        console.log('📅 Mes actual:', monthNames[currentMonthInColombia]);
-        console.log('📅 Meses que se mostrarán para excusas:', monthNames.slice(currentMonthInColombia + 1).join(', ') || 'enero-diciembre (siguiente año)');
-        console.log('🌐 Fecha UTC (referencia):', new Date().toISOString().split('T')[0]);
-        
-        // Ejecutar test automático
-        testTimeZoneAndMonths();
-        
-        // Intentar cargar estudiantes con timeout
-        console.log('Loading students...');
-        await Promise.race([
-            loadStudents(),
-            new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout loading students')), 10000)
-            )
-        ]);
-        
-        console.log('App initialized successfully');
-        
-    } catch (error) {
-        console.error('Error initializing app:', error);
-        
-        // Mostrar error al usuario pero permitir que la app funcione
-        const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = `
-            position: fixed; top: 20px; right: 20px; z-index: 10000;
-            background: #dc3545; color: white; padding: 15px; border-radius: 8px;
-            max-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        `;
-        errorDiv.innerHTML = `
-            <strong>⚠️ Advertencia:</strong><br>
-            Error al cargar datos iniciales. Algunas funciones pueden no estar disponibles.
-            <button onclick="this.parentElement.remove()" style="float:right; background:none; border:none; color:white; font-size:18px;">×</button>
-        `;
-        document.body.appendChild(errorDiv);
-        
-        // Remover automáticamente después de 10 segundos
-        setTimeout(() => {
-            if (errorDiv.parentElement) {
-                errorDiv.remove();
-            }
-        }, 10000);
-        
-        // Inicializar datos vacíos para que la app funcione
-        window.studentsData = [];
-        setupEventListeners();
-        setupFormValidation();
-    } finally {
-        hideLoading();
+    async init() {
+        await this.initSupabase();
+        this.setupEventListeners();
+        await this.checkAuthStatus();
+        this.updateStatus('🟢 Sistema listo');
+        this.showView('homeView');
     }
-});
 
-// Mostrar/ocultar indicador de datos fallback
-function showFallbackWarning(show = true) {
-    const warning = document.getElementById('fallbackDataWarning');
-    if (warning) {
-        warning.style.display = show ? 'flex' : 'none';
-        
-        if (show) {
-            console.log('📋 Showing fallback data warning to user');
-        } else {
-            console.log('📋 Hiding fallback data warning');
-        }
-    } else {
-        console.warn('⚠️ Fallback warning element not found in DOM');
-    }
-}
-
-// Event listeners para botón de reintentar
-function setupRetryButton() {
-    const retryBtn = document.getElementById('retryLoadStudents');
-    if (retryBtn) {
-        retryBtn.addEventListener('click', async () => {
-            console.log('🔄 Usuario solicita reconexión con Supabase...');
-            
+    // Inicializar Supabase
+    async initSupabase() {
+        if (!SUPABASE_CONFIG.useLocal && typeof createClient !== 'undefined') {
             try {
-                showLoading();
-                
-                // Intentar conectar con Supabase directamente
-                const students = await loadStudentsFromSupabase();
-                
-                // Si llegamos aquí, la conexión fue exitosa
-                window.studentsData = students;
-                window.dataSource = 'supabase';
-                showFallbackWarning(false);
-                
-                // Mostrar distribución por grados
-                const byGrade = students.reduce((acc, student) => {
-                    acc[student.grade] = (acc[student.grade] || 0) + 1;
-                    return acc;
-                }, {});
-                
-                const gradeInfo = Object.entries(byGrade)
-                    .map(([grade, count]) => `${grade}: ${count}`)
-                    .join('\n');
-                
-                alert(`🎉 ¡Conexión exitosa con Supabase!\n\n👥 Total: ${students.length} estudiantes\n\n📊 Por grado:\n${gradeInfo}`);
-                
+                this.supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+                console.log('Supabase inicializado correctamente');
             } catch (error) {
-                console.error('❌ Error en reconexión:', error);
-                
-                let errorMsg = '❌ No se pudo conectar con Supabase\n\n';
-                
-                if (error.message.includes('no existe')) {
-                    errorMsg += '🗃️ Problema: La tabla "students" no existe\n';
-                    errorMsg += '💡 Solución: Ejecute el SQL para crear las tablas';
-                } else if (error.message.includes('permisos')) {
-                    errorMsg += '🔒 Problema: Sin permisos de acceso\n';
-                    errorMsg += '💡 Solución: Configure las políticas RLS';
-                } else if (error.message.includes('vacía')) {
-                    errorMsg += '📋 Problema: La tabla está vacía\n';
-                    errorMsg += '💡 Solución: Inserte datos de estudiantes';
-                } else {
-                    errorMsg += `🔧 Error: ${error.message}\n`;
-                    errorMsg += '💡 Revise la consola para más detalles';
-                }
-                
-                errorMsg += '\n\n📋 Se mantienen los datos de ejemplo para que pueda probar la aplicación.';
-                
-                alert(errorMsg);
-            } finally {
-                hideLoading();
-            }
-        });
-    }
-}
-
-// Configurar event listeners
-function setupEventListeners() {
-    // Navegación
-    elements.homeBtn.addEventListener('click', () => showView('home'));
-    elements.consultBtn.addEventListener('click', () => showView('consult'));
-    elements.loginBtn.addEventListener('click', () => showView('login'));
-    elements.logoutBtn.addEventListener('click', logout);
-    
-    // Setup retry button
-    setupRetryButton();
-    
-    // Opciones de solicitud
-    document.querySelectorAll('.option-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-            requestType = card.dataset.type;
-            elements.formTitle.textContent = `Solicitud de ${requestType.charAt(0).toUpperCase() + requestType.slice(1)}`;
-            
-            // Mostrar/ocultar campos específicos según el tipo
-            const permissionFields = document.querySelector('.permission-fields');
-            const excuseFields = document.querySelector('.excuse-fields');
-            
-            if (requestType === 'permiso') {
-                permissionFields.style.display = 'grid';
-                excuseFields.style.display = 'none';
-                
-                // Hacer obligatorios los campos de permiso
-                document.getElementById('startTime').required = true;
-                document.getElementById('absenceDays').required = false;
-                document.getElementById('absenceMonth').required = false;
-            } else {
-                permissionFields.style.display = 'none';
-                excuseFields.style.display = 'grid';
-                
-                // Hacer obligatorios los campos de excusa
-                document.getElementById('startTime').required = false;
-                document.getElementById('absenceDays').required = true;
-                document.getElementById('absenceMonth').required = true;
-                
-                // Actualizar meses disponibles inmediatamente
-                updateAvailableMonths();
-            }
-            
-            showView('form');
-        });
-    });
-    
-    // Formulario
-    elements.backToHome.addEventListener('click', () => {
-        resetForm();
-        showView('home');
-    });
-    
-    elements.prevBtn.addEventListener('click', previousStep);
-    elements.nextBtn.addEventListener('click', nextStep);
-    elements.submitBtn.addEventListener('click', submitRequest);
-    elements.requestForm.addEventListener('submit', (e) => e.preventDefault());
-    
-    // Login
-    elements.loginForm.addEventListener('submit', handleLogin);
-    
-    // Tabs de login
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentRole = btn.dataset.role;
-        });
-    });
-    
-    // Modal
-    elements.closeModal.addEventListener('click', () => {
-        elements.successModal.style.display = 'none';
-        resetForm();
-        showView('home');
-    });
-    
-    // Consulta de radicado
-    document.getElementById('consultBtn').addEventListener('click', consultFiling);
-    
-    // Botón de prueba de conexión
-    const testConnectionBtn = document.getElementById('testConnectionBtn');
-    if (testConnectionBtn) {
-        testConnectionBtn.addEventListener('click', async () => {
-            try {
-                showLoading();
-                
-                console.log('🔧 === DIAGNÓSTICO COMPLETO ===');
-                
-                // 1. Info básica
-                const todayInColombia = getTodayInColombia();
-                const currentMonth = getCurrentMonthInColombia();
-                const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-                
-                // 2. Estado actual
-                const dataSource = window.dataSource || 'desconocida';
-                const studentCount = window.studentsData?.length || 0;
-                
-                // 3. Test de conexión con Supabase
-                let supabaseStatus = '❌ No probado';
-                let supabaseDetails = '';
-                
-                try {
-                    const students = await loadStudentsFromSupabase();
-                    supabaseStatus = '✅ CONECTADO';
-                    supabaseDetails = `Estudiantes en DB: ${students.length}`;
-                    
-                    // Actualizar datos si la conexión funciona
-                    window.studentsData = students;
-                    window.dataSource = 'supabase';
-                    showFallbackWarning(false);
-                    
-                } catch (error) {
-                    supabaseStatus = '❌ ERROR';
-                    supabaseDetails = error.message;
-                }
-                
-                // 4. Test básico de configuración
-                const configTest = {
-                    url: !!SUPABASE_URL,
-                    apiKey: !!SUPABASE_ANON_KEY,
-                    client: !!supabase,
-                    network: navigator.onLine
-                };
-                
-                // Reporte final
-                let report = `🔍 DIAGNÓSTICO DE CONEXIÓN\n\n`;
-                report += `📅 Fecha Colombia: ${todayInColombia}\n`;
-                report += `📅 Mes actual: ${monthNames[currentMonth]}\n\n`;
-                
-                report += `🔧 CONFIGURACIÓN:\n`;
-                report += `URL: ${configTest.url ? '✅' : '❌'} ${configTest.url ? SUPABASE_URL : 'No configurada'}\n`;
-                report += `API Key: ${configTest.apiKey ? '✅' : '❌'} ${configTest.apiKey ? 'Configurada' : 'No configurada'}\n`;
-                report += `Cliente: ${configTest.client ? '✅' : '❌'} ${configTest.client ? 'Inicializado' : 'Error'}\n`;
-                report += `Red: ${configTest.network ? '✅' : '❌'} ${configTest.network ? 'Online' : 'Offline'}\n\n`;
-                
-                report += `📡 CONEXIÓN SUPABASE: ${supabaseStatus}\n`;
-                if (supabaseDetails) {
-                    report += `Detalles: ${supabaseDetails}\n`;
-                }
-                report += `\n`;
-                
-                report += `📊 ESTADO ACTUAL:\n`;
-                report += `Fuente de datos: ${dataSource}\n`;
-                report += `Estudiantes disponibles: ${studentCount}\n\n`;
-                
-                // Sugerencias
-                if (supabaseStatus.includes('ERROR')) {
-                    report += `💡 PARA SOLUCIONAR:\n`;
-                    
-                    if (supabaseDetails.includes('no existe')) {
-                        report += `1. Vaya a https://zkbnpjmtwkhcvqizpmhj.supabase.co\n`;
-                        report += `2. En SQL Editor, ejecute paso a paso el SQL\n`;
-                        report += `3. Comience con: CREATE TABLE students (...)\n`;
-                    } else if (supabaseDetails.includes('permisos')) {
-                        report += `1. Configure políticas RLS en Supabase\n`;
-                        report += `2. Ejecute: CREATE POLICY "Allow public read students"...\n`;
-                    } else if (supabaseDetails.includes('vacía')) {
-                        report += `1. Inserte datos de ejemplo\n`;
-                        report += `2. Ejecute: INSERT INTO students (code, full_name, grade)...\n`;
-                    } else {
-                        report += `1. Verifique configuración de Supabase\n`;
-                        report += `2. Revise la consola del navegador (F12)\n`;
-                        report += `3. Confirme que la URL y API Key son correctas\n`;
-                    }
-                } else {
-                    report += `🎉 ¡TODO FUNCIONA PERFECTAMENTE!`;
-                }
-                
-                alert(report);
-                
-            } catch (error) {
-                console.error('Error en diagnóstico:', error);
-                alert(`❌ Error en diagnóstico: ${error.message}`);
-            } finally {
-                hideLoading();
-            }
-        });
-    }
-}
-
-// Configurar validación del formulario
-function setupFormValidation() {
-    // Configurar fechas mínimas
-    setMinimumDates();
-    
-    // Relación con estudiante
-    document.getElementById('relationship').addEventListener('change', (e) => {
-        const otherGroup = document.getElementById('otherRelationshipGroup');
-        const otherInput = document.getElementById('otherRelationship');
-        
-        if (e.target.value === 'otro') {
-            otherGroup.style.display = 'block';
-            otherInput.required = true;
-        } else {
-            otherGroup.style.display = 'none';
-            otherInput.required = false;
-        }
-    });
-    
-    // Teléfono - solo números
-    document.getElementById('registrantPhone').addEventListener('input', (e) => {
-        e.target.value = e.target.value.replace(/[^0-9]/g, '');
-    });
-    
-    // Grado del estudiante
-    document.getElementById('studentGrade').addEventListener('change', loadStudentsByGrade);
-    
-    // Selección de estudiante
-    document.getElementById('studentSelect').addEventListener('change', (e) => {
-        const selectedOption = e.target.selectedOptions[0];
-        if (selectedOption && selectedOption.dataset.code) {
-            document.getElementById('studentCode').value = selectedOption.dataset.code;
-        }
-    });
-    
-    // Validación de fechas con actualización dinámica
-    document.getElementById('startDate').addEventListener('change', (e) => {
-        validateDates();
-        // Actualizar fecha mínima del campo endDate basado en startDate
-        const endDateInput = document.getElementById('endDate');
-        if (e.target.value) {
-            endDateInput.min = e.target.value;
-        }
-        
-        // Actualizar meses disponibles para excusas
-        if (requestType === 'excusa') {
-            updateAvailableMonths();
-        }
-    });
-    
-    document.getElementById('endDate').addEventListener('change', validateDates);
-}
-
-// Mostrar/ocultar loading
-function showLoading() {
-    if (elements.loading) {
-        elements.loading.style.display = 'flex';
-        
-        // Mostrar botón de recarga después de 10 segundos
-        setTimeout(() => {
-            const reloadBtn = document.getElementById('reloadBtn');
-            if (reloadBtn && elements.loading.style.display === 'flex') {
-                reloadBtn.style.display = 'block';
-            }
-        }, 10000);
-        
-        // Auto-hide loading después de 30 segundos como fallback
-        setTimeout(() => {
-            if (elements.loading && elements.loading.style.display === 'flex') {
-                console.warn('Loading timeout - hiding automatically');
-                hideLoading();
-            }
-        }, 30000);
-    }
-}
-
-function hideLoading() {
-    if (elements.loading) {
-        elements.loading.style.display = 'none';
-        const reloadBtn = document.getElementById('reloadBtn');
-        if (reloadBtn) {
-            reloadBtn.style.display = 'none';
-        }
-    }
-}
-
-// Navegación entre vistas
-function showView(viewName) {
-    document.querySelectorAll('.view').forEach(view => {
-        if (view.classList && typeof view.classList.remove === 'function') {
-            view.classList.remove('active');
-        }
-    });
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        if (btn.classList && typeof btn.classList.remove === 'function') {
-            btn.classList.remove('active');
-        }
-    });
-    
-    switch(viewName) {
-        case 'home':
-            elements.homeView.classList.add('active');
-            elements.homeBtn.classList.add('active');
-            break;
-        case 'form':
-            elements.formView.classList.add('active');
-            break;
-        case 'consult':
-            elements.consultView.classList.add('active');
-            elements.consultBtn.classList.add('active');
-            break;
-        case 'login':
-            elements.loginView.classList.add('active');
-            elements.loginBtn.classList.add('active');
-            break;
-        case 'dashboard':
-            elements.dashboardView.classList.add('active');
-            loadDashboard();
-            break;
-    }
-}
-
-// Función loadStudents simplificada - SOLO retorna datos fallback
-async function loadStudents() {
-    console.log('📚 Cargando datos de estudiantes...');
-    
-    // SIEMPRE usar datos fallback para esta función
-    const fallbackStudents = getFallbackStudents();
-    
-    window.studentsData = fallbackStudents;
-    window.dataSource = 'fallback';
-    
-    console.log('✅ Datos fallback listos:', fallbackStudents.length, 'estudiantes');
-    
-    return fallbackStudents;
-}
-
-// Nueva función específica para cargar desde Supabase (sin fallback interno)
-async function loadStudentsFromSupabase() {
-    console.log('📡 Conectando con Supabase...');
-    console.log('🔗 URL:', SUPABASE_URL);
-    console.log('🔑 API Key presente:', !!SUPABASE_ANON_KEY);
-    
-    if (!supabase) {
-        throw new Error('Cliente Supabase no inicializado');
-    }
-    
-    // Test de conexión básica primero
-    const { data: connectionTest, error: connectionError } = await supabase
-        .from('students')
-        .select('count')
-        .limit(1);
-    
-    if (connectionError) {
-        console.error('❌ Error de conexión:', connectionError);
-        
-        if (connectionError.code === 'PGRST116') {
-            throw new Error('Tabla "students" no existe - Ejecute el SQL');
-        }
-        if (connectionError.code === 'PGRST301') {
-            throw new Error('Sin permisos - Configure políticas RLS');
-        }
-        if (connectionError.code === '42P01') {
-            throw new Error('Tabla no encontrada - Verifique base de datos');
-        }
-        
-        throw new Error(`Error Supabase: ${connectionError.message}`);
-    }
-    
-    console.log('✅ Conexión básica exitosa');
-    
-    // Cargar estudiantes
-    const { data: students, error: studentsError } = await supabase
-        .from('students')
-        .select('*')
-        .order('grade', { ascending: true })
-        .order('full_name', { ascending: true });
-    
-    if (studentsError) {
-        console.error('❌ Error cargando estudiantes:', studentsError);
-        throw new Error(`Error datos: ${studentsError.message}`);
-    }
-    
-    if (!students || students.length === 0) {
-        throw new Error('Tabla vacía - Inserte datos de estudiantes');
-    }
-    
-    console.log('✅ Estudiantes cargados desde Supabase:', students.length);
-    return students;
-}
-
-// Función separada para datos fallback
-function getFallbackStudents() {
-    return [
-        {id: 1, code: '0001', full_name: 'Ana María González', grade: 'pre-jardín'},
-        {id: 2, code: '0002', full_name: 'Carlos Pérez', grade: 'jardín'},
-        {id: 3, code: '0003', full_name: 'Laura Rodríguez', grade: 'transición'},
-        {id: 4, code: '0004', full_name: 'Juan Martínez', grade: 'primero'},
-        {id: 5, code: '0005', full_name: 'Sofía López', grade: 'segundo'},
-        {id: 6, code: '0006', full_name: 'Diego Hernández', grade: 'tercero'},
-        {id: 7, code: '0007', full_name: 'Valentina Castro', grade: 'cuarto'},
-        {id: 8, code: '0008', full_name: 'Andrés Ruiz', grade: 'quinto'},
-        {id: 9, code: '0009', full_name: 'Isabella Torres', grade: 'sexto'},
-        {id: 10, code: '0010', full_name: 'Santiago Moreno', grade: 'séptimo'},
-        {id: 11, code: '0011', full_name: 'Camila Jiménez', grade: 'octavo'},
-        {id: 12, code: '0012', full_name: 'Mateo Vargas', grade: 'noveno'},
-        {id: 13, code: '0013', full_name: 'Antonia Sánchez', grade: 'décimo'},
-        {id: 14, code: '0014', full_name: 'Nicolás Ramírez', grade: 'undécimo'}
-    ];
-}
-
-// Cargar estudiantes por grado
-function loadStudentsByGrade() {
-    const gradeSelect = document.getElementById('studentGrade');
-    const studentSelect = document.getElementById('studentSelect');
-    const selectedGrade = gradeSelect.value;
-    
-    studentSelect.innerHTML = '<option value="">Seleccione un estudiante...</option>';
-    studentSelect.disabled = !selectedGrade;
-    
-    if (selectedGrade && window.studentsData) {
-        const studentsInGrade = window.studentsData.filter(student => student.grade === selectedGrade);
-        
-        studentsInGrade.forEach(student => {
-            const option = document.createElement('option');
-            option.value = student.id;
-            option.textContent = student.full_name;
-            option.dataset.code = student.code;
-            studentSelect.appendChild(option);
-        });
-        
-        studentSelect.disabled = false;
-    }
-}
-
-// Validar fechas
-function validateDates() {
-    const startDate = new Date(document.getElementById('startDate').value);
-    const endDate = new Date(document.getElementById('endDate').value);
-    const today = new Date();
-    
-    // Establecer hora a medianoche para comparar solo fechas
-    today.setHours(0, 0, 0, 0);
-    startDate.setHours(0, 0, 0, 0);
-    
-    // PERMITIR fecha de hoy y fechas futuras, pero NO fechas anteriores
-    if (startDate < today) {
-        alert('No se pueden registrar solicitudes para fechas pasadas. Puede registrar para HOY o fechas futuras.');
-        document.getElementById('startDate').value = '';
-        document.getElementById('startDate').focus();
-        return false;
-    }
-    
-    if (endDate) {
-        endDate.setHours(0, 0, 0, 0);
-        if (endDate < startDate) {
-            alert('La fecha de fin no puede ser anterior a la fecha de inicio');
-            document.getElementById('endDate').value = '';
-            document.getElementById('endDate').focus();
-            return false;
-        }
-        
-        // La fecha de fin tampoco puede ser anterior a hoy
-        if (endDate < today) {
-            alert('La fecha de fin no puede ser anterior a hoy');
-            document.getElementById('endDate').value = '';
-            document.getElementById('endDate').focus();
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-// Actualizar meses disponibles para mostrar meses FUTUROS
-function updateAvailableMonths() {
-    const startDate = document.getElementById('startDate').value;
-    const monthSelect = document.getElementById('absenceMonth');
-    
-    if (!startDate || !monthSelect) return;
-    
-    const selectedDate = new Date(startDate + 'T00:00:00');
-    
-    // Obtener fecha y mes actual en Colombia
-    const todayString = getTodayInColombia();
-    const currentDate = new Date(todayString + 'T00:00:00');
-    const currentMonthInColombia = getCurrentMonthInColombia(); // 0-11
-    
-    // Usar la fecha más tardía entre hoy y la fecha seleccionada
-    const referenceDate = selectedDate > currentDate ? selectedDate : currentDate;
-    const referenceMonth = selectedDate > currentDate ? selectedDate.getMonth() : currentMonthInColombia;
-    
-    const months = [
-        { value: 'enero', index: 0 },
-        { value: 'febrero', index: 1 },
-        { value: 'marzo', index: 2 },
-        { value: 'abril', index: 3 },
-        { value: 'mayo', index: 4 },
-        { value: 'junio', index: 5 },
-        { value: 'julio', index: 6 },
-        { value: 'agosto', index: 7 },
-        { value: 'septiembre', index: 8 },
-        { value: 'octubre', index: 9 },
-        { value: 'noviembre', index: 10 },
-        { value: 'diciembre', index: 11 }
-    ];
-    
-    // Limpiar opciones existentes
-    monthSelect.innerHTML = '<option value="">Seleccione el mes...</option>';
-    
-    // Agregar solo los meses FUTUROS (desde el mes siguiente hacia adelante)
-    months.forEach(month => {
-        if (month.index > referenceMonth) {
-            const option = document.createElement('option');
-            option.value = month.value;
-            option.textContent = month.value.charAt(0).toUpperCase() + month.value.slice(1);
-            monthSelect.appendChild(option);
-        }
-    });
-    
-    // Si estamos en diciembre, mostrar todos los meses del año siguiente
-    if (referenceMonth === 11) {
-        // Agregar meses del año siguiente
-        months.forEach(month => {
-            const option = document.createElement('option');
-            option.value = month.value;
-            option.textContent = month.value.charAt(0).toUpperCase() + month.value.slice(1) + ' (siguiente año)';
-            monthSelect.appendChild(option);
-        });
-    }
-    
-    const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    console.log(`📅 Mes actual en Colombia: ${monthNames[currentMonthInColombia]} (${currentMonthInColombia})`);
-    console.log(`📅 Mostrando meses desde: ${monthNames[referenceMonth + 1] || 'enero (siguiente año)'} en adelante`);
-}
-
-// Configurar fecha mínima en los campos de fecha (HOY, no mañana)
-function setMinimumDates() {
-    const today = new Date();
-    const todayString = today.toISOString().split('T')[0];
-    
-    const startDateInput = document.getElementById('startDate');
-    const endDateInput = document.getElementById('endDate');
-    
-    if (startDateInput) {
-        startDateInput.min = todayString; // Permite desde HOY
-    }
-    if (endDateInput) {
-        endDateInput.min = todayString; // Permite desde HOY
-    }
-}
-
-// Navegación del stepper
-function nextStep() {
-    if (validateCurrentStep()) {
-        if (currentStep < 5) {
-            currentStep++;
-            updateStepper();
-            updateFormStep();
-        }
-    }
-}
-
-function previousStep() {
-    if (currentStep > 1) {
-        currentStep--;
-        updateStepper();
-        updateFormStep();
-    }
-}
-
-function updateStepper() {
-    document.querySelectorAll('.step').forEach((step, index) => {
-        step.classList.toggle('active', index + 1 === currentStep);
-        step.classList.toggle('completed', index + 1 < currentStep);
-    });
-}
-
-function updateFormStep() {
-    document.querySelectorAll('.form-step').forEach((step, index) => {
-        step.classList.toggle('active', index + 1 === currentStep);
-    });
-    
-    // Actualizar botones
-    elements.prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
-    elements.nextBtn.style.display = currentStep < 5 ? 'block' : 'none';
-    elements.submitBtn.style.display = currentStep === 5 ? 'block' : 'none';
-    
-    // Actualizar resumen en el paso 5
-    if (currentStep === 5) {
-        updateSummary();
-    }
-}
-
-// Validar paso actual
-function validateCurrentStep() {
-    const currentStepElement = document.querySelector(`.form-step[data-step="${currentStep}"]`);
-    const requiredInputs = currentStepElement.querySelectorAll('input[required], select[required], textarea[required]');
-    
-    for (let input of requiredInputs) {
-        if (!input.value.trim()) {
-            input.focus();
-            alert(`Por favor complete el campo: ${input.previousElementSibling.textContent}`);
-            return false;
-        }
-        
-        if (input.type === 'email' && !isValidEmail(input.value)) {
-            input.focus();
-            alert('Por favor ingrese un correo electrónico válido');
-            return false;
-        }
-        
-        if (input.type === 'tel' && input.value.length < 10) {
-            input.focus();
-            alert('El teléfono debe tener al menos 10 dígitos');
-            return false;
-        }
-    }
-    
-    // Validaciones específicas por paso
-    if (currentStep === 1) {
-        if (!document.getElementById('dataProtection').checked) {
-            alert('Debe aceptar el tratamiento de datos personales para continuar');
-            return false;
-        }
-    }
-    
-    if (currentStep === 3) {
-        const studentSelect = document.getElementById('studentSelect');
-        const studentGrade = document.getElementById('studentGrade');
-        
-        if (!studentGrade.value) {
-            alert('Debe seleccionar un grado');
-            studentGrade.focus();
-            return false;
-        }
-        
-        if (!studentSelect.value || studentSelect.value === '') {
-            alert('Debe seleccionar un estudiante de la lista');
-            studentSelect.focus();
-            return false;
-        }
-        
-        // Verificar que el estudiante seleccionado sea válido
-        const selectedOption = studentSelect.selectedOptions[0];
-        if (!selectedOption || !selectedOption.dataset.code) {
-            alert('La selección del estudiante no es válida. Por favor seleccione nuevamente.');
-            studentSelect.focus();
-            return false;
-        }
-        
-        console.log('Student validation passed:', {
-            grade: studentGrade.value,
-            studentId: studentSelect.value,
-            studentName: selectedOption.textContent,
-            studentCode: selectedOption.dataset.code
-        });
-    }
-    
-    if (currentStep === 4) {
-        // Validaciones específicas para el paso 4
-        if (!validateDates()) {
-            return false;
-        }
-        
-        // Validaciones específicas para permisos
-        if (requestType === 'permiso') {
-            const startTime = document.getElementById('startTime').value;
-            if (!startTime.trim()) {
-                alert('La hora de salida es obligatoria para permisos');
-                document.getElementById('startTime').focus();
-                return false;
+                console.warn('Error al inicializar Supabase, usando almacenamiento local:', error);
+                SUPABASE_CONFIG.useLocal = true;
             }
         }
         
-        // Validaciones específicas para excusas
-        if (requestType === 'excusa') {
-            const absenceDays = document.getElementById('absenceDays').value;
-            const absenceMonth = document.getElementById('absenceMonth').value;
-            
-            if (!absenceDays.trim()) {
-                alert('Los días de inasistencia son obligatorios para excusas');
-                document.getElementById('absenceDays').focus();
-                return false;
-            }
-            
-            if (!absenceMonth) {
-                alert('El mes de inasistencia es obligatorio para excusas');
-                document.getElementById('absenceMonth').focus();
-                return false;
-            }
-        }
-        
-        // Validación común: reason y description
-        const reason = document.getElementById('reason').value;
-        const description = document.getElementById('description').value;
-        
-        if (!reason) {
-            alert('Debe seleccionar un motivo para la solicitud');
-            document.getElementById('reason').focus();
-            return false;
-        }
-        
-        if (!description.trim()) {
-            alert('La descripción detallada es obligatoria');
-            document.getElementById('description').focus();
-            return false;
+        if (SUPABASE_CONFIG.useLocal) {
+            console.log('Usando almacenamiento local para desarrollo');
+            await this.loadLocalData();
         }
     }
-    
-    return true;
-}
 
-// Validar email
-function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-// Actualizar resumen
-function updateSummary() {
-    const summaryContent = document.getElementById('summaryContent');
-    const formData = getFormData();
-    
-    summaryContent.innerHTML = `
-        <div class="summary-item">
-            <strong>Tipo de solicitud:</strong> ${requestType.charAt(0).toUpperCase() + requestType.slice(1)}
-        </div>
-        <div class="summary-item">
-            <strong>Solicitante:</strong> ${formData.registrantName} (${formData.relationship})
-        </div>
-        <div class="summary-item">
-            <strong>Estudiante:</strong> ${document.getElementById('studentSelect').selectedOptions[0]?.textContent || ''}
-        </div>
-        <div class="summary-item">
-            <strong>Código:</strong> ${formData.studentCode}
-        </div>
-        <div class="summary-item">
-            <strong>Fecha(s):</strong> ${formData.startDate} ${formData.endDate ? `- ${formData.endDate}` : ''}
-        </div>
-        <div class="summary-item">
-            <strong>Motivo:</strong> ${document.getElementById('reason').selectedOptions[0]?.textContent || ''}
-        </div>
-        <div class="summary-item">
-            <strong>Descripción:</strong> ${formData.description}
-        </div>
-    `;
-}
-
-// Obtener datos del formulario
-function getFormData() {
-    return {
-        type: requestType,
-        registrantName: document.getElementById('registrantName').value,
-        registrantEmail: document.getElementById('registrantEmail').value,
-        registrantPhone: document.getElementById('registrantPhone').value,
-        relationship: document.getElementById('relationship').value,
-        otherRelationship: document.getElementById('otherRelationship').value,
-        studentId: parseInt(document.getElementById('studentSelect').value),
-        studentCode: document.getElementById('studentCode').value,
-        startDate: document.getElementById('startDate').value,
-        endDate: document.getElementById('endDate').value,
-        reason: document.getElementById('reason').value,
-        description: document.getElementById('description').value,
-        dataProtectionAccepted: document.getElementById('dataProtection').checked
-    };
-}
-
-// Enviar solicitud
-async function submitRequest() {
-    if (!supabase) {
-        alert('Error: No hay conexión con la base de datos');
-        return;
-    }
-    
-    try {
-        showLoading();
+    // Cargar datos locales para desarrollo
+    async loadLocalData() {
+        this.solicitudes = this.loadFromStorage('solicitudes') || [];
+        this.radicadoCounter = this.loadFromStorage('radicadoCounter') || 1000;
         
-        const formData = getFormData();
-        console.log('Submitting request:', formData);
-        
-        // Validación final antes del envío
-        if (!formData.student_id || isNaN(formData.student_id)) {
-            throw new Error('Debe seleccionar un estudiante válido');
-        }
-        
-        if (!formData.data_protection_accepted) {
-            throw new Error('Debe aceptar el tratamiento de datos personales');
-        }
-        
-        // Limpiar campos vacíos
-        Object.keys(formData).forEach(key => {
-            if (formData[key] === '' || formData[key] === 'undefined') {
-                formData[key] = null;
-            }
-        });
-        
-        const { data, error } = await supabase
-            .from('excuse_permission_requests')
-            .insert([formData])
-            .select();
-            
-        if (error) {
-            console.error('Supabase error:', error);
-            throw new Error(`Error en la base de datos: ${error.message}`);
-        }
-        
-        if (!data || data.length === 0) {
-            throw new Error('No se recibió confirmación de la base de datos');
-        }
-        
-        const filingNumber = data[0].filing_number || `RAD${Date.now()}`;
-        console.log('Request submitted successfully:', filingNumber);
-        
-        // Ocultar debug info en caso de éxito
-        const debugInfo = document.getElementById('debugInfo');
-        if (debugInfo) {
-            debugInfo.style.display = 'none';
-        }
-        
-        elements.generatedFiling.textContent = filingNumber;
-        elements.successModal.style.display = 'flex';
-        
-    } catch (error) {
-        console.error('Error al enviar solicitud:', error);
-        alert(`Error al enviar la solicitud: ${error.message}`);
-    } finally {
-        hideLoading();
-    }
-}
-
-// Resetear formulario
-function resetForm() {
-    console.log('🔄 Resetting form...');
-    
-    currentStep = 1;
-    elements.requestForm.reset();
-    updateStepper();
-    updateFormStep();
-    
-    // Limpiar campos específicos
-    document.getElementById('otherRelationshipGroup').style.display = 'none';
-    document.getElementById('studentSelect').disabled = true;
-    document.getElementById('studentCode').value = '';
-    
-    // Ocultar campos específicos de tipo
-    document.querySelector('.permission-fields').style.display = 'none';
-    document.querySelector('.excuse-fields').style.display = 'none';
-    
-    // Ocultar debug info
-    const debugInfo = document.getElementById('debugInfo');
-    if (debugInfo) {
-        debugInfo.style.display = 'none';
-    }
-    
-    // Mantener el estado del indicador fallback (no resetearlo)
-    // showFallbackWarning permanece como está
-    
-    // Limpiar validaciones requeridas
-    document.getElementById('startTime').required = false;
-    document.getElementById('absenceDays').required = false;
-    document.getElementById('absenceMonth').required = false;
-    
-    // Reset checkboxes
-    document.getElementById('medicalCertificate').checked = false;
-    document.getElementById('incapacityCertificate').checked = false;
-    document.getElementById('dataProtection').checked = false;
-    
-    // Restablecer fechas mínimas (usando zona horaria colombiana)
-    setMinimumDates();
-    
-    // Restablecer selector de meses al estado original
-    const monthSelect = document.getElementById('absenceMonth');
-    monthSelect.innerHTML = `
-        <option value="">Seleccione el mes...</option>
-        <option value="enero">Enero</option>
-        <option value="febrero">Febrero</option>
-        <option value="marzo">Marzo</option>
-        <option value="abril">Abril</option>
-        <option value="mayo">Mayo</option>
-        <option value="junio">Junio</option>
-        <option value="julio">Julio</option>
-        <option value="agosto">Agosto</option>
-        <option value="septiembre">Septiembre</option>
-        <option value="octubre">Octubre</option>
-        <option value="noviembre">Noviembre</option>
-        <option value="diciembre">Diciembre</option>
-    `;
-    
-    // Limpiar tipo de request
-    requestType = '';
-    
-    console.log('✅ Form reset completed');
-}
-
-// Consultar radicado
-async function consultFiling() {
-    const filingNumber = document.getElementById('filingNumber').value.trim();
-    if (!filingNumber) {
-        alert('Por favor ingrese un número de radicado');
-        return;
-    }
-    
-    if (!supabase) {
-        alert('Error: No hay conexión con la base de datos');
-        return;
-    }
-    
-    try {
-        showLoading();
-        console.log('Consulting filing number:', filingNumber);
-        
-        const { data, error } = await supabase
-            .from('excuse_permission_requests')
-            .select(`
-                *,
-                students(full_name, grade),
-                coordinators(full_name),
-                teachers(full_name)
-            `)
-            .eq('filing_number', filingNumber)
-            .single();
-            
-        if (error) {
-            console.error('Consult error:', error);
-            if (error.code === 'PGRST116') {
-                throw new Error(`No se encontró información para el radicado: ${filingNumber}`);
-            }
-            throw new Error(`Error al consultar: ${error.message}`);
-        }
-        
-        if (!data) {
-            throw new Error(`No se encontró información para el radicado: ${filingNumber}`);
-        }
-        
-        console.log('Filing found:', data);
-        displayConsultResult(data);
-        
-    } catch (error) {
-        console.error('Error al consultar radicado:', error);
-        document.getElementById('consultResult').innerHTML = `
-            <div class="alert alert-error">
-                ${error.message}
-            </div>
-        `;
-    } finally {
-        hideLoading();
-    }
-}
-
-// Mostrar resultado de consulta
-function displayConsultResult(data) {
-    const resultDiv = document.getElementById('consultResult');
-    
-    const getStatusBadge = (status) => {
-        const statusMap = {
-            pending: { text: 'Pendiente', class: 'warning' },
-            approved: { text: 'Aprobado', class: 'success' },
-            rejected: { text: 'Rechazado', class: 'error' }
+        // Usuarios predefinidos para desarrollo local
+        this.usuariosLocal = {
+            coordinadores: [
+                { id: 'coord1', usuario: 'coord1', password: 'coord123', nombre: 'María González', tipo: 'coordinador', email: 'maria.gonzalez@gemelli.edu.co' },
+                { id: 'directora', usuario: 'directora', password: 'dir123', nombre: 'Ana Patricia López', tipo: 'coordinador', email: 'ana.lopez@gemelli.edu.co' }
+            ],
+            docentes: [
+                { id: 'doc1', usuario: 'doc1', password: 'doc123', nombre: 'Carlos Ramírez', grado: '5°', tipo: 'docente', email: 'carlos.ramirez@gemelli.edu.co' },
+                { id: 'doc2', usuario: 'doc2', password: 'doc123', nombre: 'Laura Martínez', grado: '8°', tipo: 'docente', email: 'laura.martinez@gemelli.edu.co' },
+                { id: 'doc3', usuario: 'doc3', password: 'doc123', nombre: 'Pedro Silva', grado: '11°', tipo: 'docente', email: 'pedro.silva@gemelli.edu.co' }
+            ],
+            admin: [
+                { id: 'admin', usuario: 'admin', password: 'admin123', nombre: 'Administrador Sistema', tipo: 'admin', email: 'admin@gemelli.edu.co' }
+            ]
         };
-        const statusInfo = statusMap[status] || { text: status, class: 'info' };
-        return `<span class="badge badge-${statusInfo.class}">${statusInfo.text}</span>`;
-    };
-    
-    let detailsHTML = `
-        <div class="request-details">
-            <h3>📋 Información de la Solicitud</h3>
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <strong>Radicado:</strong> ${data.filing_number}
-                </div>
-                <div class="detail-item">
-                    <strong>Tipo:</strong> ${data.type.charAt(0).toUpperCase() + data.type.slice(1)}
-                </div>
-                <div class="detail-item">
-                    <strong>Estudiante:</strong> ${data.students.full_name} (${data.students.grade})
-                </div>
-                <div class="detail-item">
-                    <strong>Solicitante:</strong> ${data.registrant_name}
-                </div>
-                <div class="detail-item">
-                    <strong>Fecha:</strong> ${data.start_date} ${data.end_date ? `- ${data.end_date}` : ''}
-                </div>
-    `;
-    
-    // Información específica para permisos
-    if (data.type === 'permiso') {
-        if (data.start_time) {
-            detailsHTML += `
-                <div class="detail-item">
-                    <strong>Hora de salida:</strong> ${data.start_time}
-                </div>
-            `;
-        }
-        if (data.end_time) {
-            detailsHTML += `
-                <div class="detail-item">
-                    <strong>Hora de regreso:</strong> ${data.end_time}
-                </div>
-            `;
-        }
     }
-    
-    // Información específica para excusas
-    if (data.type === 'excusa') {
-        if (data.absence_days) {
-            detailsHTML += `
-                <div class="detail-item">
-                    <strong>Días de inasistencia:</strong> ${data.absence_days}
-                </div>
-            `;
-        }
-        if (data.absence_month) {
-            detailsHTML += `
-                <div class="detail-item">
-                    <strong>Mes:</strong> ${data.absence_month}
-                </div>
-            `;
-        }
-        
-        const certificates = [];
-        if (data.medical_certificate) certificates.push('Certificado médico');
-        if (data.incapacity_certificate) certificates.push('Incapacidad');
-        
-        if (certificates.length > 0) {
-            detailsHTML += `
-                <div class="detail-item">
-                    <strong>Documentos:</strong> ${certificates.join(', ')}
-                </div>
-            `;
-        }
-    }
-    
-    detailsHTML += `
-                <div class="detail-item">
-                    <strong>Motivo:</strong> ${data.reason}
-                </div>
-                <div class="detail-item full-width">
-                    <strong>Descripción:</strong> ${data.description}
-                </div>
-            </div>
-            
-            <div class="status-section">
-                <h4>📊 Estado de Aprobaciones</h4>
-                <div class="status-grid">
-                    <div class="status-item">
-                        <strong>Coordinación de Convivencia:</strong> ${getStatusBadge(data.coordinator_status)}
-                        ${data.coordinator_comments ? `<p class="comments">${data.coordinator_comments}</p>` : ''}
-                        ${data.coordinator_date ? `<small>Fecha: ${new Date(data.coordinator_date).toLocaleDateString()}</small>` : ''}
-                    </div>
-                    <div class="status-item">
-                        <strong>Coordinación Académica:</strong> ${getStatusBadge(data.academic_coordinator_status || 'pending')}
-                        ${data.academic_coordinator_comments ? `<p class="comments">${data.academic_coordinator_comments}</p>` : ''}
-                        ${data.academic_coordinator_date ? `<small>Fecha: ${new Date(data.academic_coordinator_date).toLocaleDateString()}</small>` : ''}
-                    </div>
-                    <div class="status-item">
-                        <strong>Docente:</strong> ${getStatusBadge(data.teacher_status)}
-                        ${data.teacher_comments ? `<p class="comments">${data.teacher_comments}</p>` : ''}
-                        ${data.teacher_assignments ? `<p class="assignments"><strong>Trabajos asignados:</strong> ${data.teacher_assignments}</p>` : ''}
-                        ${data.teacher_date ? `<small>Fecha: ${new Date(data.teacher_date).toLocaleDateString()}</small>` : ''}
-                    </div>
-                    <div class="status-item">
-                        <strong>Asesor de Grupo:</strong> ${getStatusBadge(data.group_advisor_status || 'pending')}
-                        ${data.group_advisor_comments ? `<p class="comments">${data.group_advisor_comments}</p>` : ''}
-                        ${data.group_advisor_date ? `<small>Fecha: ${new Date(data.group_advisor_date).toLocaleDateString()}</small>` : ''}
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    resultDiv.innerHTML = detailsHTML;
-}
 
-// Login
-async function handleLogin(e) {
-    e.preventDefault();
-    
-    if (!supabase) {
-        alert('Error: No hay conexión con la base de datos');
-        return;
-    }
-    
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    
-    if (!currentRole) {
-        alert('Por favor seleccione un tipo de usuario');
-        return;
-    }
-    
-    if (!username || !password) {
-        alert('Por favor complete todos los campos');
-        return;
-    }
-    
-    try {
-        showLoading();
-        
-        const tableName = currentRole === 'coordinator' ? 'coordinators' : 
-                         currentRole === 'teacher' ? 'teachers' : 'administrators';
-        
-        console.log(`Attempting login for ${currentRole} with username: ${username}`);
-        
-        const { data, error } = await supabase
-            .from(tableName)
-            .select('*')
-            .eq('username', username)
-            .eq('password', password)
-            .single();
-            
-        if (error) {
-            console.error('Login error:', error);
-            if (error.code === 'PGRST116') {
-                throw new Error('Usuario o contraseña incorrectos');
+    // Verificar estado de autenticación
+    async checkAuthStatus() {
+        if (SUPABASE_CONFIG.useLocal) {
+            const savedUser = this.loadFromStorage('currentUser');
+            if (savedUser) {
+                this.currentUser = savedUser;
+                this.updateAuthUI();
             }
-            throw new Error(`Error de conexión: ${error.message}`);
-        }
-        
-        if (!data) {
-            throw new Error('Usuario o contraseña incorrectos');
-        }
-        
-        console.log('Login successful for:', data.full_name);
-        
-        currentUser = data;
-        elements.userName.textContent = data.full_name;
-        elements.userInfo.style.display = 'block';
-        elements.loginBtn.style.display = 'none';
-        
-        showView('dashboard');
-        
-    } catch (error) {
-        console.error('Error en login:', error);
-        alert(error.message || 'Error al iniciar sesión');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Logout
-async function logout() {
-    if (supabase && supabase.auth && typeof supabase.auth.signOut === 'function') {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-            alert(`Error al cerrar sesión: ${error.message}`);
+        } else if (this.supabase) {
+            const { data: { session } } = await this.supabase.auth.getSession();
+            if (session) {
+                this.currentUser = await this.getUserProfile(session.user.id);
+                this.updateAuthUI();
+            }
         }
     }
 
-    currentUser = null;
-    currentRole = null;
-    if (elements.userInfo) elements.userInfo.style.display = 'none';
-    if (elements.loginBtn) elements.loginBtn.style.display = 'block';
-    if (typeof document !== 'undefined') {
-        const userInput = document.getElementById('username');
-        if (userInput) userInput.value = '';
-        const passInput = document.getElementById('password');
-        if (passInput) passInput.value = '';
+    // Gestión de permisos
+    hasPermission(permission) {
+        if (!this.currentUser) return false;
+        
+        const permissions = {
+            'coordinador': ['aprobar_solicitudes', 'rechazar_solicitudes', 'ver_dashboard', 'ver_todas_solicitudes'],
+            'docente': ['validar_solicitudes', 'asignar_trabajos', 'ver_estudiantes', 'ver_solicitudes_grado'],
+            'admin': ['ver_estadisticas', 'gestionar_usuarios', 'acceso_completo', 'ver_todas_solicitudes']
+        };
+        
+        const userPermissions = permissions[this.currentUser.tipo] || [];
+        return userPermissions.includes(permission);
     }
-    if (typeof showView === 'function' && elements.homeView && elements.homeView.classList) {
-        showView('home');
-    }
-}
 
-// Cargar dashboard
-async function loadDashboard() {
-    if (!currentUser) return;
-    
-    try {
-        showLoading();
+    canViewSolicitud(solicitud) {
+        if (!this.currentUser) return false;
         
-        // Estadísticas del día
-        const today = new Date().toISOString().split('T')[0];
+        // Admins y coordinadores ven todo
+        if (this.hasPermission('ver_todas_solicitudes')) return true;
         
-        const { data: todayData } = await supabase
-            .from('excuse_permission_requests')
-            .select('*')
-            .gte('created_at', today);
-            
-        document.getElementById('todayRequests').textContent = todayData?.length || 0;
-        
-        // Solicitudes pendientes
-        let pendingQuery = supabase
-            .from('excuse_permission_requests')
-            .select('*');
-            
-        if (currentRole === 'coordinator') {
-            pendingQuery = pendingQuery.eq('coordinator_status', 'pending');
-        } else         if (currentRole === 'teacher') {
-            // Para docentes, filtrar por grados que manejan
-            pendingQuery = pendingQuery
-                .eq('coordinator_status', 'approved')
-                .eq('teacher_status', 'pending');
+        // Docentes solo ven solicitudes de su grado
+        if (this.currentUser.tipo === 'docente') {
+            return solicitud.grado === this.currentUser.grado;
         }
         
-        const { data: pendingData } = await pendingQuery;
-        let filteredPendingData = pendingData;
-        if (currentRole === 'teacher' && pendingData) {
-            filteredPendingData = await filterRequestsByTeacherGrades(pendingData);
-        }
-        document.getElementById('pendingRequests').textContent = filteredPendingData?.length || 0;
-        
-        // Solicitudes aprobadas
-        const { data: approvedData } = await supabase
-            .from('excuse_permission_requests')
-            .select('*')
-            .eq('coordinator_status', 'approved')
-            .eq('teacher_status', 'approved');
-            
-        document.getElementById('approvedRequests').textContent = approvedData?.length || 0;
-        
-        // Cargar tabla de solicitudes
-        await loadRequestsTable();
-        
-    } catch (error) {
-        console.error('Error al cargar dashboard:', error);
-    } finally {
-        hideLoading();
+        return false;
     }
-}
 
-// Filtrar solicitudes por docente según sus grados
-async function filterRequestsByTeacherGrades(requests) {
-    if (!currentUser || currentRole !== 'teacher') return requests;
-    
-    try {
-        // Parsear los grados del docente (stored as JSON string)
-        const teacherGrades = JSON.parse(currentUser.grades);
+    // Actualizar UI basada en autenticación
+    updateAuthUI() {
+        const loginBtn = document.getElementById('loginBtn');
+        const docentesBtn = document.getElementById('docentesBtn');
         
-        // Obtener información de estudiantes para filtrar por grado
-        const studentIds = requests.map(r => r.student_id);
-        const { data: students } = await supabase
-            .from('students')
-            .select('id, grade')
-            .in('id', studentIds);
+        if (this.currentUser) {
+            loginBtn.textContent = `${this.currentUser.nombre} (${this.currentUser.tipo})`;
+            loginBtn.style.background = '#10b981';
             
-        // Filtrar solicitudes donde el estudiante esté en un grado que maneja el docente
-        return requests.filter(request => {
-            const student = students.find(s => s.id === request.student_id);
-            return student && teacherGrades.includes(student.grade);
+            // Mostrar botón de acceso directo para docentes
+            if (this.currentUser.tipo === 'docente') {
+                docentesBtn.style.display = 'block';
+            }
+        } else {
+            loginBtn.textContent = 'Login';
+            loginBtn.style.background = '';
+            docentesBtn.style.display = 'none';
+        }
+    }
+
+    // Obtener perfil de usuario desde Supabase
+    async getUserProfile(userId) {
+        if (SUPABASE_CONFIG.useLocal) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('vista_usuarios_completa')
+                .select('*')
+                .eq('id', userId)
+                .single();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Error al obtener perfil:', error);
+            return null;
+        }
+    }
+
+    // CRUD Operations para Solicitudes
+    async createSolicitud(solicitudData) {
+        if (SUPABASE_CONFIG.useLocal) {
+            return this.createSolicitudLocal(solicitudData);
+        }
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('solicitudes')
+                .insert([{
+                    radicado: this.generateRadicado(),
+                    tipo_solicitud_id: solicitudData.tipo === 'excusa' ? 1 : 2,
+                    nombre_estudiante: solicitudData.nombreEstudiante,
+                    grado_id: await this.getGradoId(solicitudData.grado),
+                    motivo: solicitudData.motivoInasistencia || solicitudData.motivoPermiso,
+                    datos_formulario: solicitudData,
+                    nombre_padre_acudiente: solicitudData.firmaPadre,
+                    tiene_certificado_medico: solicitudData.certificadoMedico || false,
+                    tiene_incapacidad: solicitudData.incapacidad || false
+                }])
+                .select();
+            
+            if (error) throw error;
+            return data[0];
+        } catch (error) {
+            console.error('Error al crear solicitud:', error);
+            throw error;
+        }
+    }
+
+    createSolicitudLocal(solicitudData) {
+        const radicado = this.generateRadicado();
+        const solicitud = {
+            id: Date.now(),
+            radicado: radicado,
+            tipo: solicitudData.tipo || (solicitudData.motivoInasistencia ? 'excusa' : 'permiso'),
+            fecha: new Date().toISOString(),
+            estado: 'pendiente',
+            ...solicitudData
+        };
+
+        this.solicitudes.push(solicitud);
+        this.saveToStorage('solicitudes', this.solicitudes);
+        this.saveToStorage('radicadoCounter', this.radicadoCounter);
+        
+        return solicitud;
+    }
+
+    async getSolicitudes(filtros = {}) {
+        if (SUPABASE_CONFIG.useLocal) {
+            return this.getSolicitudesLocal(filtros);
+        }
+        
+        try {
+            let query = this.supabase.from('vista_solicitudes_completas').select('*');
+            
+            // Aplicar filtros de permisos
+            if (this.currentUser && this.currentUser.tipo === 'docente') {
+                query = query.eq('grado', this.currentUser.grado);
+            }
+            
+            // Aplicar filtros adicionales
+            if (filtros.estado) {
+                query = query.eq('estado_actual', filtros.estado);
+            }
+            
+            if (filtros.tipo) {
+                query = query.eq('tipo_solicitud', filtros.tipo);
+            }
+            
+            const { data, error } = await query.order('fecha_solicitud', { ascending: false });
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Error al obtener solicitudes:', error);
+            return [];
+        }
+    }
+
+    getSolicitudesLocal(filtros = {}) {
+        let solicitudes = [...this.solicitudes];
+        
+        // Aplicar filtros de permisos
+        if (this.currentUser && this.currentUser.tipo === 'docente') {
+            solicitudes = solicitudes.filter(s => s.grado === this.currentUser.grado);
+        }
+        
+        // Aplicar filtros adicionales
+        if (filtros.estado) {
+            solicitudes = solicitudes.filter(s => s.estado === filtros.estado);
+        }
+        
+        if (filtros.tipo) {
+            solicitudes = solicitudes.filter(s => s.tipo === filtros.tipo);
+        }
+        
+        return solicitudes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    }
+
+    async updateSolicitudEstado(solicitudId, nuevoEstado, observaciones = '') {
+        if (SUPABASE_CONFIG.useLocal) {
+            return this.updateSolicitudEstadoLocal(solicitudId, nuevoEstado, observaciones);
+        }
+        
+        try {
+            const updateData = {
+                estado_actual_id: this.getEstadoId(nuevoEstado),
+                observaciones: observaciones,
+                updated_at: new Date().toISOString()
+            };
+            
+            // Agregar campos específicos según el estado
+            if (nuevoEstado === 'aprobado') {
+                updateData.fecha_aprobacion = new Date().toISOString();
+                updateData.aprobado_por_id = this.currentUser.id;
+            } else if (nuevoEstado === 'rechazado') {
+                updateData.fecha_rechazo = new Date().toISOString();
+                updateData.rechazado_por_id = this.currentUser.id;
+            } else if (nuevoEstado === 'validado') {
+                updateData.fecha_validacion = new Date().toISOString();
+                updateData.validado_por_id = this.currentUser.id;
+            }
+            
+            const { data, error } = await this.supabase
+                .from('solicitudes')
+                .update(updateData)
+                .eq('id', solicitudId)
+                .select();
+            
+            if (error) throw error;
+            return data[0];
+        } catch (error) {
+            console.error('Error al actualizar solicitud:', error);
+            throw error;
+        }
+    }
+
+    updateSolicitudEstadoLocal(solicitudId, nuevoEstado, observaciones = '') {
+        const solicitud = this.solicitudes.find(s => s.id === solicitudId);
+        if (solicitud) {
+            solicitud.estado = nuevoEstado;
+            solicitud.observaciones = observaciones;
+            
+            if (nuevoEstado === 'aprobado') {
+                solicitud.fechaAprobacion = new Date().toISOString();
+                solicitud.aprobadoPor = this.currentUser.nombre;
+            } else if (nuevoEstado === 'rechazado') {
+                solicitud.fechaRechazo = new Date().toISOString();
+                solicitud.rechazadoPor = this.currentUser.nombre;
+            } else if (nuevoEstado === 'validado') {
+                solicitud.fechaValidacion = new Date().toISOString();
+                solicitud.validadoPor = this.currentUser.nombre;
+            }
+            
+            this.saveToStorage('solicitudes', this.solicitudes);
+            return solicitud;
+        }
+        return null;
+    }
+
+    // Utilidades
+    async getGradoId(nombreGrado) {
+        if (SUPABASE_CONFIG.useLocal) {
+            const grados = ['Preescolar', '1°', '2°', '3°', '4°', '5°', '6°', '7°', '8°', '9°', '10°', '11°'];
+            return grados.indexOf(nombreGrado) + 1;
+        }
+        
+        const { data } = await this.supabase
+            .from('grados')
+            .select('id')
+            .eq('nombre', nombreGrado)
+            .single();
+        
+        return data?.id || 1;
+    }
+
+    getEstadoId(nombreEstado) {
+        const estados = { 'pendiente': 1, 'aprobado': 2, 'rechazado': 3, 'validado': 4 };
+        return estados[nombreEstado] || 1;
+    }
+    setupEventListeners() {
+        // Navegación principal
+        document.getElementById('inicioBtn').addEventListener('click', () => this.showView('homeView'));
+        document.getElementById('consultarBtn').addEventListener('click', () => this.showView('consultarView'));
+        document.getElementById('docentesBtn').addEventListener('click', () => this.showView('docenteView'));
+        document.getElementById('loginBtn').addEventListener('click', () => this.showView('loginView'));
+
+        // Botones de solicitud
+        document.getElementById('excusaCard').addEventListener('click', () => this.iniciarSolicitud('excusa'));
+        document.getElementById('permisoCard').addEventListener('click', () => this.iniciarSolicitud('permiso'));
+
+        // Botones de volver
+        document.getElementById('backToHome').addEventListener('click', () => this.showView('homeView'));
+        document.getElementById('backToHomePermiso').addEventListener('click', () => this.showView('homeView'));
+
+        // Formularios
+        document.getElementById('excusaForm').addEventListener('submit', (e) => this.handleExcusaSubmit(e));
+        document.getElementById('permisoForm').addEventListener('submit', (e) => this.handlePermisoSubmit(e));
+        document.getElementById('loginForm').addEventListener('submit', (e) => this.handleLogin(e));
+
+        // Checkboxes para mostrar upload
+        document.getElementById('certificadoMedico').addEventListener('change', this.toggleFileUpload);
+        document.getElementById('incapacidad').addEventListener('change', this.toggleFileUpload);
+
+        // Consulta de radicado
+        document.getElementById('buscarBtn').addEventListener('click', () => this.consultarRadicado());
+        document.getElementById('numeroRadicado').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.consultarRadicado();
         });
-    } catch (error) {
-        console.error('Error al filtrar solicitudes por grado:', error);
-        return requests;
-    }
-}
 
-// Cargar tabla de solicitudes
-async function loadRequestsTable() {
-    try {
-        let query = supabase
-            .from('excuse_permission_requests')
-            .select(`
-                *,
-                students(full_name, grade, code)
-            `)
-            .order('created_at', { ascending: false });
+        // Modal protección de datos
+        document.getElementById('aceptoProteccion').addEventListener('change', this.toggleProteccionButton);
+        document.getElementById('cancelarProteccion').addEventListener('click', this.cerrarModalProteccion);
+        document.getElementById('aceptarProteccion').addEventListener('click', this.aceptarProteccion);
+
+        // Modal radicado
+        document.getElementById('cerrarModalRadicado').addEventListener('click', this.cerrarModalRadicado);
+
+        // Logout buttons
+        document.getElementById('logoutBtn')?.addEventListener('click', () => this.logout());
+        document.getElementById('logoutDocenteBtn')?.addEventListener('click', () => this.logout());
+        document.getElementById('logoutAdminBtn')?.addEventListener('click', () => this.logout());
+
+        // Modal confirmación
+        document.getElementById('cancelarAccion').addEventListener('click', this.cerrarModalConfirmacion);
+        document.getElementById('confirmarAccion').addEventListener('click', this.ejecutarAccionConfirmacion);
+    }
+
+    // Navegación entre vistas
+    showView(viewId) {
+        // Ocultar todas las vistas
+        document.querySelectorAll('.view').forEach(view => {
+            view.classList.remove('active');
+        });
+
+        // Mostrar vista seleccionada
+        document.getElementById(viewId).classList.add('active');
+        this.currentView = viewId;
+
+        // Actualizar navegación
+        this.updateNavigation(viewId);
+
+        // Cargar datos específicos de la vista
+        if (viewId === 'coordinadorView') this.loadCoordinadorDashboard();
+        if (viewId === 'docenteView') this.loadDocenteDashboard();
+        if (viewId === 'adminView') this.loadAdminDashboard();
+    }
+
+    updateNavigation(activeView) {
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        const viewToButtonMap = {
+            'homeView': 'inicioBtn',
+            'consultarView': 'consultarBtn',
+            'docenteView': 'docentesBtn',
+            'loginView': 'loginBtn'
+        };
+
+        const activeButton = viewToButtonMap[activeView];
+        if (activeButton) {
+            document.getElementById(activeButton).classList.add('active');
+        }
+    }
+
+    updateStatus(message) {
+        document.getElementById('statusText').textContent = message;
+    }
+
+    // Iniciar proceso de solicitud
+    iniciarSolicitud(tipo) {
+        this.tipoSolicitud = tipo;
+        this.showModalProteccionDatos();
+    }
+
+    // Modal de protección de datos
+    showModalProteccionDatos() {
+        document.getElementById('modalProteccionDatos').style.display = 'flex';
+    }
+
+    toggleProteccionButton() {
+        const checkbox = document.getElementById('aceptoProteccion');
+        const button = document.getElementById('aceptarProteccion');
+        button.disabled = !checkbox.checked;
+    }
+
+    cerrarModalProteccion() {
+        document.getElementById('modalProteccionDatos').style.display = 'none';
+        document.getElementById('aceptoProteccion').checked = false;
+        document.getElementById('aceptarProteccion').disabled = true;
+    }
+
+    aceptarProteccion() {
+        this.cerrarModalProteccion();
+        if (this.tipoSolicitud === 'excusa') {
+            this.showView('excusaView');
+        } else if (this.tipoSolicitud === 'permiso') {
+            this.showView('permisoView');
+        }
+    }
+
+    // Toggle file upload
+    toggleFileUpload() {
+        const certificado = document.getElementById('certificadoMedico').checked;
+        const incapacidad = document.getElementById('incapacidad').checked;
+        const archivoGroup = document.getElementById('archivoGroup');
+        
+        if (certificado || incapacidad) {
+            archivoGroup.style.display = 'block';
+        } else {
+            archivoGroup.style.display = 'none';
+        }
+    }
+
+    // Manejo de formularios
+    async handleExcusaSubmit(e) {
+        e.preventDefault();
+        
+        try {
+            const formData = this.getExcusaFormData();
+            const solicitud = await this.createSolicitud({
+                ...formData,
+                tipo: 'excusa'
+            });
             
-        if (currentRole === 'coordinator') {
-            query = query.eq('coordinator_status', 'pending');
-        } else if (currentRole === 'teacher') {
-            query = query
-                .eq('coordinator_status', 'approved')
-                .eq('teacher_status', 'pending');
+            this.showModalRadicado(solicitud.radicado);
+            this.clearForm('excusaForm');
+            this.updateStatus('🟢 Excusa enviada exitosamente');
+        } catch (error) {
+            console.error('Error al enviar excusa:', error);
+            this.updateStatus('🔴 Error al enviar excusa');
+            alert('Error al enviar la excusa. Intente nuevamente.');
+        }
+    }
+
+    async handlePermisoSubmit(e) {
+        e.preventDefault();
+        
+        try {
+            const formData = this.getPermisoFormData();
+            const solicitud = await this.createSolicitud({
+                ...formData,
+                tipo: 'permiso'
+            });
+            
+            this.showModalRadicado(solicitud.radicado);
+            this.clearForm('permisoForm');
+            this.updateStatus('🟢 Permiso enviado exitosamente');
+        } catch (error) {
+            console.error('Error al enviar permiso:', error);
+            this.updateStatus('🔴 Error al enviar permiso');
+            alert('Error al enviar el permiso. Intente nuevamente.');
+        }
+    }
+
+    // Consulta de radicado
+    async consultarRadicado() {
+        const numeroRadicado = document.getElementById('numeroRadicado').value.trim();
+        if (!numeroRadicado) {
+            alert('Por favor ingrese un número de radicado');
+            return;
+        }
+
+        const resultadoDiv = document.getElementById('resultadoConsulta');
+        
+        try {
+            let solicitud = null;
+            
+            if (SUPABASE_CONFIG.useLocal) {
+                solicitud = this.solicitudes.find(s => s.radicado === numeroRadicado);
+            } else {
+                const { data, error } = await this.supabase
+                    .from('vista_solicitudes_completas')
+                    .select('*')
+                    .eq('radicado', numeroRadicado)
+                    .single();
+                
+                if (error && error.code !== 'PGRST116') {
+                    throw error;
+                }
+                solicitud = data;
+            }
+
+            if (solicitud) {
+                resultadoDiv.innerHTML = this.generateConsultaHTML(solicitud);
+                resultadoDiv.style.display = 'block';
+                this.updateStatus('🟢 Solicitud encontrada');
+            } else {
+                resultadoDiv.innerHTML = `
+                    <div class="no-encontrado">
+                        <i class="fas fa-search"></i>
+                        <h3>No se encontró la solicitud</h3>
+                        <p>El número de radicado <strong>${numeroRadicado}</strong> no existe en nuestros registros.</p>
+                    </div>
+                `;
+                resultadoDiv.style.display = 'block';
+                this.updateStatus('🟡 Solicitud no encontrada');
+            }
+        } catch (error) {
+            console.error('Error al consultar radicado:', error);
+            resultadoDiv.innerHTML = `
+                <div class="no-encontrado">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Error en la consulta</h3>
+                    <p>Ocurrió un error al buscar la solicitud. Intente nuevamente.</p>
+                </div>
+            `;
+            resultadoDiv.style.display = 'block';
+            this.updateStatus('🔴 Error en consulta');
+        }
+    }
+
+    generateConsultaHTML(solicitud) {
+        const estadoClass = {
+            'pendiente': 'estado-pendiente',
+            'aprobado': 'estado-aprobado',
+            'rechazado': 'estado-rechazado',
+            'validado': 'estado-validado'
+        };
+
+        const estadoTexto = {
+            'pendiente': 'Pendiente de revisión',
+            'aprobado': 'Aprobado por coordinación',
+            'rechazado': 'Rechazado',
+            'validado': 'Validado por docente'
+        };
+
+        const estado = solicitud.estado || solicitud.estado_actual || 'pendiente';
+        const nombreEstudiante = solicitud.nombreEstudiante || solicitud.nombre_estudiante || 'No especificado';
+        const grado = solicitud.grado || 'No especificado';
+        const fecha = solicitud.fecha || solicitud.fecha_solicitud || new Date().toISOString();
+        const tipo = solicitud.tipo || solicitud.tipo_solicitud || 'solicitud';
+
+        return `
+            <div class="solicitud-detalle">
+                <div class="solicitud-header">
+                    <h3>Solicitud de ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</h3>
+                    <span class="estado ${estadoClass[estado]}">${estadoTexto[estado]}</span>
+                </div>
+                <div class="solicitud-info">
+                    <p><strong>Radicado:</strong> ${solicitud.radicado}</p>
+                    <p><strong>Estudiante:</strong> ${nombreEstudiante}</p>
+                    <p><strong>Grado:</strong> ${grado}</p>
+                    <p><strong>Fecha de solicitud:</strong> ${new Date(fecha).toLocaleString()}</p>
+                    ${solicitud.observaciones ? `<p><strong>Observaciones:</strong> ${solicitud.observaciones}</p>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // Funciones auxiliares compartidas entre modales
+    showModalConfirmacion(titulo, mensaje, accion, mostrarObservaciones = false) {
+        document.getElementById('tituloConfirmacion').textContent = titulo;
+        document.getElementById('mensajeConfirmacion').textContent = mensaje;
+        document.getElementById('observacionesGroup').style.display = mostrarObservaciones ? 'block' : 'none';
+        
+        this.accionPendiente = accion;
+        document.getElementById('modalConfirmacion').style.display = 'flex';
+    }
+
+    cerrarModalConfirmacion() {
+        document.getElementById('modalConfirmacion').style.display = 'none';
+        document.getElementById('observaciones').value = '';
+        this.accionPendiente = null;
+    }
+
+    ejecutarAccionConfirmacion() {
+        if (this.accionPendiente) {
+            this.accionPendiente();
+        }
+        this.cerrarModalConfirmacion();
+    }
+
+    // Autenticación
+    async handleLogin(e) {
+        e.preventDefault();
+        const usuario = document.getElementById('usuario').value;
+        const password = document.getElementById('password').value;
+        const tipoUsuario = document.getElementById('tipoUsuario').value;
+
+        try {
+            let userFound = null;
+            
+            if (SUPABASE_CONFIG.useLocal) {
+                userFound = await this.loginLocal(usuario, password, tipoUsuario);
+            } else {
+                userFound = await this.loginSupabase(usuario, password, tipoUsuario);
+            }
+
+            if (userFound) {
+                this.currentUser = userFound;
+                this.saveToStorage('currentUser', userFound);
+                this.clearForm('loginForm');
+                this.updateAuthUI();
+                
+                // Redirigir según el tipo de usuario
+                if (tipoUsuario === 'coordinador') {
+                    this.showView('coordinadorView');
+                } else if (tipoUsuario === 'docente') {
+                    this.showView('docenteView');
+                } else if (tipoUsuario === 'admin') {
+                    this.showView('adminView');
+                }
+                
+                this.updateStatus(`🟢 Bienvenido ${userFound.nombre}`);
+            } else {
+                alert('Usuario o contraseña incorrectos');
+            }
+        } catch (error) {
+            console.error('Error en login:', error);
+            alert('Error al iniciar sesión. Intente nuevamente.');
+        }
+    }
+
+    async loginLocal(usuario, password, tipoUsuario) {
+        let userFound = null;
+        
+        if (tipoUsuario === 'coordinador') {
+            userFound = this.usuariosLocal.coordinadores.find(u => u.usuario === usuario && u.password === password);
+        } else if (tipoUsuario === 'docente') {
+            userFound = this.usuariosLocal.docentes.find(u => u.usuario === usuario && u.password === password);
+        } else if (tipoUsuario === 'admin') {
+            userFound = this.usuariosLocal.admin.find(u => u.usuario === usuario && u.password === password);
         }
         
-        const { data: requests } = await query;
-        
-        // Filtrar por grados del docente si es necesario
-        let filteredRequests = requests;
-        if (currentRole === 'teacher' && requests) {
-            filteredRequests = await filterRequestsByTeacherGrades(requests);
+        return userFound;
+    }
+
+    async loginSupabase(usuario, password, tipoUsuario) {
+        try {
+            // Buscar usuario en la base de datos
+            const { data: userData, error: userError } = await this.supabase
+                .from('usuarios')
+                .select(`
+                    id, usuario, nombre, email, grado_asignado,
+                    tipos_usuario!inner(nombre)
+                `)
+                .eq('usuario', usuario)
+                .eq('activo', true)
+                .eq('tipos_usuario.nombre', tipoUsuario)
+                .single();
+
+            if (userError || !userData) {
+                console.error('Usuario no encontrado:', userError);
+                return null;
+            }
+
+            // En producción, aquí verificarías el hash de la contraseña
+            // Por ahora, verificamos la contraseña en texto plano (solo para desarrollo)
+            const { data: authData, error: authError } = await this.supabase
+                .from('usuarios')
+                .select('password_hash')
+                .eq('id', userData.id)
+                .eq('password_hash', password) // En producción usar bcrypt
+                .single();
+
+            if (authError || !authData) {
+                console.log('Contraseña incorrecta');
+                return null;
+            }
+
+            // Autenticar con Supabase Auth (opcional)
+            const email = userData.email || `${usuario}@gemelli.edu.co`;
+            
+            return {
+                id: userData.id,
+                usuario: userData.usuario,
+                nombre: userData.nombre,
+                email: userData.email,
+                tipo: tipoUsuario,
+                grado: userData.grado_asignado
+            };
+
+        } catch (error) {
+            console.error('Error en autenticación Supabase:', error);
+            return null;
         }
+    }
+
+    logout() {
+        this.currentUser = null;
+        this.saveToStorage('currentUser', null);
+        this.updateAuthUI();
+        this.showView('homeView');
+        this.updateStatus('🟢 Sistema listo');
+    }
+
+    // Dashboard Coordinador
+    async loadCoordinadorDashboard() {
+        if (!this.currentUser || !this.hasPermission('ver_dashboard')) {
+            this.showView('loginView');
+            return;
+        }
+
+        try {
+            const solicitudes = await this.getSolicitudes();
+            
+            const pendientes = solicitudes.filter(s => s.estado === 'pendiente' || s.estado_actual === 'pendiente');
+            const aprobadasHoy = solicitudes.filter(s => {
+                const estado = s.estado || s.estado_actual;
+                const fecha = s.fecha || s.fecha_solicitud;
+                return estado === 'aprobado' && 
+                       new Date(fecha).toDateString() === new Date().toDateString();
+            });
+            const totalMes = solicitudes.filter(s => {
+                const fecha = new Date(s.fecha || s.fecha_solicitud);
+                const ahora = new Date();
+                return fecha.getMonth() === ahora.getMonth() && fecha.getFullYear() === ahora.getFullYear();
+            });
+
+            document.getElementById('pendientesCount').textContent = pendientes.length;
+            document.getElementById('aprobadasHoy').textContent = aprobadasHoy.length;
+            document.getElementById('totalMes').textContent = totalMes.length;
+
+            await this.renderSolicitudesPendientes(pendientes);
+        } catch (error) {
+            console.error('Error al cargar dashboard coordinador:', error);
+            this.updateStatus('🔴 Error al cargar datos');
+        }
+    }
+
+    async renderSolicitudesPendientes(solicitudes) {
+        const container = document.getElementById('listaSolicitudes');
         
-        const tableContainer = document.getElementById('requestsList');
-        
-        if (!filteredRequests || filteredRequests.length === 0) {
-            tableContainer.innerHTML = '<p>No hay solicitudes pendientes</p>';
+        if (solicitudes.length === 0) {
+            container.innerHTML = '<p class="no-solicitudes">No hay solicitudes pendientes</p>';
+            return;
+        }
+
+        container.innerHTML = solicitudes.map(solicitud => {
+            const motivo = solicitud.motivo || solicitud.motivoInasistencia || solicitud.motivoPermiso || 'No especificado';
+            const tipo = solicitud.tipo || solicitud.tipo_solicitud || 'solicitud';
+            const estudiante = solicitud.nombreEstudiante || solicitud.nombre_estudiante || 'No especificado';
+            const grado = solicitud.grado || 'No especificado';
+            const fecha = solicitud.fecha || solicitud.fecha_solicitud || new Date().toISOString();
+            const radicado = solicitud.radicado || 'Sin radicado';
+            
+            return `
+                <div class="solicitud-card" data-id="${solicitud.id}">
+                    <div class="solicitud-info">
+                        <h4>${tipo.charAt(0).toUpperCase() + tipo.slice(1)} - ${radicado}</h4>
+                        <p><strong>Estudiante:</strong> ${estudiante} (${grado})</p>
+                        <p><strong>Fecha:</strong> ${new Date(fecha).toLocaleString()}</p>
+                        <p><strong>Motivo:</strong> ${motivo}</p>
+                    </div>
+                    <div class="solicitud-actions">
+                        <button class="btn-success" onclick="sistema.aprobarSolicitud('${solicitud.id}')">
+                            <i class="fas fa-check"></i> Aprobar
+                        </button>
+                        <button class="btn-danger" onclick="sistema.rechazarSolicitud('${solicitud.id}')">
+                            <i class="fas fa-times"></i> Rechazar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async aprobarSolicitud(id) {
+        if (!this.hasPermission('aprobar_solicitudes')) {
+            alert('No tiene permisos para aprobar solicitudes');
             return;
         }
         
-        let tableHTML = `
-            <table class="requests-table">
-                <thead>
-                    <tr>
-                        <th>Radicado</th>
-                        <th>Tipo</th>
-                        <th>Estudiante</th>
-                        <th>Grado</th>
-                        <th>Fecha</th>
-                        <th>Solicitante</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+        this.showModalConfirmacion(
+            'Aprobar Solicitud',
+            '¿Está seguro de que desea aprobar esta solicitud?',
+            () => this.ejecutarAprobacion(id)
+        );
+    }
+
+    async rechazarSolicitud(id) {
+        if (!this.hasPermission('rechazar_solicitudes')) {
+            alert('No tiene permisos para rechazar solicitudes');
+            return;
+        }
         
-        filteredRequests.forEach(request => {
-            tableHTML += `
-                <tr>
-                    <td>${request.filing_number}</td>
-                    <td>${request.type}</td>
-                    <td>${request.students.full_name}</td>
-                    <td>${request.students.grade}</td>
-                    <td>${request.start_date}</td>
-                    <td>${request.registrant_name}</td>
-                    <td>
-                        <button class="btn-small btn-primary" onclick="reviewRequest('${request.id}')">
-                            Revisar
+        this.showModalConfirmacion(
+            'Rechazar Solicitud',
+            '¿Está seguro de que desea rechazar esta solicitud?',
+            () => this.ejecutarRechazo(id),
+            true
+        );
+    }
+
+    async ejecutarAprobacion(id) {
+        try {
+            await this.updateSolicitudEstado(id, 'aprobado');
+            await this.loadCoordinadorDashboard();
+            this.updateStatus('🟢 Solicitud aprobada exitosamente');
+        } catch (error) {
+            console.error('Error al aprobar solicitud:', error);
+            this.updateStatus('🔴 Error al aprobar solicitud');
+            alert('Error al aprobar la solicitud');
+        }
+    }
+
+    async ejecutarRechazo(id) {
+        try {
+            const observaciones = document.getElementById('observaciones').value;
+            await this.updateSolicitudEstado(id, 'rechazado', observaciones);
+            await this.loadCoordinadorDashboard();
+            this.updateStatus('🟢 Solicitud rechazada');
+        } catch (error) {
+            console.error('Error al rechazar solicitud:', error);
+            this.updateStatus('🔴 Error al rechazar solicitud');
+            alert('Error al rechazar la solicitud');
+        }
+    }
+
+    // Dashboard Docente
+    async loadDocenteDashboard() {
+        if (!this.currentUser || !this.hasPermission('validar_solicitudes')) {
+            this.showView('loginView');
+            return;
+        }
+
+        try {
+            const solicitudesAprobadas = await this.getSolicitudes({ estado: 'aprobado' });
+            await this.renderSolicitudesDocente(solicitudesAprobadas);
+        } catch (error) {
+            console.error('Error al cargar dashboard docente:', error);
+            this.updateStatus('🔴 Error al cargar datos');
+        }
+    }
+
+    async renderSolicitudesDocente(solicitudes) {
+        const container = document.getElementById('solicitudesDocente');
+        
+        if (solicitudes.length === 0) {
+            container.innerHTML = '<p class="no-solicitudes">No hay solicitudes para validar</p>';
+            return;
+        }
+
+        container.innerHTML = solicitudes.map(solicitud => {
+            const motivo = solicitud.motivo || solicitud.motivoInasistencia || solicitud.motivoPermiso || 'No especificado';
+            const tipo = solicitud.tipo || solicitud.tipo_solicitud || 'solicitud';
+            const estudiante = solicitud.nombreEstudiante || solicitud.nombre_estudiante || 'No especificado';
+            const aprobadoPor = solicitud.aprobadoPor || solicitud.aprobado_por || 'Sistema';
+            const radicado = solicitud.radicado || 'Sin radicado';
+            
+            return `
+                <div class="solicitud-card" data-id="${solicitud.id}">
+                    <div class="solicitud-info">
+                        <h4>${tipo.charAt(0).toUpperCase() + tipo.slice(1)} - ${radicado}</h4>
+                        <p><strong>Estudiante:</strong> ${estudiante} (${solicitud.grado})</p>
+                        <p><strong>Aprobado por:</strong> ${aprobadoPor}</p>
+                        <p><strong>Motivo:</strong> ${motivo}</p>
+                    </div>
+                    <div class="solicitud-actions">
+                        <button class="btn-primary" onclick="sistema.validarSolicitud('${solicitud.id}')">
+                            <i class="fas fa-stamp"></i> Validar
                         </button>
-                    </td>
-                </tr>
+                    </div>
+                </div>
             `;
+        }).join('');
+    }
+
+    async validarSolicitud(id) {
+        if (!this.hasPermission('validar_solicitudes')) {
+            alert('No tiene permisos para validar solicitudes');
+            return;
+        }
+
+        try {
+            await this.updateSolicitudEstado(id, 'validado');
+            await this.loadDocenteDashboard();
+            this.updateStatus('🟢 Solicitud validada exitosamente');
+        } catch (error) {
+            console.error('Error al validar solicitud:', error);
+            this.updateStatus('🔴 Error al validar solicitud');
+            alert('Error al validar la solicitud');
+        }
+    }
+
+    // Dashboard Admin
+    async loadAdminDashboard() {
+        if (!this.currentUser || !this.hasPermission('ver_estadisticas')) {
+            this.showView('loginView');
+            return;
+        }
+
+        try {
+            const solicitudes = await this.getSolicitudes();
+            
+            const total = solicitudes.length;
+            const aprobadas = solicitudes.filter(s => {
+                const estado = s.estado || s.estado_actual;
+                return estado === 'aprobado' || estado === 'validado';
+            }).length;
+            const tasa = total > 0 ? Math.round((aprobadas / total) * 100) : 0;
+            const promedio = this.calcularPromedioDiario(solicitudes);
+
+            document.getElementById('totalSolicitudes').textContent = total;
+            document.getElementById('tasaAprobacion').textContent = `${tasa}%`;
+            document.getElementById('promedioDiario').textContent = promedio;
+
+            this.renderAdminCharts(solicitudes);
+        } catch (error) {
+            console.error('Error al cargar dashboard admin:', error);
+            this.updateStatus('🔴 Error al cargar estadísticas');
+        }
+    }
+
+    calcularPromedioDiario(solicitudes) {
+        if (solicitudes.length === 0) return 0;
+        
+        const fechas = solicitudes.map(s => {
+            const fecha = s.fecha || s.fecha_solicitud;
+            return new Date(fecha).toDateString();
         });
+        const fechasUnicas = [...new Set(fechas)];
         
-        tableHTML += `
-                </tbody>
-            </table>
-        `;
+        return Math.round(solicitudes.length / Math.max(fechasUnicas.length, 1));
+    }
+
+    renderAdminCharts(solicitudes) {
+        // Gráfico de grados (simplificado)
+        const gradosCount = {};
+        solicitudes.forEach(s => {
+            const grado = s.grado || 'Sin grado';
+            gradosCount[grado] = (gradosCount[grado] || 0) + 1;
+        });
+
+        const gradosChart = document.getElementById('gradosChart');
+        gradosChart.innerHTML = Object.entries(gradosCount)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([grado, count]) => `
+                <div class="chart-bar">
+                    <span class="chart-label">${grado}</span>
+                    <div class="chart-value">${count}</div>
+                </div>
+            `).join('');
+
+        // Histórico mensual (simplificado)
+        const mesesCount = {};
+        solicitudes.forEach(s => {
+            const fecha = new Date(s.fecha || s.fecha_solicitud);
+            const mes = fecha.toLocaleDateString('es', { month: 'short', year: 'numeric' });
+            mesesCount[mes] = (mesesCount[mes] || 0) + 1;
+        });
+
+        const historicoChart = document.getElementById('historicoChart');
+        historicoChart.innerHTML = Object.entries(mesesCount)
+            .slice(-6)
+            .map(([mes, count]) => `
+                <div class="chart-bar">
+                    <span class="chart-label">${mes}</span>
+                    <div class="chart-value">${count}</div>
+                </div>
+            `).join('');
+    }
+
+    getExcusaFormData() {
+        return {
+            fechaExcusa: document.getElementById('fechaExcusa').value,
+            nombreEstudiante: document.getElementById('nombreEstudianteExcusa').value,
+            grado: document.getElementById('gradoExcusa').value,
+            diasInasistencia: document.getElementById('diasInasistencia').value,
+            mesInasistencia: document.getElementById('mesInasistencia').value,
+            motivoInasistencia: document.getElementById('motivoInasistencia').value,
+            certificadoMedico: document.getElementById('certificadoMedico').checked,
+            incapacidad: document.getElementById('incapacidad').checked,
+            firmaPadre: document.getElementById('firmaPadreExcusa').value
+        };
+    }
+
+    getPermisoFormData() {
+        return {
+            fechaPermiso: document.getElementById('fechaPermiso').value,
+            nombreEstudiante: document.getElementById('nombreEstudiantePermiso').value,
+            grado: document.getElementById('gradoPermiso').value,
+            motivoPermiso: document.getElementById('motivoPermiso').value,
+            horaSalida: document.getElementById('horaSalida').value,
+            horaRegreso: document.getElementById('horaRegreso').value,
+            firmaPadre: document.getElementById('firmaPadrePermiso').value
+        };
+    }
+
+    generateRadicado() {
+        const fecha = new Date();
+        const year = fecha.getFullYear();
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const prefix = `GEM${year}${month}`;
+        const numero = String(this.radicadoCounter++).padStart(4, '0');
+        return `${prefix}${numero}`;
+    }
+
+    showModalRadicado(radicado) {
+        document.getElementById('numeroRadicadoGenerado').textContent = radicado;
+        document.getElementById('modalRadicado').style.display = 'flex';
+    }
+
+    cerrarModalRadicado() {
+        document.getElementById('modalRadicado').style.display = 'none';
+        this.showView('homeView');
+    }
+
+    clearForm(formId) {
+        document.getElementById(formId).reset();
+        if (formId === 'excusaForm') {
+            document.getElementById('archivoGroup').style.display = 'none';
+        }
+    }
+
+    // Event Listeners
+    setupEventListeners() {
+        // Navegación principal
+        document.getElementById('inicioBtn').addEventListener('click', () => this.showView('homeView'));
+        document.getElementById('consultarBtn').addEventListener('click', () => this.showView('consultarView'));
+        document.getElementById('docentesBtn').addEventListener('click', () => {
+            if (this.currentUser && this.currentUser.tipo === 'docente') {
+                this.showView('docenteView');
+            } else {
+                this.showView('loginView');
+            }
+        });
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            if (this.currentUser) {
+                this.logout();
+            } else {
+                this.showView('loginView');
+            }
+        });
+
+        // Botones de solicitud
+        document.getElementById('excusaCard').addEventListener('click', () => this.iniciarSolicitud('excusa'));
+        document.getElementById('permisoCard').addEventListener('click', () => this.iniciarSolicitud('permiso'));
+
+        // Botones de volver
+        document.getElementById('backToHome').addEventListener('click', () => this.showView('homeView'));
+        document.getElementById('backToHomePermiso').addEventListener('click', () => this.showView('homeView'));
+
+        // Formularios
+        document.getElementById('excusaForm').addEventListener('submit', (e) => this.handleExcusaSubmit(e));
+        document.getElementById('permisoForm').addEventListener('submit', (e) => this.handlePermisoSubmit(e));
+        document.getElementById('loginForm').addEventListener('submit', (e) => this.handleLogin(e));
+
+        // Checkboxes para mostrar upload
+        document.getElementById('certificadoMedico').addEventListener('change', this.toggleFileUpload);
+        document.getElementById('incapacidad').addEventListener('change', this.toggleFileUpload);
+
+        // Consulta de radicado
+        document.getElementById('buscarBtn').addEventListener('click', () => this.consultarRadicado());
+        document.getElementById('numeroRadicado').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.consultarRadicado();
+        });
+
+        // Modal protección de datos
+        document.getElementById('aceptoProteccion').addEventListener('change', this.toggleProteccionButton);
+        document.getElementById('cancelarProteccion').addEventListener('click', () => this.cerrarModalProteccion());
+        document.getElementById('aceptarProteccion').addEventListener('click', () => this.aceptarProteccion());
+
+        // Modal radicado
+        document.getElementById('cerrarModalRadicado').addEventListener('click', () => this.cerrarModalRadicado());
+
+        // Logout buttons
+        document.getElementById('logoutBtn')?.addEventListener('click', () => this.logout());
+        document.getElementById('logoutDocenteBtn')?.addEventListener('click', () => this.logout());
+        document.getElementById('logoutAdminBtn')?.addEventListener('click', () => this.logout());
+
+        // Modal confirmación
+        document.getElementById('cancelarAccion').addEventListener('click', () => this.cerrarModalConfirmacion());
+        document.getElementById('confirmarAccion').addEventListener('click', () => this.ejecutarAccionConfirmacion());
+    }
+
+    // Navegación entre vistas
+    showView(viewId) {
+        // Verificar permisos para vistas protegidas
+        if (viewId === 'coordinadorView' && (!this.currentUser || !this.hasPermission('ver_dashboard'))) {
+            this.showView('loginView');
+            return;
+        }
         
-        tableContainer.innerHTML = tableHTML;
+        if (viewId === 'docenteView' && (!this.currentUser || !this.hasPermission('validar_solicitudes'))) {
+            this.showView('loginView');
+            return;
+        }
         
-    } catch (error) {
-        console.error('Error al cargar solicitudes:', error);
+        if (viewId === 'adminView' && (!this.currentUser || !this.hasPermission('ver_estadisticas'))) {
+            this.showView('loginView');
+            return;
+        }
+
+        // Ocultar todas las vistas
+        document.querySelectorAll('.view').forEach(view => {
+            view.classList.remove('active');
+        });
+
+        // Mostrar vista seleccionada
+        document.getElementById(viewId).classList.add('active');
+        this.currentView = viewId;
+
+        // Actualizar navegación
+        this.updateNavigation(viewId);
+
+        // Cargar datos específicos de la vista
+        if (viewId === 'coordinadorView') this.loadCoordinadorDashboard();
+        if (viewId === 'docenteView') this.loadDocenteDashboard();
+        if (viewId === 'adminView') this.loadAdminDashboard();
+    }
+
+    updateNavigation(activeView) {
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        const viewToButtonMap = {
+            'homeView': 'inicioBtn',
+            'consultarView': 'consultarBtn',
+            'docenteView': 'docentesBtn',
+            'loginView': 'loginBtn'
+        };
+
+        const activeButton = viewToButtonMap[activeView];
+        if (activeButton) {
+            document.getElementById(activeButton).classList.add('active');
+        }
+    }
+
+    updateStatus(message) {
+        document.getElementById('statusText').textContent = message;
+    }
+
+    // Iniciar proceso de solicitud
+    iniciarSolicitud(tipo) {
+        this.tipoSolicitud = tipo;
+        this.showModalProteccionDatos();
+    }
+
+    // Modal de protección de datos
+    showModalProteccionDatos() {
+        document.getElementById('modalProteccionDatos').style.display = 'flex';
+    }
+
+    toggleProteccionButton() {
+        const checkbox = document.getElementById('aceptoProteccion');
+        const button = document.getElementById('aceptarProteccion');
+        button.disabled = !checkbox.checked;
+    }
+
+    cerrarModalProteccion() {
+        document.getElementById('modalProteccionDatos').style.display = 'none';
+        document.getElementById('aceptoProteccion').checked = false;
+        document.getElementById('aceptarProteccion').disabled = true;
+    }
+
+    aceptarProteccion() {
+        this.cerrarModalProteccion();
+        if (this.tipoSolicitud === 'excusa') {
+            this.showView('excusaView');
+        } else if (this.tipoSolicitud === 'permiso') {
+            this.showView('permisoView');
+        }
+    }
+
+    // Toggle file upload
+    toggleFileUpload() {
+        const certificado = document.getElementById('certificadoMedico').checked;
+        const incapacidad = document.getElementById('incapacidad').checked;
+        const archivoGroup = document.getElementById('archivoGroup');
+        
+        if (certificado || incapacidad) {
+            archivoGroup.style.display = 'block';
+        } else {
+            archivoGroup.style.display = 'none';
+        }
+    }
+
+    // Utilidades de almacenamiento
+    saveToStorage(key, data) {
+        try {
+            // Usar almacenamiento en memoria para el entorno de Claude
+            if (!window.sistemaStorage) {
+                window.sistemaStorage = {};
+            }
+            window.sistemaStorage[key] = JSON.parse(JSON.stringify(data));
+        } catch (error) {
+            console.warn('No se pudo guardar en almacenamiento:', error);
+        }
+    }
+
+    loadFromStorage(key) {
+        try {
+            return window.sistemaStorage?.[key] || null;
+        } catch (error) {
+            console.warn('No se pudo cargar del almacenamiento:', error);
+            return null;
+        }
     }
 }
 
-// Revisar solicitud (función global)
-window.reviewRequest = async function(requestId) {
-    try {
-        const { data: request } = await supabase
-            .from('excuse_permission_requests')
-            .select(`
-                *,
-                students(full_name, grade, code)
-            `)
-            .eq('id', requestId)
-            .single();
-            
-        if (!request) return;
-        
-        const action = confirm(`¿Desea APROBAR la solicitud ${request.filing_number}?\n\nEstudiante: ${request.students.full_name}\nMotivo: ${request.reason}\nDescripción: ${request.description}\n\nOK = Aprobar | Cancelar = Rechazar`);
-        
-        let comments = '';
-        let assignments = '';
-        
-        if (action) {
-            comments = prompt('Comentarios de aprobación (opcional):') || '';
-            if (currentRole === 'teacher') {
-                assignments = prompt('Trabajos que debe presentar el estudiante (opcional):') || '';
-            }
-        } else {
-            comments = prompt('Motivo del rechazo:');
-            if (!comments) return;
-        }
-        
-        const updateData = {};
-        
-        if (currentRole === 'coordinator') {
-            updateData.coordinator_status = action ? 'approved' : 'rejected';
-            updateData.coordinator_id = currentUser.id;
-            updateData.coordinator_comments = comments;
-            updateData.coordinator_date = new Date().toISOString();
-        } else if (currentRole === 'teacher') {
-            updateData.teacher_status = action ? 'approved' : 'rejected';
-            updateData.teacher_id = currentUser.id;
-            updateData.teacher_comments = comments;
-            updateData.teacher_assignments = assignments;
-            updateData.teacher_date = new Date().toISOString();
-        }
-        
-        const { error } = await supabase
-            .from('excuse_permission_requests')
-            .update(updateData)
-            .eq('id', requestId);
-            
-        if (error) throw error;
-        
-        alert('Solicitud procesada correctamente');
-        await loadDashboard();
-        
-    } catch (error) {
-        console.error('Error al procesar solicitud:', error);
-        alert('Error al procesar la solicitud');
-    }
-};
+// Inicializar sistema cuando se carga la página
+document.addEventListener('DOMContentLoaded', () => {
+    window.sistema = new SistemaExcusas();
+});
 
-// Inicializar role por defecto
-currentRole = 'coordinator';
-
-
-// Export funciones para pruebas
-export { logout };
+// Exponer globalmente para eventos onclick
+if (typeof window !== 'undefined') {
+    window.sistema = new SistemaExcusas();
+}
