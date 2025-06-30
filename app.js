@@ -1356,7 +1356,7 @@ class SistemaExcusas {
         }
     }
 
-    // Actualizar getExcusaFormData
+    // Actualizar getExcusaFormData (sin documento)
     getExcusaFormData() {
         // Obtener información del estudiante seleccionado
         const estudianteSelect = document.getElementById('estudianteExcusa');
@@ -1371,7 +1371,6 @@ class SistemaExcusas {
             emailAcudiente: document.getElementById('emailAcudiente').value,
             telefonoAcudiente: document.getElementById('telefonoAcudiente').value,
             perfilAcudiente: document.getElementById('perfilAcudiente').value,
-            documentoAcudiente: document.getElementById('documentoAcudiente').value,
             
             // Información del estudiante
             nombreEstudiante: estudianteData ? `${estudianteData.nombre} ${estudianteData.apellidos}` : '',
@@ -1388,7 +1387,7 @@ class SistemaExcusas {
         };
     }
 
-    // Actualizar getPermisoFormData
+    // Actualizar getPermisoFormData (sin documento)
     getPermisoFormData() {
         // Obtener información del estudiante seleccionado
         const estudianteSelect = document.getElementById('estudiantePermiso');
@@ -1403,7 +1402,6 @@ class SistemaExcusas {
             emailAcudiente: document.getElementById('emailAcudientePermiso').value,
             telefonoAcudiente: document.getElementById('telefonoAcudientePermiso').value,
             perfilAcudiente: document.getElementById('perfilAcudientePermiso').value,
-            documentoAcudiente: document.getElementById('documentoAcudientePermiso').value,
             
             // Información del estudiante
             nombreEstudiante: estudianteData ? `${estudianteData.nombre} ${estudianteData.apellidos}` : '',
