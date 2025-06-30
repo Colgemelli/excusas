@@ -32,6 +32,8 @@ Mensajes de error específicos para fechas inválidas
 🛠️ Configuración Inicial
 Opción 1: Desarrollo Local (Sin Supabase)
 El sistema funciona inmediatamente con todas las nuevas características.
+Las solicitudes se guardan en `localStorage` del navegador mientras Supabase no esté disponible.
+Si `localStorage` no está habilitado, los datos solo persisten durante la sesión actual.
 
 Subir archivos a Netlify/GitHub Pages:
 bash
