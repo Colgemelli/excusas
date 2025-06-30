@@ -1042,6 +1042,10 @@ body {
     box-shadow: var(--shadow-lg);
 }
 
+.resultado-container .solicitud-detalle + .solicitud-detalle {
+    margin-top: 1rem;
+}
+
 .solicitud-header {
     display: flex;
     justify-content: space-between;
