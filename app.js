@@ -1045,7 +1045,9 @@ class SistemaExcusas {
 
     // Dashboard Admin
     async loadAdminDashboard() {
-        if (!this.currentUser || !this.hasPermission('ver_estadisticas')) {
+        if (!this.currentUser ||
+            !this.hasPermission('ver_estadisticas') ||
+            !this.hasPermission('ver_todas_solicitudes')) {
             this.showView('loginView');
             return;
         }
@@ -1066,6 +1068,7 @@ class SistemaExcusas {
             document.getElementById('promedioDiario').textContent = promedio;
 
             this.renderAdminCharts(solicitudes);
+            await this.renderSolicitudesAdmin(solicitudes);
         } catch (error) {
             console.error('Error al cargar dashboard admin:', error);
             this.updateStatus('🔴 Error al cargar estadísticas');
@@ -1167,6 +1170,19 @@ class SistemaExcusas {
                     <div class="chart-value">${count}</div>
                 </div>
             `).join('');
+    }
+
+    async renderSolicitudesAdmin(solicitudes) {
+        const container = document.getElementById('adminSolicitudes');
+
+        if (solicitudes.length === 0) {
+            container.innerHTML = '<p class="no-solicitudes">No hay solicitudes</p>';
+            return;
+        }
+
+        container.innerHTML = solicitudes
+            .map(s => this.generateConsultaHTML(s))
+            .join('');
     }
 
     // Actualizar sección de revisión
@@ -1281,8 +1297,8 @@ class SistemaExcusas {
             return;
         }
         
-        if (viewId === 'adminView' && (!this.currentUser || !this.hasPermission('ver_estadisticas'))) {
-            this.showView('loginView');
+        if (viewId === 'adminView' &&
+            (!this.currentUser || !this.hasPermission('ver_estadisticas') || !this.hasPermission('ver_todas_solicitudes'))) {
             return;
         }
 
