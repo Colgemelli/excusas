@@ -1051,6 +1051,21 @@ body {
     border-bottom: 1px solid var(--border-color);
 }
 
+.validacion-detalle {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.resultado-container .solicitud-detalle + .solicitud-detalle {
+    margin-top: 1rem;
+}
+
+.resultado-container .validacion-detalle {
+    margin-top: 1rem;
+}
+
 .solicitud-header h3 {
     font-size: var(--font-size-xl);
     color: var(--text-primary);
