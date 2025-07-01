@@ -92,6 +92,15 @@ credenciales mediante `window.process.env`. Dicho archivo está listado en
 sql
 -- Insertar estudiantes en la tabla correspondiente
 -- (Script incluido en el archivo SQL completo)
+6. Configurar tabla `configuracion_sistema`
+Inserta los registros iniciales para la numeración de radicados:
+
+```sql
+INSERT INTO configuracion_sistema (clave, valor) VALUES
+  ('radicado_prefix', 'RAD-'),
+  ('radicado_counter', '1000');
+```
+
 🎨 Flujo del Formulario Stepper
 📝 Excusas (4 Pasos):
 👨‍👩‍👧‍👦 Acudiente: Información personal completa
