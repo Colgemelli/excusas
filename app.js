@@ -32,14 +32,20 @@ class SistemaExcusas {
     }
 
     async init() {
-        await this.initSupabase();
-        this.setupEventListeners();
-        this.initSteppers();
-        this.initDateValidation();
-        this.initStudentDatabase();
-        await this.checkAuthStatus();
-        this.updateStatus('🟢 Sistema listo');
-        this.showView('homeView');
+        try {
+            await this.initSupabase();
+            this.setupEventListeners();
+            this.initSteppers();
+            this.initDateValidation();
+            this.initStudentDatabase();
+            await this.checkAuthStatus();
+        } catch (error) {
+            this.updateStatus('🔴 Error en inicialización');
+            console.error('Error en inicialización:', error);
+        } finally {
+            this.updateStatus('🟢 Sistema listo');
+            this.showView('homeView');
+        }
     }
 
     // Inicializar steppers
@@ -256,7 +262,7 @@ class SistemaExcusas {
             this.usuariosLocal = { coordinadores: [], docentes: [], admin: [] };
             return;
         }
-        
+
         this.solicitudes = this.loadFromStorage('solicitudes') || [];
         this.radicadoCounter = this.loadFromStorage('radicadoCounter') || 1000;
         
