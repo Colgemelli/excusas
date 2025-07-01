@@ -182,11 +182,13 @@ En el código JavaScript, usar una librería como bcrypt.js
 Hashear contraseñas antes de compararlas
 Variables de Entorno
 Define `SUPABASE_URL` y `SUPABASE_ANON_KEY` en tu entorno y ejecuta el script
-de construcción para generar `env.js`
+de construcción para generar `env.js`.
 
 ```bash
-./build.sh
+SUPABASE_URL=tu-url SUPABASE_ANON_KEY=tu-clave ./build.sh
 ```
+
+Se incluye un archivo `env.example.js` como referencia.
 
 El archivo `env.js` se carga antes de `app.js` y expone los valores mediante
 `window.process.env`.
