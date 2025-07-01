@@ -24,6 +24,7 @@ class SistemaExcusas {
         this.currentUser = null;
         this.tipoSolicitud = null;
         this.solicitudes = [];
+        this.adminSolicitudes = [];
         this.radicadoCounter = 1000;
         this.supabase = null;
         
@@ -743,6 +744,25 @@ class SistemaExcusas {
         ventana.print();
     }
 
+    generateAdminCardHTML(solicitud) {
+        const estado = escapeHTML(solicitud.estado || solicitud.estado_actual || 'pendiente');
+        const nombre = escapeHTML(solicitud.nombreEstudiante || solicitud.nombre_estudiante || '');
+        const grado = escapeHTML(solicitud.grado || '');
+        const fecha = solicitud.fecha || solicitud.fecha_solicitud || new Date().toISOString();
+        const radicado = escapeHTML(solicitud.radicado);
+
+        return `
+            <div class="solicitud-card admin-card" data-id="${solicitud.id}">
+                <div>
+                    <h4>Radicado ${radicado}</h4>
+                    <p><strong>Estudiante:</strong> ${nombre}</p>
+                    <p><strong>Grado:</strong> ${grado}</p>
+                    <p><strong>Fecha:</strong> ${new Date(fecha).toLocaleDateString()}</p>
+                </div>
+                <span class="estado ${estado}"></span>
+            </div>
+        `;
+    }
 
     // Funciones auxiliares compartidas entre modales
     showModalConfirmacion(titulo, mensaje, accion, mostrarObservaciones = false) {
@@ -1273,11 +1293,12 @@ class SistemaExcusas {
 
         if (solicitudes.length === 0) {
             container.innerHTML = '<p class="no-solicitudes">No hay solicitudes</p>';
+            this.adminSolicitudes = solicitudes;
             return;
         }
 
         container.innerHTML = solicitudes
-            .map(s => this.generateConsultaHTML(s))
+            .map(s => this.generateAdminCardHTML(s))
             .join('');
     }
 
@@ -1907,6 +1928,19 @@ class SistemaExcusas {
             });
         }
         aplicarPermisos?.addEventListener('click', () => this.loadAdminPermisos());
+
+
+        ['adminSolicitudes', 'adminExcusasList', 'adminPermisosList'].forEach(id => {
+            document.getElementById(id)?.addEventListener('click', (e) => {
+                const card = e.target.closest('.solicitud-card.admin-card');
+                if (card) {
+                    const sid = card.getAttribute('data-id');
+                    if (sid) this.showDetalleSolicitud(sid);
+                }
+            });
+        });
+
+        document.getElementById('cerrarDetalleSolicitud')?.addEventListener('click', () => this.cerrarDetalleSolicitud());
     }
 
     // Utilidades de almacenamiento
