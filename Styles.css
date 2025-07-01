@@ -206,6 +206,27 @@ body {
     line-height: 1.5;
 }
 
+/* Color variations for request option cards */
+.parent-card {
+    background-color: var(--warning-color);
+    color: var(--text-primary);
+}
+
+.parent-card h3,
+.parent-card p {
+    color: var(--text-primary);
+}
+
+.teacher-card {
+    background-color: var(--success-color);
+    color: var(--text-white);
+}
+
+.teacher-card h3,
+.teacher-card p {
+    color: var(--text-white);
+}
+
 /* Buttons */
 .btn-primary,
 .btn-secondary,
