@@ -455,6 +455,16 @@ class SistemaExcusas {
                 query = query.eq('tipo_solicitud', filtros.tipo);
             }
             
+            if (filtros.fechaInicio) {
+                query = query.gte('fecha_solicitud', filtros.fechaInicio);
+            }
+
+            if (filtros.fechaFin) {
+                const end = new Date(filtros.fechaFin);
+                end.setHours(23, 59, 59, 999);
+                query = query.lte('fecha_solicitud', end.toISOString());
+            }
+
             const { data, error } = await query.order('fecha_solicitud', { ascending: false });
             
             if (error) throw error;
@@ -477,11 +487,22 @@ class SistemaExcusas {
         if (filtros.estado) {
             solicitudes = solicitudes.filter(s => s.estado === filtros.estado);
         }
-        
+
         if (filtros.tipo) {
             solicitudes = solicitudes.filter(s => s.tipo === filtros.tipo);
         }
-        
+
+        if (filtros.fechaInicio) {
+            const start = new Date(filtros.fechaInicio);
+            solicitudes = solicitudes.filter(s => new Date(s.fecha) >= start);
+        }
+
+        if (filtros.fechaFin) {
+            const end = new Date(filtros.fechaFin);
+            end.setHours(23, 59, 59, 999);
+            solicitudes = solicitudes.filter(s => new Date(s.fecha) <= end);
+        }
+
         return solicitudes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     }
 
@@ -700,6 +721,25 @@ class SistemaExcusas {
             }).join('');
         }
 
+        imprimirSolicitud(id) {
+        const solicitud = this.solicitudes.find(s => String(s.id) === String(id));
+        if (!solicitud) return;
+        const ventana = window.open('', '_blank');
+        if (!ventana) return;
+        const contenido = this.generateConsultaHTML(solicitud);
+        ventana.document.write(`<!DOCTYPE html><html><head><title>Imprimir</title><style>body{font-family:Arial,sans-serif;padding:20px;}</style></head><body>${contenido}</body></html>`);
+        ventana.document.close();
+        ventana.print();
+    }
+
+        html += `
+            <div class="solicitud-actions">
+                <button class="btn-secondary" onclick="sistema.imprimirSolicitud('${solicitud.id}')">
+                    <i class="fas fa-print"></i> Imprimir
+                </button>
+            </div>
+        `;
+
         return html;
     }
 
@@ -849,7 +889,13 @@ class SistemaExcusas {
         }
 
         try {
-            const solicitudes = await this.getSolicitudes();
+            const filtros = {};
+            const inicioInput = document.getElementById('adminFechaInicio');
+            const finInput = document.getElementById('adminFechaFin');
+            if (inicioInput && inicioInput.value) filtros.fechaInicio = inicioInput.value;
+            if (finInput && finInput.value) filtros.fechaFin = finInput.value;
+
+            const solicitudes = await this.getSolicitudes(filtros);
             
             const pendientes = solicitudes.filter(s => s.estado === 'pendiente' || s.estado_actual === 'pendiente');
             const aprobadasHoy = solicitudes.filter(s => {
@@ -1753,6 +1799,22 @@ class SistemaExcusas {
 
         // Eventos para el stepper
         this.setupStepperEvents();
+
+        // Filtros de fecha para admin
+        const toggleFecha = document.getElementById('toggleFecha');
+        const fechaFilters = document.getElementById('fechaFilters');
+        const aplicarFiltro = document.getElementById('aplicarFiltroFecha');
+        if (toggleFecha) {
+            toggleFecha.addEventListener('change', () => {
+                if (fechaFilters) fechaFilters.style.display = toggleFecha.checked ? 'flex' : 'none';
+                if (!toggleFecha.checked) {
+                    document.getElementById('adminFechaInicio').value = '';
+                    document.getElementById('adminFechaFin').value = '';
+                    this.loadAdminDashboard();
+                }
+            });
+        }
+        aplicarFiltro?.addEventListener('click', () => this.loadAdminDashboard());
     }
 
     // Utilidades de almacenamiento
