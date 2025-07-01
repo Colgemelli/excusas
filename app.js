@@ -780,29 +780,7 @@ class SistemaExcusas {
         `;
         
         const validaciones = solicitud.validacionesDocentes || solicitud.datos_formulario?.validacionesDocentes || [];
-        if (Array.isArray(validaciones) && validaciones.length > 0) {
-            html += validaciones.map(v => {
-                const docente = escapeHTML(v.docente || '');
-                const asignatura = escapeHTML(v.asignatura || '');
-                const fechaVal = v.fecha ? new Date(v.fecha).toLocaleString() : '';
-                const obs = escapeHTML(v.observacion || '');
-                return `
-                    <div class="validacion-detalle">
-                        <div class="solicitud-header">
-                            <h3>Validación Docente</h3>
-                            <span class="estado estado-validado">Validado</span>
-                        </div>
-                        <div class="solicitud-info">
-                            <p><strong>Docente:</strong> ${docente}</p>
-                            <p><strong>Asignatura:</strong> ${asignatura}</p>
-                            <p><strong>Fecha:</strong> ${fechaVal}</p>
-                            ${obs ? `<p><strong>Observación:</strong> ${obs}</p>` : ''}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
+        
         html += `
             <div class="solicitud-actions">
                 <button class="btn-secondary" onclick="sistema.imprimirSolicitud('${solicitud.id}')">
