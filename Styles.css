@@ -1279,6 +1279,24 @@ body {
     box-shadow: var(--shadow-lg);
 }
 
+/* Admin Solicitudes */
+.admin-solicitudes {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+    margin-top: 2rem;
+}
+
+.admin-solicitudes h3 {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.admin-solicitudes .solicitud-detalle + .solicitud-detalle {
+    margin-top: 1rem;
+}
+
 .chart-container h3 {
     margin-bottom: 1.5rem;
     color: var(--text-primary);
