@@ -253,17 +253,18 @@ class SistemaExcusas {
         this.solicitudes = this.loadFromStorage('solicitudes') || [];
         this.radicadoCounter = this.loadFromStorage('radicadoCounter') || 1000;
         
-        // Usuarios predefinidos para desarrollo local
+    // Usuarios predefinidos para desarrollo local (contraseñas en bcrypt)
+        const saltRounds = 10;
         this.usuariosLocal = {
             coordinadores: [
-                { id: 'coord1', usuario: 'coord1', password: 'coord123', nombre: 'María González', tipo: 'coordinador', email: 'maria.gonzalez@gemelli.edu.co' },
-                { id: 'directora', usuario: 'directora', password: 'dir123', nombre: 'Ana Patricia López', tipo: 'coordinador', email: 'ana.lopez@gemelli.edu.co' }
+                { id: 'coord1', usuario: 'coord1', passwordHash: bcrypt.hashSync('coord123', saltRounds), nombre: 'María González', tipo: 'coordinador', email: 'maria.gonzalez@gemelli.edu.co' },
+                { id: 'directora', usuario: 'directora', passwordHash: bcrypt.hashSync('dir123', saltRounds), nombre: 'Ana Patricia López', tipo: 'coordinador', email: 'ana.lopez@gemelli.edu.co' }
             ],
             docentes: [
                 {
                     id: 'doc1',
                     usuario: 'doc1',
-                    password: 'doc123',
+                    passwordHash: bcrypt.hashSync('doc123', saltRounds),
                     nombre: 'Carlos Ramírez',
                     grado: '5°',
                     asignatura: 'Matemáticas',
@@ -273,7 +274,7 @@ class SistemaExcusas {
                 {
                     id: 'doc2',
                     usuario: 'doc2',
-                    password: 'doc123',
+                    passwordHash: bcrypt.hashSync('doc123', saltRounds),
                     nombre: 'Laura Martínez',
                     grado: '8°',
                     asignatura: 'Inglés',
@@ -283,7 +284,7 @@ class SistemaExcusas {
                 {
                     id: 'doc3',
                     usuario: 'doc3',
-                    password: 'doc123',
+                    passwordHash: bcrypt.hashSync('doc123', saltRounds),
                     nombre: 'Pedro Silva',
                     grado: '11°',
                     asignatura: 'Física',
@@ -292,7 +293,7 @@ class SistemaExcusas {
                 }
             ],
             admin: [
-                { id: 'admin', usuario: 'admin', password: 'admin123', nombre: 'Administrador Sistema', tipo: 'admin', email: 'admin@gemelli.edu.co' }
+                { id: 'admin', usuario: 'admin', passwordHash: bcrypt.hashSync('admin123', saltRounds), nombre: 'Administrador Sistema', tipo: 'admin', email: 'admin@gemelli.edu.co' }
             ]
         };
     }
@@ -613,6 +614,11 @@ class SistemaExcusas {
     getEstadoId(nombreEstado) {
         const estados = { 'pendiente': 1, 'aprobado': 2, 'rechazado': 3, 'validado': 4 };
         return estados[nombreEstado] || 1;
+    }
+
+    getTipoUsuarioId(tipo) {
+        const tipos = { 'coordinador': 1, 'docente': 2, 'admin': 3 };
+        return tipos[tipo] || 1;
     }
 
     // Generar número de radicado incremental
@@ -949,16 +955,23 @@ class SistemaExcusas {
 
     async loginLocal(usuario, password, tipoUsuario) {
         let userFound = null;
-        
+
         if (tipoUsuario === 'coordinador') {
-            userFound = this.usuariosLocal.coordinadores.find(u => u.usuario === usuario && u.password === password);
+            userFound = this.usuariosLocal.coordinadores.find(u => u.usuario === usuario);
         } else if (tipoUsuario === 'docente') {
-            userFound = this.usuariosLocal.docentes.find(u => u.usuario === usuario && u.password === password);
+            userFound = this.usuariosLocal.docentes.find(u => u.usuario === usuario);
         } else if (tipoUsuario === 'admin') {
-            userFound = this.usuariosLocal.admin.find(u => u.usuario === usuario && u.password === password);
+            userFound = this.usuariosLocal.admin.find(u => u.usuario === usuario);
         }
         
-        return userFound;
+         if (userFound) {
+            const match = await bcrypt.compare(password, userFound.passwordHash);
+            if (!match) return null;
+            const { passwordHash, ...userData } = userFound;
+            return userData;
+        }
+
+        return null;
     }
 
     async loginSupabase(usuario, password, tipoUsuario) {
@@ -980,16 +993,20 @@ class SistemaExcusas {
                 return null;
             }
 
-            // En producción, aquí verificarías el hash de la contraseña
-            // Por ahora, verificamos la contraseña en texto plano (solo para desarrollo)
+            // Obtener hash de la contraseña
             const { data: authData, error: authError } = await this.supabase
                 .from('usuarios')
                 .select('password_hash')
                 .eq('id', userData.id)
-                .eq('password_hash', password) // En producción usar bcrypt
                 .single();
 
             if (authError || !authData) {
+                console.log('Contraseña incorrecta');
+                return null;
+            }
+
+            const match = await bcrypt.compare(password, authData.password_hash);
+            if (!match) {
                 console.log('Contraseña incorrecta');
                 return null;
             }
@@ -1013,6 +1030,35 @@ class SistemaExcusas {
         }
     }
 
+    // Crear usuario en Supabase con contraseña hasheada
+    async createUserSupabase(usuarioData) {
+        try {
+            const passwordHash = await bcrypt.hash(usuarioData.password, 10);
+
+            const { data, error } = await this.supabase
+                .from('usuarios')
+                .insert([
+                    {
+                        usuario: usuarioData.usuario,
+                        password_hash: passwordHash,
+                        nombre: usuarioData.nombre,
+                        email: usuarioData.email,
+                        grado_asignado: usuarioData.grado,
+                        asignatura: usuarioData.asignatura,
+                        tipo_usuario_id: this.getTipoUsuarioId(usuarioData.tipo),
+                        activo: true
+                    }
+                ])
+                .select();
+
+            if (error) throw error;
+            return data[0];
+        } catch (error) {
+            console.error('Error creando usuario:', error);
+            throw error;
+        }
+    }
+    
     logout() {
         this.currentUser = null;
         this.saveToStorage('currentUser', null);
