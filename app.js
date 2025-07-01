@@ -26,6 +26,7 @@ class SistemaExcusas {
         this.solicitudes = [];
         this.adminSolicitudes = [];
         this.radicadoCounter = 1000;
+        this.radicadoPrefix = 'RAD-';
         this.supabase = null;
         
         this.init();
@@ -34,6 +35,7 @@ class SistemaExcusas {
     async init() {
         try {
             await this.initSupabase();
+            await this.loadRadicadoConfig();
             this.setupEventListeners();
             this.initSteppers();
             this.initDateValidation();
@@ -44,6 +46,30 @@ class SistemaExcusas {
         } catch (error) {
             this.updateStatus('🔴 Error en inicialización');
             console.error('Error en inicialización:', error);
+        }
+    }
+
+    async loadRadicadoConfig() {
+        if (SUPABASE_CONFIG.useLocal) {
+            this.radicadoPrefix = this.loadFromStorage('radicadoPrefix') || this.radicadoPrefix;
+            this.radicadoCounter = this.loadFromStorage('radicadoCounter') || this.radicadoCounter;
+            return;
+        }
+
+        try {
+            const { data, error } = await this.supabase
+                .from('configuracion_sistema')
+                .select('clave, valor')
+                .in('clave', ['radicado_prefix', 'radicado_counter']);
+
+            if (error) throw error;
+
+            data.forEach(row => {
+                if (row.clave === 'radicado_prefix') this.radicadoPrefix = row.valor;
+                if (row.clave === 'radicado_counter') this.radicadoCounter = Number(row.valor);
+            });
+        } catch (error) {
+            console.error('Error cargando configuración de radicados:', error);
         }
     }
 
@@ -123,7 +149,7 @@ class SistemaExcusas {
 
             // ========== CORRECCIÓN: Mapeo correcto de campos ==========
             const solicitudParaDB = {
-                radicado: this.generateRadicado(),
+                radicado: await this.generateRadicado(),
                 tipo_solicitud_id: solicitudData.tipo === 'excusa' ? 1 : 2,
                 nombre_estudiante: solicitudData.nombreEstudiante,
                 grado_id: gradoId,
@@ -374,7 +400,8 @@ class SistemaExcusas {
         // Usuarios predefinidos para desarrollo local (contraseñas en texto plano)
         this.solicitudes = this.loadFromStorage('solicitudes') || [];
         this.radicadoCounter = this.loadFromStorage('radicadoCounter') || 1000;
-        
+        this.radicadoPrefix = this.loadFromStorage('radicadoPrefix') || this.radicadoPrefix;
+
         this.usuariosLocal = {
             coordinadores: [
                  { id: 'coord1', usuario: 'coord1', password: 'coord123', nombre: 'María González', tipo: 'coordinador', email: 'maria.gonzalez@gemelli.edu.co' },
@@ -421,13 +448,28 @@ class SistemaExcusas {
     // ========== RESTO DE MÉTODOS PERMANECEN IGUALES ==========
     
     // Generar número de radicado incremental
-    generateRadicado() {
+    async generateRadicado() {
         this.radicadoCounter += 1;
-        return `RAD-${this.radicadoCounter}`;
+        const radicado = `${this.radicadoPrefix}${this.radicadoCounter}`;
+
+        if (SUPABASE_CONFIG.useLocal) {
+            this.saveToStorage('radicadoCounter', this.radicadoCounter);
+        } else {
+            try {
+                await this.supabase
+                    .from('configuracion_sistema')
+                    .update({ valor: String(this.radicadoCounter) })
+                    .eq('clave', 'radicado_counter');
+            } catch (error) {
+                console.error('Error actualizando contador de radicados:', error);
+            }
+        }
+
+        return radicado;
     }
 
     async createSolicitudLocal(solicitudData) {
-        const radicado = this.generateRadicado();
+        const radicado = await this.generateRadicado();
         let archivoBase64 = null;
         if (solicitudData.archivoAdjunto) {
             try {
@@ -449,7 +491,6 @@ class SistemaExcusas {
         if (archivoBase64) solicitud.archivoAdjunto = archivoBase64;
         this.solicitudes.push(solicitud);
         this.saveToStorage('solicitudes', this.solicitudes);
-        this.saveToStorage('radicadoCounter', this.radicadoCounter);
 
         return solicitud;
     }
