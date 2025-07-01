@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 set -e
 
-: "${https://zkbnpjmtwkhcvqizpmhj.supabase.co}"
-: "${eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprYm5wam10d2toY3ZxaXpwbWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTQyNDksImV4cCI6MjA2NjczMDI0OX0.McMyTT8-Myp6L0nIjTN4chedAPunB0dwymQKhiNp6uI"
+# Ensure environment variables are set
+: "${SUPABASE_URL:?SUPABASE_URL not set}"
+: "${SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY not set}"
 
-cat > env.js <<EOF2
+cat > env.js <<EOF
 window.process = {
   env: {
-    SUPABASE_URL: "$SUPABASE_URL",
-    SUPABASE_ANON_KEY: "$SUPABASE_ANON_KEY"
+    SUPABASE_URL: "${SUPABASE_URL}",
+    SUPABASE_ANON_KEY: "${SUPABASE_ANON_KEY}"
   }
 };
-EOF2
+EOF
+
+echo "env.js generado"
