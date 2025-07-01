@@ -1,5 +1,2 @@
-# Example environment file (copy as env.js for local secrets)
-# env.example.js
-
 # Local environment configuration
 env.js
