@@ -235,16 +235,23 @@ class SistemaExcusas {
     // Inicializar Supabase
     async initSupabase() {
         if (!SUPABASE_CONFIG.useLocal) {
-            try {
-                if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
-                    this.supabase = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
-                    console.log('Supabase inicializado correctamente');
-                } else {
-                    throw new Error('Supabase library not loaded');
-                }
-            } catch (error) {
-                console.warn('Error al inicializar Supabase, usando almacenamiento local:', error);
+            if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key) {
+                console.error('Supabase configuration missing. Falling back to local storage');
                 SUPABASE_CONFIG.useLocal = true;
+                 this.updateStatus('🟡 Supabase no configurado, usando modo local');
+            } else {
+                try {
+                    if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+                        this.supabase = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+                        console.log('Supabase inicializado correctamente');
+                    } else {
+                        throw new Error('Supabase library not loaded');
+                    }
+                } catch (error) {
+                    console.warn('Error al inicializar Supabase, usando almacenamiento local:', error);
+                    SUPABASE_CONFIG.useLocal = true;
+                    this.updateStatus('🟡 Supabase no inicializado, usando modo local');
+                }
             }
         }
 
