@@ -764,6 +764,36 @@ class SistemaExcusas {
         `;
     }
 
+    async showDetalleSolicitud(id) {
+        let solicitud = null;
+        try {
+            if (SUPABASE_CONFIG.useLocal) {
+                solicitud = this.solicitudes.find(s => String(s.id) === String(id));
+            } else if (this.supabase) {
+                const { data, error } = await this.supabase
+                    .from('vista_solicitudes_completas')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                if (error) throw error;
+                solicitud = data;
+            }
+
+            if (solicitud) {
+                const body = document.getElementById('detalleSolicitudBody');
+                body.innerHTML = this.generateConsultaHTML(solicitud);
+                document.getElementById('modalDetalleSolicitud').style.display = 'flex';
+            }
+        } catch (error) {
+            console.error('Error al obtener detalle de la solicitud:', error);
+        }
+    }
+
+    cerrarDetalleSolicitud() {
+        document.getElementById('modalDetalleSolicitud').style.display = 'none';
+        document.getElementById('detalleSolicitudBody').innerHTML = '';
+    }
+
     // Funciones auxiliares compartidas entre modales
     showModalConfirmacion(titulo, mensaje, accion, mostrarObservaciones = false) {
         document.getElementById('tituloConfirmacion').textContent = titulo;
