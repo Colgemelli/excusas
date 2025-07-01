@@ -95,10 +95,9 @@ class SistemaExcusas {
                 }
                 console.log('✅ Conexión a Supabase verificada');
             } catch (error) {
-                console.warn('Fallo inicializando Supabase, usando modo local:', error);
-                this.updateStatus('⚠️ Supabase no disponible, usando modo local');
-                SUPABASE_CONFIG.useLocal = true;
-                await this.loadLocalData();
+                this.updateStatus('🔴 Error conectando a Supabase');
+                console.error('Error al inicializar Supabase:', error);
+                throw error;
             }
         } else {
             console.log('📱 Usando almacenamiento local para desarrollo');
@@ -398,7 +397,7 @@ class SistemaExcusas {
 
     // Cargar datos locales para desarrollo
     async loadLocalData() {
-        // Usuarios predefinidos para desarrollo local (contraseñas en texto plano)
+        // Usuarios predefinidos para desarrollo local (contraseñas en texto plano en la columna "password")
         this.solicitudes = this.loadFromStorage('solicitudes') || [];
         this.radicadoCounter = this.loadFromStorage('radicadoCounter') || 1000;
         this.radicadoPrefix = this.loadFromStorage('radicadoPrefix') || this.radicadoPrefix;
@@ -983,26 +982,22 @@ class SistemaExcusas {
         const usuario = document.getElementById('usuario').value;
         const password = document.getElementById('password').value;
         const tipoUsuario = document.getElementById('tipoUsuario').value;
-        const msgEl = document.getElementById('loginMessage');
-        msgEl.textContent = '';
-        msgEl.style.display = 'none';
 
         try {
-            let result = null;
+            let userFound = null;
             
             if (SUPABASE_CONFIG.useLocal) {
-                result = await this.loginLocal(usuario, password, tipoUsuario);
+                userFound = await this.loginLocal(usuario, password, tipoUsuario);
             } else {
-                result = await this.loginSupabase(usuario, password, tipoUsuario);
+                userFound = await this.loginSupabase(usuario, password, tipoUsuario);
             }
 
-            if (result && result.user) {
-                const userFound = result.user;
+            if (userFound) {
                 this.currentUser = userFound;
                 this.saveToStorage('currentUser', userFound);
                 this.clearForm('loginForm');
                 this.updateAuthUI();
-
+                
                 // Redirigir según el tipo de usuario
                 if (tipoUsuario === 'coordinador') {
                     this.showView('coordinadorView');
@@ -1011,25 +1006,14 @@ class SistemaExcusas {
                 } else if (tipoUsuario === 'admin') {
                     this.showView('adminView');
                 }
-
+                
                 this.updateStatus(`🟢 Bienvenido ${userFound.nombre}`);
             } else {
-                let msg = 'Error al iniciar sesión.';
-                if (result && result.error === 'user_not_found') {
-                    msg = 'Usuario no encontrado';
-                } else if (result && result.error === 'incorrect_password') {
-                    msg = 'Contraseña incorrecta';
-                } else if (result && result.error === 'connection_error') {
-                    msg = 'Error de conexión con Supabase';
-                }
-                msgEl.textContent = msg;
-                msgEl.style.display = 'block';
-                this.updateStatus('🔴 Fallo al iniciar sesión');
+                alert('Usuario o contraseña incorrectos');
             }
         } catch (error) {
             console.error('Error en login:', error);
-            msgEl.textContent = 'Error inesperado. Intente nuevamente.';
-            msgEl.style.display = 'block';
+            alert('Error al iniciar sesión. Intente nuevamente.');
         }
     }
 
@@ -1044,16 +1028,12 @@ class SistemaExcusas {
             userFound = this.usuariosLocal.admin.find(u => u.usuario === usuario);
         }
         
-        if (!userFound) {
-            return { error: 'user_not_found' };
+        if (userFound && userFound.password === password) {
+            const { password, ...userData } = userFound;
+            return userData;
         }
 
-        if (userFound.password !== password) {
-            return { error: 'incorrect_password' };
-        }
-
-        const { password: pw, ...userData } = userFound;
-        return { user: userData };
+        return null;
     }
 
     async loginSupabase(usuario, password, tipoUsuario) {
@@ -1070,53 +1050,48 @@ class SistemaExcusas {
                 .eq('tipos_usuario.nombre', tipoUsuario)
                 .single();
 
-            if (userError) {
-                console.error('Error consultando usuario:', userError);
-                return { error: 'connection_error' };
-            }
-
-            if (!userData) {
-                return { error: 'user_not_found' };
+            if (userError || !userData) {
+                console.error('Usuario no encontrado:', userError);
+                return null;
             }
 
             // Obtener contraseña almacenada
             const { data: authData, error: authError } = await this.supabase
                 .from('usuarios')
-                .select('password_hash')
+                .select('password')
                 .eq('id', userData.id)
                 .single();
 
-            if (authError) {
-                console.error('Error obteniendo contraseña:', authError);
-                return { error: 'connection_error' };
+            if (authError || !authData) {
+                console.log('Contraseña incorrecta');
+                return null;
             }
 
-            if (!authData || password !== authData.password_hash) {
-                return { error: 'incorrect_password' };
+             if (!authData || password !== authData.password) {
+                console.log('Contraseña incorrecta');
+                return null;
             }
 
             // Autenticar con Supabase Auth (opcional)
             const email = userData.email || `${usuario}@gemelli.edu.co`;
-
+            
             return {
-                user: {
-                    id: userData.id,
-                    usuario: userData.usuario,
-                    nombre: userData.nombre,
-                    email: userData.email,
-                    tipo: tipoUsuario,
-                    grado: userData.grado_asignado,
-                    asignatura: userData.asignatura
-                }
+                id: userData.id,
+                usuario: userData.usuario,
+                nombre: userData.nombre,
+                email: userData.email,
+                tipo: tipoUsuario,
+                grado: userData.grado_asignado,
+                asignatura: userData.asignatura
             };
 
         } catch (error) {
             console.error('Error en autenticación Supabase:', error);
-            return { error: 'connection_error' };
+            return null;
         }
     }
 
-    // Crear usuario en Supabase (contraseña en texto plano)
+    // Crear usuario en Supabase (contraseña en texto plano almacenada en la columna "password")
     async createUserSupabase(usuarioData) {
         try {
             
@@ -1125,7 +1100,7 @@ class SistemaExcusas {
                 .insert([
                     {
                         usuario: usuarioData.usuario,
-                        password_hash: usuarioData.password,
+                        password: usuarioData.password,
                         nombre: usuarioData.nombre,
                         email: usuarioData.email,
                         grado_asignado: usuarioData.grado,
