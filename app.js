@@ -449,22 +449,20 @@ class SistemaExcusas {
     
     // Generar número de radicado incremental
     async generateRadicado() {
-        this.radicadoCounter += 1;
-        const radicado = `${this.radicadoPrefix}${this.radicadoCounter}`;
-
         if (SUPABASE_CONFIG.useLocal) {
+            this.radicadoCounter += 1;
             this.saveToStorage('radicadoCounter', this.radicadoCounter);
         } else {
             try {
-                await this.supabase
-                    .from('configuracion_sistema')
-                    .update({ valor: String(this.radicadoCounter) })
-                    .eq('clave', 'radicado_counter');
+                const { data, error } = await this.supabase.rpc('increment_radicado_counter');
+                if (error) throw error;
+                this.radicadoCounter = data;
             } catch (error) {
-                console.error('Error actualizando contador de radicados:', error);
+                console.error('Error incrementando radicado en Supabase:', error);
+                this.radicadoCounter += 1;
             }
         }
-
+        const radicado = `${this.radicadoPrefix}${this.radicadoCounter}`;
         return radicado;
     }
 
