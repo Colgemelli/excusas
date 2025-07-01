@@ -1,334 +1,96 @@
-📋 Sistema de Excusas y Permisos - Colegio Gemelli Franciscanos
-🚀 Instrucciones de Configuración y Despliegue
-📁 Estructura de Archivos
-proyecto/
-├── index.html          # Interfaz principal con formularios stepper
-├── app.js             # Lógica de la aplicación con stepper y validaciones
-├── styles.css         # Estilos CSS con componentes stepper
-└── README.md          # Este archivo
-✨ Nuevas Características Implementadas
-🎯 Formulario Stepper (Estilo Stepperize)
-4 pasos para completar cada solicitud
-Navegación visual con indicadores de progreso
-Validación paso a paso antes de continuar
-Sección de revisión antes del envío final
-Responsive design adaptado a móviles
-👨‍👩‍👧‍👦 Información Completa del Acudiente
-Nombre completo del acudiente
-Correo electrónico (nuevo campo obligatorio)
-Teléfono de contacto
-Perfil/relación con el estudiante (Padre, Madre, Tutor, etc.)
-Número de documento de identidad
-Eliminado: Campo de "firma del padre" (reemplazado por datos completos)
-🎓 Base de Datos de Estudiantes
-Estudiantes por grado preconfigurados
-Selección dinámica cuando se elige el grado
-Información del estudiante con código y nombre completo
-Validación automática de estudiante seleccionado
-📅 Validación de Fechas Mejorada
-Solo fechas futuras: Desde hoy en adelante
-Validación en tiempo real
-Mensajes de error específicos para fechas inválidas
-🛠️ Configuración Inicial
-Opción 1: Desarrollo Local (Sin Supabase)
-El sistema funciona inmediatamente con todas las nuevas características.
-Las solicitudes se guardan en `localStorage` del navegador mientras Supabase no esté disponible.
-Si `localStorage` no está habilitado, los datos solo persisten durante la sesión actual.
-Si la inicialización de Supabase falla, `useLocal` se activa automáticamente y se muestra una advertencia en la consola indicando este modo de respaldo.
+# 📄 Aplicación de Excusas y Permisos - Colegio Gemelli
 
-Subir archivos a Netlify/GitHub Pages:
-bash
-git clone tu-repositorio
-# Subir index.html, app.js, styles.css
-Usuarios predefinidos para testing:
-Coordinadores:
-- Usuario: coord1 | Contraseña: coord123
-- Usuario: directora | Contraseña: dir123
+Este repositorio contiene una aplicación web desarrollada para el Colegio Franciscano Agustín Gemelli. El sistema permite a los padres de familia diligenciar excusas o permisos estudiantiles sin necesidad de registro previo. La aplicación está desplegada en **Netlify**, utiliza **Supabase** como backend y está gestionada a través de **GitHub**.
 
-Docentes:
-- Usuario: doc1 | Contraseña: doc123 (Grado: 5°)
-- Usuario: doc2 | Contraseña: doc123 (Grado: 8°)
-- Usuario: doc3 | Contraseña: doc123 (Grado: 11°)
+---
 
-Administrador:
-- Usuario: admin | Contraseña: admin123
-Estudiantes de ejemplo por grado:
-Preescolar: Ana Sofía Pérez, Carlos Andrés López, etc.
-1° a 11°: 5 estudiantes por grado con códigos únicos
-Carga automática al seleccionar grado
-Opción 2: Producción con Supabase
-1. Crear Proyecto en Supabase
-Ve a supabase.com
-Crea una cuenta y nuevo proyecto
-Anota tu Project URL y anon public key
-2. Configurar Base de Datos
-Ejecuta el script SQL completo que está en el artifact "Tablas SQL para Supabase":
+## 🚀 Tecnologías Utilizadas
 
-sql
--- Ejecutar todo el contenido del archivo SQL en el Query Editor de Supabase
--- Esto creará todas las tablas, políticas y datos iniciales
-Luego, ejecuta el archivo `docs/views.sql` para crear las vistas
-`vista_estudiantes_grados`, `vista_usuarios_completa` y
-`vista_solicitudes_completas`.
-3. Configurar Políticas RLS
-sql
--- Política simple para desarrollo
-CREATE POLICY "usuarios_autenticados_ven_solicitudes" ON solicitudes
-    FOR SELECT USING (auth.role() = 'authenticated');
+- **Frontend**: HTML5, CSS3, JavaScript
+- **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **Hosting**: Netlify
+- **Repositorio**: GitHub
 
-CREATE POLICY "crear_solicitudes_publico" ON solicitudes
-    FOR INSERT WITH CHECK (true);
-4. Generar `env.js`
-Define `SUPABASE_URL` y `SUPABASE_ANON_KEY` y ejecuta el script `build.sh`:
+---
 
-```bash
-SUPABASE_URL=tu-url SUPABASE_ANON_KEY=tu-clave ./build.sh
+## 🏠 Funcionalidades Principales
+
+- Página de inicio que permite al padre escoger entre excusa o permiso.
+- Formularios dinámicos según el tipo de solicitud.
+- Validación de datos y campos obligatorios.
+- Subida de archivos adjuntos (incapacidades, certificados, etc.).
+- Generación automática de número de radicado.
+- Flujo de estados de la solicitud (en validación, aprobada, rechazada).
+- Panel administrativo con control de usuarios, auditoría, estadísticas y más.
+
+---
+
+## 🧱 Estructura del Proyecto
+
+```
+excusas/
+├── index.html        # Página principal
+├── styles.css        # Estilos generales
+├── app.js            # Lógica de la aplicación
+├── README.md         # Documentación
 ```
 
-Esto crea el archivo `env.js` que se carga antes de `app.js` y expone las
-credenciales mediante `window.process.env`. Dicho archivo está listado en
-`.gitignore`, por lo que no se incluye en el repositorio.
-5. Poblar Base de Datos de Estudiantes
-sql
--- Insertar estudiantes en la tabla correspondiente
--- (Script incluido en el archivo SQL completo)
+---
 
-6. Configurar tabla `configuracion_sistema`
-Inserta los registros iniciales para la numeración de radicados:
+## 🧮 Base de Datos - Supabase (PostgreSQL)
 
-```sql
-INSERT INTO configuracion_sistema (clave, valor) VALUES
-  ('radicado_prefix', 'RAD-'),
-  ('radicado_counter', '1000');
-```
+Se utilizaron las siguientes tablas en Supabase para manejar todo el flujo del sistema:
 
-Para evitar colisiones en ambientes multiusuario, crea una función que
-incremente el contador de manera atómica:
+### 📂 Tablas Principales
 
-```sql
-CREATE OR REPLACE FUNCTION increment_radicado_counter()
-RETURNS integer AS $$
-DECLARE
-  nuevo_valor integer;
-BEGIN
-  UPDATE configuracion_sistema
-     SET valor = (valor::int + 1)::text
-   WHERE clave = 'radicado_counter'
-   RETURNING valor::int INTO nuevo_valor;
-  RETURN nuevo_valor;
-END;
-$$ LANGUAGE plpgsql;
-```
+1. **usuarios**: Manejo de usuarios del sistema (padres, administrativos, validadores).
+2. **tipos_usuario**: Define roles y permisos de acceso.
+3. **estudiantes**: Información básica de los estudiantes.
+4. **grados**: Niveles académicos y grados del colegio.
+5. **solicitudes**: Registro de todas las excusas y permisos solicitados.
+6. **tipos_solicitud**: Clasificación entre excusas y permisos.
+7. **archivos_adjuntos**: Manejo de documentos como certificados médicos e incapacidades.
+8. **historial_estados**: Registro de los cambios de estado de cada solicitud.
+9. **estados_solicitud**: Etapas del proceso (radicado, validado, aprobado, rechazado).
+10. **logs_auditoria**: Auditoría completa de acciones del sistema.
+11. **configuracion_sistema**: Parámetros de configuración general.
+12. **estadisticas_cache**: Caché de métricas para reportes y análisis.
 
-🎨 Flujo del Formulario Stepper
-📝 Excusas (4 Pasos):
-👨‍👩‍👧‍👦 Acudiente: Información personal completa
-🎓 Estudiante: Selección de grado y estudiante
-📋 Excusa: Fechas, motivo, documentos adjuntos
-✅ Confirmación: Revisión antes de enviar
-🕐 Permisos (4 Pasos):
-👨‍👩‍👧‍👦 Acudiente: Información personal completa
-🎓 Estudiante: Selección de grado y estudiante
-⏰ Permiso: Fechas, horarios, tipo de permiso
-✅ Confirmación: Revisión antes de enviar
-✅ Validaciones Implementadas
-🔍 Validación por Pasos:
-Paso 1: Email válido, campos obligatorios completos
-Paso 2: Grado y estudiante seleccionados
-Paso 3: Fechas futuras, campos específicos del tipo
-Paso 4: Revisión final de todos los datos
-📅 Validación de Fechas:
-Fecha mínima: Hoy (no fechas pasadas)
-Validación automática al cambiar fecha
-Mensajes de error específicos
-👥 Validación de Estudiantes:
-Carga dinámica por grado seleccionado
-Información automática del estudiante
-Códigos únicos por estudiante
-🔐 Política de Protección de Datos Actualizada
-✅ Características Mejoradas:
-Identificación completa del Colegio Gemelli
-Finalidades específicas del sistema
-Derechos detallados del titular
-Contacto Habeas Data: habeasdata@colegiosfranciscanos.com
-Doble validación obligatoria
-📱 Diseño Responsive
-🖥️ Desktop:
-Stepper horizontal con conectores
-Formulario de 2 columnas
-Navegación lateral
-📱 Móvil:
-Stepper vertical tipo cards
-Formulario de 1 columna
-Botones full-width
-Touch-friendly navigation
-🐛 Solución de Problemas
-Error: Estudiantes no cargan
-Verificar selección de grado
-Revisar console del navegador
-Verificar estructura de datos
-Error: Fechas no válidas
-Comprobar configuración de fecha mínima
-Verificar formato de fecha del navegador
-Error: Stepper no navega
-Verificar validaciones de cada paso
-Revisar campos obligatorios
-Comprobar mensajes de error
-🎯 Funcionalidades del Stepper
-⏭️ Navegación:
-Siguiente: Solo si el paso actual es válido
-Anterior: Siempre disponible (excepto paso 1)
-Saltar pasos: No permitido sin validar
-Indicadores visuales: Estados completado/activo/pendiente
-🔄 Auto-actualización:
-Sección de revisión se actualiza automáticamente
-Información del estudiante aparece al seleccionar
-Campos dinámicos según tipo de solicitud
-✨ Características Especiales:
-Prevención de envío con Enter en campos intermedios
-Validación en tiempo real en campos críticos
-Estados visuales para campos válidos/inválidos
-Mensajes de error contextuales por paso
-📊 Datos de Ejemplo Incluidos
-javascript
-// Ejemplo de estudiantes por grado
-'5°': [
-    { codigo: '5A001', nombre: 'Gabriela', apellidos: 'Molina Vargas' },
-    { codigo: '5A002', nombre: 'Maximiliano', apellidos: 'Contreras Ruiz' },
-    // ... más estudiantes
-]
-🚀 Próximas Mejoras
- Integración con sistema académico real
- Notificaciones push para padres
- Firma digital electrónica
- Historial de solicitudes por estudiante
- Dashboard para padres de familia
-© 2025 Sistema de Excusas y Permisos - Colegio Gemelli Franciscanos Formulario Stepper v2.0 con validaciones avanzadas
+---
 
-Usuarios en Producción
-Los usuarios predefinidos tienen contraseñas en texto plano para desarrollo. En producción:
+## 🔐 Seguridad Implementada
 
-Se recomienda cambiar las contraseñas manualmente en la base de datos. Las contraseñas se almacenan y se verifican en texto plano; para usar hashing habría que modificar la lógica en `app.js
-Variables de Entorno
-Define `SUPABASE_URL` y `SUPABASE_ANON_KEY` en tu entorno y ejecuta el script
-de construcción para generar `env.js`.
+- Validación y sanitización de formularios.
+- Uso de HTTPS vía Netlify.
+- Control de roles con Supabase (RLS activado).
+- Generación y validación de tokens únicos de radicado.
+- Subida segura de archivos con verificación de tipo MIME y checksum.
 
-```bash
-SUPABASE_URL=tu-url SUPABASE_ANON_KEY=tu-clave ./build.sh
-```
-Reemplaza `tu-url` y `tu-clave` con los valores reales de tu proyecto cuando ejecutes `build.sh`.
-Se incluye un archivo `env.example.js` como referencia.
+---
 
-El archivo `env.js` se carga antes de `app.js` y expone los valores mediante
-`window.process.env`.
-**Importante:** `env.js` no se incluye en el repositorio por contener credenciales.
-Tras clonar el proyecto, generalo nuevamente ejecutando el script anterior.
+## 🧪 Despliegue
 
-### Generar `env.js`
-Ejecuta nuevamente `build.sh` especificando `SUPABASE_URL` y
-`SUPABASE_ANON_KEY`. El archivo resultante, `env.js`, debe quedar en la misma
-carpeta que `index.html`. Si no se proporcionan credenciales válidas, la
-aplicación cambia automáticamente a almacenamiento en `localStorage` como
-respaldo.
-🌐 Despliegue
-GitHub + Netlify (Recomendado)
-Crear repositorio en GitHub:
-bash
-git init
-git add .
-git commit -m "Sistema de excusas inicial"
-git remote add origin https://github.com/tu-usuario/sistema-excusas.git
-git push -u origin main
-Configurar Netlify:
-Conectar repositorio de GitHub
-Build command: (dejar vacío)
-Publish directory: (dejar vacío o "/")
-Configurar variables de entorno si usas Supabase
-Vercel
-Conectar repositorio de GitHub
-Configurar variables de entorno
-Deploy automático
-Hosting tradicional
-Subir archivos via FTP
-Asegurarse de que el servidor soporte HTTPS
-📊 Funcionalidades Implementadas
-✅ Para Padres de Familia (Sin Login)
-Crear solicitudes de excusa
-Crear solicitudes de permiso
-Consultar estado por radicado
-Modal de protección de datos obligatorio
-Generación automática de radicados
-Adjuntar documentos (certificados médicos)
-✅ Para Coordinadores
-Dashboard con estadísticas
-Aprobar/rechazar solicitudes
-Ver todas las solicitudes
-Agregar observaciones
-Firma digital (aprobación/rechazo)
-✅ Para Docentes
-Ver solicitudes de su grado asignado
-Validar solicitudes aprobadas
-Dashboard simplificado
-✅ Para Administradores
-Dashboard completo con métricas
-Estadísticas por grado
-Histórico mensual
-Gestión completa del sistema
-🔍 Sistema de Permisos
-javascript
-// Permisos por rol
-const permissions = {
-    'coordinador': [
-        'aprobar_solicitudes', 
-        'rechazar_solicitudes', 
-        'ver_dashboard', 
-        'ver_todas_solicitudes'
-    ],
-    'docente': [
-        'validar_solicitudes', 
-        'asignar_trabajos', 
-        'ver_estudiantes', 
-        'ver_solicitudes_grado'
-    ],
-    'admin': [
-        'ver_estadisticas', 
-        'gestionar_usuarios', 
-        'acceso_completo', 
-        'ver_todas_solicitudes'
-    ]
-};
-🐛 Troubleshooting
-Error: "operator does not exist: text ->> unknown"
-Usar las políticas RLS simplificadas proporcionadas
-La lógica de permisos se maneja en JavaScript
-Error de conexión a Supabase
-Verificar URL y clave anónima
-Verificar configuración de CORS en Supabase
-Cambiar useLocal: true para desarrollo sin Supabase
-Solicitudes no aparecen
-Verificar políticas RLS
-Verificar permisos de usuario
-Revisar console del navegador para errores
-📱 Responsive Design
-Optimizado para móviles y tablets
-Formularios adaptativos
-Navegación touch-friendly
-🎨 Personalización
-Variables CSS en :root para fácil customización
-Colores institucionales del Colegio Gemelli
-Iconos Font Awesome incluidos
-📈 Próximas Mejoras
- Notificaciones por email
- Reportes en PDF
- Integración con calendario escolar
- App móvil con Capacitor
- Backup automático de datos
-🆘 Soporte
-Para soporte técnico:
+1. **Frontend**: Subido en Netlify (HTML, CSS y JS planos).
+2. **Backend**: Supabase para autenticación, base de datos y almacenamiento.
+3. **Repositorio**: Versión controlada mediante GitHub.
 
-Revisar console del navegador
-Verificar configuración de Supabase
-Consultar documentación de Supabase
-## Licencia
+---
 
-Este proyecto se distribuye bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+## 📦 SQL del Esquema (Resumen de Tablas)
+
+La estructura completa de las tablas está descrita en el archivo `schema.sql` y fue generada desde Supabase. Las relaciones están correctamente establecidas con claves foráneas, UUIDs, timestamps automáticos y constraints de seguridad.
+
+> Para más detalles sobre el esquema SQL completo, revisa el archivo `schema.sql` o accede al [archivo SQL original](https://github.com/Colgemelli/excusas/blob/main/schema.sql).
+
+---
+
+## 📩 Contacto
+
+Desarrollado por el equipo TIC del Colegio Franciscano Agustín Gemelli.
+
+Para soporte o sugerencias: [www.colgemelli.edu.co](https://www.colgemelli.edu.co)  
+Email: sistemas@colgemelli.edu.co
+
+---
+
+> "La educación también es responsabilidad compartida, y este sistema lo demuestra."
