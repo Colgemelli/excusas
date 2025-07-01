@@ -208,13 +208,7 @@ javascript
 Usuarios en Producción
 Los usuarios predefinidos tienen contraseñas en texto plano para desarrollo. En producción:
 
-Cambiar contraseñas:
-sql
-UPDATE usuarios SET password_hash = 'nueva_contraseña_hash_bcrypt' 
-WHERE usuario = 'admin';
-Implementar hashing de contraseñas:
-En el código JavaScript, usar una librería como bcrypt.js
-Hashear contraseñas antes de compararlas
+Se recomienda cambiar las contraseñas manualmente en la base de datos. Las contraseñas se almacenan y se verifican en texto plano; para usar hashing habría que modificar la lógica en `app.js
 Variables de Entorno
 Define `SUPABASE_URL` y `SUPABASE_ANON_KEY` en tu entorno y ejecuta el script
 de construcción para generar `env.js`.
