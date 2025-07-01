@@ -256,28 +256,20 @@ class SistemaExcusas {
 
     // Cargar datos locales para desarrollo
     async loadLocalData() {
-        if (typeof bcrypt === 'undefined') {
-            console.warn('bcrypt no disponible, no se pudo inicializar en modo local');
-            this.updateStatus('🔴 No se pudo inicializar en modo local');
-            this.usuariosLocal = { coordinadores: [], docentes: [], admin: [] };
-            return;
-        }
-
+       // Usuarios predefinidos para desarrollo local (contraseñas en texto plano)
         this.solicitudes = this.loadFromStorage('solicitudes') || [];
         this.radicadoCounter = this.loadFromStorage('radicadoCounter') || 1000;
         
-    // Usuarios predefinidos para desarrollo local (contraseñas en bcrypt)
-        const saltRounds = 10;
-        this.usuariosLocal = {
+            this.usuariosLocal = {
             coordinadores: [
-                { id: 'coord1', usuario: 'coord1', passwordHash: bcrypt.hashSync('coord123', saltRounds), nombre: 'María González', tipo: 'coordinador', email: 'maria.gonzalez@gemelli.edu.co' },
-                { id: 'directora', usuario: 'directora', passwordHash: bcrypt.hashSync('dir123', saltRounds), nombre: 'Ana Patricia López', tipo: 'coordinador', email: 'ana.lopez@gemelli.edu.co' }
+                 { id: 'coord1', usuario: 'coord1', password: 'coord123', nombre: 'María González', tipo: 'coordinador', email: 'maria.gonzalez@gemelli.edu.co' },
+                { id: 'directora', usuario: 'directora', password: 'dir123', nombre: 'Ana Patricia López', tipo: 'coordinador', email: 'ana.lopez@gemelli.edu.co' }
             ],
             docentes: [
                 {
                     id: 'doc1',
                     usuario: 'doc1',
-                    passwordHash: bcrypt.hashSync('doc123', saltRounds),
+                    password: 'doc123',
                     nombre: 'Carlos Ramírez',
                     grado: '5°',
                     asignatura: 'Matemáticas',
@@ -287,7 +279,7 @@ class SistemaExcusas {
                 {
                     id: 'doc2',
                     usuario: 'doc2',
-                    passwordHash: bcrypt.hashSync('doc123', saltRounds),
+                    password: 'doc123',
                     nombre: 'Laura Martínez',
                     grado: '8°',
                     asignatura: 'Inglés',
@@ -297,7 +289,7 @@ class SistemaExcusas {
                 {
                     id: 'doc3',
                     usuario: 'doc3',
-                    passwordHash: bcrypt.hashSync('doc123', saltRounds),
+                    password: 'doc123',
                     nombre: 'Pedro Silva',
                     grado: '11°',
                     asignatura: 'Física',
@@ -306,7 +298,7 @@ class SistemaExcusas {
                 }
             ],
             admin: [
-                { id: 'admin', usuario: 'admin', passwordHash: bcrypt.hashSync('admin123', saltRounds), nombre: 'Administrador Sistema', tipo: 'admin', email: 'admin@gemelli.edu.co' }
+                { id: 'admin', usuario: 'admin', password: 'admin123', nombre: 'Administrador Sistema', tipo: 'admin', email: 'admin@gemelli.edu.co' }
             ]
         };
     }
@@ -977,10 +969,8 @@ class SistemaExcusas {
             userFound = this.usuariosLocal.admin.find(u => u.usuario === usuario);
         }
         
-         if (userFound) {
-            const match = await bcrypt.compare(password, userFound.passwordHash);
-            if (!match) return null;
-            const { passwordHash, ...userData } = userFound;
+        if (userFound && userFound.password === password) {
+            const { password, ...userData } = userFound;
             return userData;
         }
 
@@ -1006,7 +996,7 @@ class SistemaExcusas {
                 return null;
             }
 
-            // Obtener hash de la contraseña
+            // Obtener contraseña almacenada
             const { data: authData, error: authError } = await this.supabase
                 .from('usuarios')
                 .select('password_hash')
@@ -1018,8 +1008,7 @@ class SistemaExcusas {
                 return null;
             }
 
-            const match = await bcrypt.compare(password, authData.password_hash);
-            if (!match) {
+            if (password !== authData.password_hash) {
                 console.log('Contraseña incorrecta');
                 return null;
             }
@@ -1043,17 +1032,16 @@ class SistemaExcusas {
         }
     }
 
-    // Crear usuario en Supabase con contraseña hasheada
+    // Crear usuario en Supabase (contraseña en texto plano)
     async createUserSupabase(usuarioData) {
         try {
-            const passwordHash = await bcrypt.hash(usuarioData.password, 10);
-
+            
             const { data, error } = await this.supabase
                 .from('usuarios')
                 .insert([
                     {
                         usuario: usuarioData.usuario,
-                        password_hash: passwordHash,
+                        password_hash: usuarioData.password,
                         nombre: usuarioData.nombre,
                         email: usuarioData.email,
                         grado_asignado: usuarioData.grado,
