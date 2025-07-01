@@ -92,6 +92,7 @@ credenciales mediante `window.process.env`. Dicho archivo está listado en
 sql
 -- Insertar estudiantes en la tabla correspondiente
 -- (Script incluido en el archivo SQL completo)
+
 6. Configurar tabla `configuracion_sistema`
 Inserta los registros iniciales para la numeración de radicados:
 
@@ -99,6 +100,24 @@ Inserta los registros iniciales para la numeración de radicados:
 INSERT INTO configuracion_sistema (clave, valor) VALUES
   ('radicado_prefix', 'RAD-'),
   ('radicado_counter', '1000');
+```
+
+Para evitar colisiones en ambientes multiusuario, crea una función que
+incremente el contador de manera atómica:
+
+```sql
+CREATE OR REPLACE FUNCTION increment_radicado_counter()
+RETURNS integer AS $$
+DECLARE
+  nuevo_valor integer;
+BEGIN
+  UPDATE configuracion_sistema
+     SET valor = (valor::int + 1)::text
+   WHERE clave = 'radicado_counter'
+   RETURNING valor::int INTO nuevo_valor;
+  RETURN nuevo_valor;
+END;
+$$ LANGUAGE plpgsql;
 ```
 
 🎨 Flujo del Formulario Stepper
