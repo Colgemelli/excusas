@@ -983,22 +983,26 @@ class SistemaExcusas {
         const usuario = document.getElementById('usuario').value;
         const password = document.getElementById('password').value;
         const tipoUsuario = document.getElementById('tipoUsuario').value;
+        const msgEl = document.getElementById('loginMessage');
+        msgEl.textContent = '';
+        msgEl.style.display = 'none';
 
         try {
-            let userFound = null;
+            let result = null;
             
             if (SUPABASE_CONFIG.useLocal) {
-                userFound = await this.loginLocal(usuario, password, tipoUsuario);
+                result = await this.loginLocal(usuario, password, tipoUsuario);
             } else {
-                userFound = await this.loginSupabase(usuario, password, tipoUsuario);
+                result = await this.loginSupabase(usuario, password, tipoUsuario);
             }
 
-            if (userFound) {
+            if (result && result.user) {
+                const userFound = result.user;
                 this.currentUser = userFound;
                 this.saveToStorage('currentUser', userFound);
                 this.clearForm('loginForm');
                 this.updateAuthUI();
-                
+
                 // Redirigir según el tipo de usuario
                 if (tipoUsuario === 'coordinador') {
                     this.showView('coordinadorView');
@@ -1007,14 +1011,25 @@ class SistemaExcusas {
                 } else if (tipoUsuario === 'admin') {
                     this.showView('adminView');
                 }
-                
+
                 this.updateStatus(`🟢 Bienvenido ${userFound.nombre}`);
             } else {
-                alert('Usuario o contraseña incorrectos');
+                let msg = 'Error al iniciar sesión.';
+                if (result && result.error === 'user_not_found') {
+                    msg = 'Usuario no encontrado';
+                } else if (result && result.error === 'incorrect_password') {
+                    msg = 'Contraseña incorrecta';
+                } else if (result && result.error === 'connection_error') {
+                    msg = 'Error de conexión con Supabase';
+                }
+                msgEl.textContent = msg;
+                msgEl.style.display = 'block';
+                this.updateStatus('🔴 Fallo al iniciar sesión');
             }
         } catch (error) {
             console.error('Error en login:', error);
-            alert('Error al iniciar sesión. Intente nuevamente.');
+            msgEl.textContent = 'Error inesperado. Intente nuevamente.';
+            msgEl.style.display = 'block';
         }
     }
 
@@ -1029,12 +1044,16 @@ class SistemaExcusas {
             userFound = this.usuariosLocal.admin.find(u => u.usuario === usuario);
         }
         
-        if (userFound && userFound.password === password) {
-            const { password, ...userData } = userFound;
-            return userData;
+        if (!userFound) {
+            return { error: 'user_not_found' };
         }
 
-        return null;
+        if (userFound.password !== password) {
+            return { error: 'incorrect_password' };
+        }
+
+        const { password: pw, ...userData } = userFound;
+        return { user: userData };
     }
 
     async loginSupabase(usuario, password, tipoUsuario) {
@@ -1051,9 +1070,13 @@ class SistemaExcusas {
                 .eq('tipos_usuario.nombre', tipoUsuario)
                 .single();
 
-            if (userError || !userData) {
-                console.error('Usuario no encontrado:', userError);
-                return null;
+            if (userError) {
+                console.error('Error consultando usuario:', userError);
+                return { error: 'connection_error' };
+            }
+
+            if (!userData) {
+                return { error: 'user_not_found' };
             }
 
             // Obtener contraseña almacenada
@@ -1063,32 +1086,33 @@ class SistemaExcusas {
                 .eq('id', userData.id)
                 .single();
 
-            if (authError || !authData) {
-                console.log('Contraseña incorrecta');
-                return null;
+            if (authError) {
+                console.error('Error obteniendo contraseña:', authError);
+                return { error: 'connection_error' };
             }
 
-            if (password !== authData.password_hash) {
-                console.log('Contraseña incorrecta');
-                return null;
+            if (!authData || password !== authData.password_hash) {
+                return { error: 'incorrect_password' };
             }
 
             // Autenticar con Supabase Auth (opcional)
             const email = userData.email || `${usuario}@gemelli.edu.co`;
-            
+
             return {
-                id: userData.id,
-                usuario: userData.usuario,
-                nombre: userData.nombre,
-                email: userData.email,
-                tipo: tipoUsuario,
-                grado: userData.grado_asignado,
-                asignatura: userData.asignatura
+                user: {
+                    id: userData.id,
+                    usuario: userData.usuario,
+                    nombre: userData.nombre,
+                    email: userData.email,
+                    tipo: tipoUsuario,
+                    grado: userData.grado_asignado,
+                    asignatura: userData.asignatura
+                }
             };
 
         } catch (error) {
             console.error('Error en autenticación Supabase:', error);
-            return null;
+            return { error: 'connection_error' };
         }
     }
 
