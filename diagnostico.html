@@ -285,6 +285,10 @@
             try {
                 addTestResult('🔄 Verificando carga de Supabase...', 'info');
                 
+                if (!window.SUPABASE_CONFIG.url || !window.SUPABASE_CONFIG.key) {
+                    throw new Error('Variables de Supabase no configuradas');
+                }
+
                 if (typeof window.supabase === 'undefined') {
                     throw new Error('Librería Supabase no está cargada');
                 }
@@ -521,6 +525,10 @@
                     .select('id')
                     .eq('nombre', document.getElementById('test-grado').value)
                     .single();
+
+                    if (!tipoData || !estadoData || !gradoData) {
+                    throw new Error('Datos de referencia no encontrados');
+                }
 
                 const solicitudData = {
                     tipo_solicitud_id: tipoData.id,
