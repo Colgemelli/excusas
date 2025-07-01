@@ -78,13 +78,16 @@ CREATE POLICY "usuarios_autenticados_ven_solicitudes" ON solicitudes
 
 CREATE POLICY "crear_solicitudes_publico" ON solicitudes
     FOR INSERT WITH CHECK (true);
-4. Actualizar Configuración en app.js
-javascript
-const SUPABASE_CONFIG = {
-    url: 'https://tu-proyecto.supabase.co',
-    key: 'tu-clave-anonima-aqui',
-    useLocal: false  // Cambiar a false para usar Supabase
-};
+4. Generar `env.js`
+Define `SUPABASE_URL` y `SUPABASE_ANON_KEY` y ejecuta el script `build.sh`:
+
+```bash
+SUPABASE_URL=tu-url SUPABASE_ANON_KEY=tu-clave ./build.sh
+```
+
+Esto crea el archivo `env.js` que se carga antes de `app.js` y expone las
+credenciales mediante `window.process.env`. Dicho archivo está listado en
+`.gitignore`, por lo que no se incluye en el repositorio.
 5. Poblar Base de Datos de Estudiantes
 sql
 -- Insertar estudiantes en la tabla correspondiente
