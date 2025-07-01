@@ -1265,6 +1265,10 @@ body {
     box-shadow: var(--shadow-lg);
 }
 
+.admin-card {
+    cursor: pointer;
+}
+
 /* Admin Charts */
 .admin-charts {
     display: grid;
