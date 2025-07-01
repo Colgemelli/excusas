@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico - Sistema de Excusas y Permisos</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Supabase v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Estilos específicos para diagnóstico */
+        .diagnostic-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: monospace;
+        }
+        
+        .diagnostic-header {
+            background: #1e293b;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .diagnostic-section {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .diagnostic-section h3 {
+            background: #f1f5f9;
+            margin: 0;
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .diagnostic-content {
+            padding: 20px;
+        }
+        
+        .log-entry {
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .log-info { background: #e0f2fe; color: #0277bd; }
+        .log-success { background: #e8f5e8; color: #2e7d32; }
+        .log-warning { background: #fff3e0; color: #f57c00; }
+        .log-error { background: #ffebee; color: #d32f2f; }
+        
+        .test-button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background: #1565c0;
+        }
+        
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-running { background: #fff3e0; color: #f57c00; }
+        .status-success { background: #e8f5e8; color: #2e7d32; }
+        .status-error { background: #ffebee; color: #d32f2f; }
+        
+        #console-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 4px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagnostic-container">
+        <div class="diagnostic-header">
+            <h1>🔍 Sistema de Diagnóstico</h1>
+            <p>Diagnosticando conexión con Supabase...</p>
+            <div class="status-indicator status-running" id="main-status">🔄 Ejecutando diagnóstico...</div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>📊 Estado de las Pruebas</h3>
+            <div class="diagnostic-content">
+                <div id="test-results">
+                    <div class="log-entry log-info">Iniciando diagnóstico del sistema...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>🧪 Pruebas Manuales</h3>
+            <div class="diagnostic-content">
+                <button class="test-button" onclick="testSupabaseConnection()">
+                    🔗 Probar Conexión Supabase
+                </button>
+                <button class="test-button" onclick="testDatabaseStructure()">
+                    🏗️ Verificar Estructura BD
+                </button>
+                <button class="test-button" onclick="testDataInsertion()">
+                    💾 Probar Inserción
+                </button>
+                <button class="test-button" onclick="testFormulario()">
+                    📝 Probar Formulario
+                </button>
+                <button class="test-button" onclick="clearLogs()">
+                    🗑️ Limpiar Logs
+                </button>
+            </div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>📺 Consola en Tiempo Real</h3>
+            <div class="diagnostic-content">
+                <div id="console-output">Esperando logs...\n</div>
+            </div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>🎯 Prueba Rápida de Formulario</h3>
+            <div class="diagnostic-content">
+                <form id="test-form" style="display: grid; gap: 10px; max-width: 400px;">
+                    <input type="text" placeholder="Nombre del estudiante" id="test-nombre" value="Estudiante Prueba">
+                    <select id="test-grado">
+                        <option value="">Seleccionar grado...</option>
+                        <option value="5°">5°</option>
+                        <option value="6°">6°</option>
+                        <option value="7°">7°</option>
+                    </select>
+                    <textarea placeholder="Motivo de la excusa" id="test-motivo">Prueba de funcionamiento del sistema</textarea>
+                    <input type="text" placeholder="Nombre del acudiente" id="test-acudiente" value="Acudiente Prueba">
+                    <input type="email" placeholder="Email del acudiente" id="test-email" value="prueba@test.com">
+                    <input type="tel" placeholder="Teléfono del acudiente" id="test-telefono" value="1234567890">
+                    <button type="submit" class="test-button">📤 Enviar Solicitud de Prueba</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Configuración
+        window.SUPABASE_CONFIG = {
+            url: 'https://zkbnpjmtwkhcvqizpmhj.supabase.co',
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprYm5wam10d2toY3ZxaXpwbWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTQyNDksImV4cCI6MjA2NjczMDI0OX0.McMyTT8-Myp6L0nIjTN4chedAPunB0dwymQKhiNp6uI'
+        };
+
+        let supabaseClient = null;
+        let logCount = 0;
+
+        // Override console para capturar logs
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn
+        };
+
+        function addToConsole(message, type = 'log') {
+            const consoleOutput = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : 'ℹ️';
+            consoleOutput.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            
+            // También mostrar en consola original
+            originalConsole[type](message);
+        }
+
+        console.log = (message) => addToConsole(message, 'log');
+        console.error = (message) => addToConsole(message, 'error');
+        console.warn = (message) => addToConsole(message, 'warn');
+
+        function addTestResult(message, status = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${status}`;
+            logEntry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            resultsDiv.appendChild(logEntry);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function updateMainStatus(message, status = 'running') {
+            const statusDiv = document.getElementById('main-status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-indicator status-${status}`;
+        }
+
+        async function initSupabase() {
+            try {
+                addTestResult('🔄 Verificando carga de Supabase...', 'info');
+                
+                if (typeof window.supabase === 'undefined') {
+                    throw new Error('Librería Supabase no está cargada');
+                }
+                
+                addTestResult('✅ Librería Supabase cargada correctamente', 'success');
+                
+                supabaseClient = window.supabase.createClient(
+                    window.SUPABASE_CONFIG.url, 
+                    window.SUPABASE_CONFIG.key
+                );
+                
+                addTestResult('✅ Cliente Supabase inicializado', 'success');
+                console.log('Supabase inicializado correctamente');
+                
+                return true;
+            } catch (error) {
+                addTestResult(`❌ Error inicializando Supabase: ${error.message}`, 'error');
+                console.error('Error:', error);
+                return false;
+            }
+        }
+
+        async function testSupabaseConnection() {
+            try {
+                addTestResult('🔄 Probando conexión a Supabase...', 'info');
+                
+                if (!supabaseClient) {
+                    const initialized = await initSupabase();
+                    if (!initialized) return;
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('grados')
+                    .select('*')
+                    .limit(1);
+
+                if (error) {
+                    throw new Error(`Error de conexión: ${error.message}`);
+                }
+
+                addTestResult(`✅ Conexión exitosa - Encontrados ${data ? data.length : 0} registros en tabla grados`, 'success');
+                console.log('Datos de prueba:', data);
+                
+            } catch (error) {
+                addTestResult(`❌ Error de conexión: ${error.message}`, 'error');
+                console.error('Error de conexión:', error);
+            }
+        }
+
+        async function testDatabaseStructure() {
+            try {
+                addTestResult('🔄 Verificando estructura de base de datos...', 'info');
+                
+                if (!supabaseClient) {
+                    const initialized = await initSupabase();
+                    if (!initialized) return;
+                }
+
+                const tables = [
+                    'estados_solicitud',
+                    'tipos_solicitud',
+                    'tipos_usuario',
+                    'grados',
+                    'usuarios',
+                    'estudiantes',
+                    'solicitudes'
+                ];
+
+                for (const table of tables) {
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from(table)
+                            .select('*')
+                            .limit(1);
+
+                        if (error) {
+                            addTestResult(`❌ Error en tabla ${table}: ${error.message}`, 'error');
+                        } else {
+                            addTestResult(`✅ Tabla ${table} accesible`, 'success');
+                        }
+                    } catch (err) {
+                        addTestResult(`❌ Error verificando tabla ${table}: ${err.message}`, 'error');
+                    }
+                }
+
+                addTestResult('🎯 Verificación de estructura completada', 'info');
+                
+            } catch (error) {
+                addTestResult(`❌ Error verificando estructura: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        async function testDataInsertion() {
+            try {
+                addTestResult('🔄 Probando inserción de datos...', 'info');
+                
+                if (!supabaseClient) {
+                    const initialized = await initSupabase();
+                    if (!initialized) return;
+                }
+
+                // Obtener IDs necesarios
+                const { data: tipoData } = await supabaseClient
+                    .from('tipos_solicitud')
+                    .select('id')
+                    .eq('nombre', 'excusa')
+                    .single();
+
+                const { data: estadoData } = await supabaseClient
+                    .from('estados_solicitud')
+                    .select('id')
+                    .eq('nombre', 'pendiente')
+                    .single();
+
+                const { data: gradoData } = await supabaseClient
+                    .from('grados')
+                    .select('id')
+                    .eq('nombre', '5°')
+                    .single();
+
+                if (!tipoData || !estadoData || !gradoData) {
+                    throw new Error('Datos básicos faltantes en las tablas');
+                }
+
+                addTestResult('✅ Datos básicos encontrados', 'success');
+
+                // Insertar datos de prueba
+                const testData = {
+                    radicado: `TEST-${Date.now()}`,
+                    tipo_solicitud_id: tipoData.id,
+                    estado_actual_id: estadoData.id,
+                    nombre_estudiante: 'Estudiante Prueba Diagnóstico',
+                    grado_id: gradoData.id,
+                    motivo: 'Prueba de diagnóstico del sistema',
+                    datos_formulario: { test: true, timestamp: new Date().toISOString() },
+                    nombre_padre_acudiente: 'Padre Prueba',
+                    telefono_contacto: '1234567890',
+                    email_contacto: 'prueba@diagnostico.com'
+                };
+
+                const { data, error } = await supabaseClient
+                    .from('solicitudes')
+                    .insert([testData])
+                    .select();
+
+                if (error) {
+                    throw new Error(`Error en inserción: ${error.message}`);
+                }
+
+                addTestResult(`✅ Inserción exitosa - ID: ${data[0].id}`, 'success');
+                console.log('Datos insertados:', data[0]);
+
+                // Limpiar datos de prueba
+                await supabaseClient
+                    .from('solicitudes')
+                    .delete()
+                    .eq('id', data[0].id);
+                
+                addTestResult('✅ Datos de prueba limpiados', 'success');
+
+            } catch (error) {
+                addTestResult(`❌ Error en inserción: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        async function testFormulario() {
+            try {
+                const form = document.getElementById('test-form');
+                const formData = new FormData(form);
+                
+                const solicitudData = {
+                    nombre_estudiante: document.getElementById('test-nombre').value,
+                    grado: document.getElementById('test-grado').value,
+                    motivo: document.getElementById('test-motivo').value,
+                    nombre_padre_acudiente: document.getElementById('test-acudiente').value,
+                    telefono_contacto: document.getElementById('test-telefono').value,
+                    email_contacto: document.getElementById('test-email').value
+                };
+
+                addTestResult('🔄 Procesando formulario de prueba...', 'info');
+                console.log('Datos del formulario:', solicitudData);
+
+                if (!solicitudData.nombre_estudiante || !solicitudData.grado || !solicitudData.motivo) {
+                    throw new Error('Campos obligatorios faltantes');
+                }
+
+                addTestResult('✅ Validación de formulario exitosa', 'success');
+                addTestResult('💡 Datos listos para envío a Supabase', 'info');
+
+            } catch (error) {
+                addTestResult(`❌ Error en formulario: ${error.message}`, 'error');
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('test-results').innerHTML = '<div class="log-entry log-info">Logs limpiados...</div>';
+            document.getElementById('console-output').textContent = 'Logs limpiados...\n';
+        }
+
+        // Event listeners
+        document.getElementById('test-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            try {
+                addTestResult('🚀 Enviando solicitud real...', 'info');
+                
+                if (!supabaseClient) {
+                    const initialized = await initSupabase();
+                    if (!initialized) return;
+                }
+
+                // Obtener IDs necesarios
+                const { data: tipoData } = await supabaseClient
+                    .from('tipos_solicitud')
+                    .select('id')
+                    .eq('nombre', 'excusa')
+                    .single();
+
+                const { data: estadoData } = await supabaseClient
+                    .from('estados_solicitud')
+                    .select('id')
+                    .eq('nombre', 'pendiente')
+                    .single();
+
+                const { data: gradoData } = await supabaseClient
+                    .from('grados')
+                    .select('id')
+                    .eq('nombre', document.getElementById('test-grado').value)
+                    .single();
+
+                const solicitudData = {
+                    tipo_solicitud_id: tipoData.id,
+                    estado_actual_id: estadoData.id,
+                    nombre_estudiante: document.getElementById('test-nombre').value,
+                    grado_id: gradoData.id,
+                    motivo: document.getElementById('test-motivo').value,
+                    datos_formulario: {
+                        test: true,
+                        timestamp: new Date().toISOString(),
+                        source: 'diagnostic_form'
+                    },
+                    nombre_padre_acudiente: document.getElementById('test-acudiente').value,
+                    telefono_contacto: document.getElementById('test-telefono').value,
+                    email_contacto: document.getElementById('test-email').value
+                };
+
+                const { data, error } = await supabaseClient
+                    .from('solicitudes')
+                    .insert([solicitudData])
+                    .select();
+
+                if (error) {
+                    throw new Error(error.message);
+                }
+
+                addTestResult(`🎉 ¡SOLICITUD CREADA EXITOSAMENTE! Radicado: ${data[0].radicado}`, 'success');
+                updateMainStatus('✅ Sistema funcionando correctamente', 'success');
+                console.log('Solicitud creada:', data[0]);
+
+                // Limpiar formulario
+                document.getElementById('test-form').reset();
+                document.getElementById('test-nombre').value = 'Estudiante Prueba';
+                document.getElementById('test-acudiente').value = 'Acudiente Prueba';
+                document.getElementById('test-email').value = 'prueba@test.com';
+                document.getElementById('test-telefono').value = '1234567890';
+                document.getElementById('test-motivo').value = 'Prueba de funcionamiento del sistema';
+
+            } catch (error) {
+                addTestResult(`❌ Error enviando solicitud: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        });
+
+        // Inicialización automática
+        document.addEventListener('DOMContentLoaded', async () => {
+            addTestResult('🔄 Iniciando diagnóstico automático...', 'info');
+            
+            setTimeout(async () => {
+                await testSupabaseConnection();
+                await testDatabaseStructure();
+                
+                updateMainStatus('✅ Diagnóstico completado - Sistema listo para pruebas', 'success');
+                addTestResult('🎯 Diagnóstico automático completado. Use los botones para pruebas manuales.', 'success');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
