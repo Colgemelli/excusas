@@ -1272,6 +1272,28 @@ body {
     gap: 2rem;
 }
 
+/* Admin Filters */
+.admin-filters {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.admin-filters .date-range {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.admin-filters input[type="date"] {
+    padding: 0.3rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
 .chart-container {
     background: var(--bg-card);
     border-radius: 12px;
