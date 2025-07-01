@@ -808,6 +808,11 @@
                     </div>
                 </div>
                 
+                <div class="admin-actions">
+                    <button id="adminExcusasBtn" class="btn-primary">Excusas</button>
+                    <button id="adminPermisosBtn" class="btn-primary">Permisos</button>
+                </div>
+
                 <div class="admin-charts">
                     <div class="chart-container">
                         <h3>Grados con más solicitudes</h3>
@@ -834,6 +839,62 @@
                 <div class="admin-solicitudes">
                     <h3>Listado de Solicitudes</h3>
                     <div id="adminSolicitudes"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="adminExcusasView" class="view">
+            <div class="container">
+                <div class="form-header">
+                    <button id="backToAdminExcusas" class="btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                    <h2>Excusas Registradas</h2>
+                </div>
+
+                <div class="admin-filters">
+                    <div class="toggle-fecha">
+                        <input type="checkbox" id="toggleFechaExcusas">
+                        <label for="toggleFechaExcusas">Filtrar por fecha</label>
+                    </div>
+                    <div class="date-range" id="fechaFiltersExcusas" style="display:none;">
+                        <label>Desde <input type="date" id="excusasFechaInicio"></label>
+                        <label>Hasta <input type="date" id="excusasFechaFin"></label>
+                        <button id="aplicarFiltroExcusas" class="btn-secondary">Aplicar</button>
+                    </div>
+                </div>
+
+                <div class="admin-solicitudes">
+                    <h3>Listado de Excusas</h3>
+                    <div id="adminExcusasList"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="adminPermisosView" class="view">
+            <div class="container">
+                <div class="form-header">
+                    <button id="backToAdminPermisos" class="btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                    <h2>Permisos Registrados</h2>
+                </div>
+
+                <div class="admin-filters">
+                    <div class="toggle-fecha">
+                        <input type="checkbox" id="toggleFechaPermisos">
+                        <label for="toggleFechaPermisos">Filtrar por fecha</label>
+                    </div>
+                    <div class="date-range" id="fechaFiltersPermisos" style="display:none;">
+                        <label>Desde <input type="date" id="permisosFechaInicio"></label>
+                        <label>Hasta <input type="date" id="permisosFechaFin"></label>
+                        <button id="aplicarFiltroPermisos" class="btn-secondary">Aplicar</button>
+                    </div>
+                </div>
+
+                <div class="admin-solicitudes">
+                    <h3>Listado de Permisos</h3>
+                    <div id="adminPermisosList"></div>
                 </div>
             </div>
         </section>
