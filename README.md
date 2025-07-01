@@ -67,6 +67,9 @@ Ejecuta el script SQL completo que está en el artifact "Tablas SQL para Supabas
 sql
 -- Ejecutar todo el contenido del archivo SQL en el Query Editor de Supabase
 -- Esto creará todas las tablas, políticas y datos iniciales
+Luego, ejecuta el archivo `docs/views.sql` para crear las vistas
+`vista_estudiantes_grados`, `vista_usuarios_completa` y
+`vista_solicitudes_completas`.
 3. Configurar Políticas RLS
 sql
 -- Política simple para desarrollo
