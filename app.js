@@ -250,6 +250,13 @@ class SistemaExcusas {
 
     // Cargar datos locales para desarrollo
     async loadLocalData() {
+        if (typeof bcrypt === 'undefined') {
+            console.warn('bcrypt no disponible, no se pudo inicializar en modo local');
+            this.updateStatus('🔴 No se pudo inicializar en modo local');
+            this.usuariosLocal = { coordinadores: [], docentes: [], admin: [] };
+            return;
+        }
+        
         this.solicitudes = this.loadFromStorage('solicitudes') || [];
         this.radicadoCounter = this.loadFromStorage('radicadoCounter') || 1000;
         
@@ -1058,7 +1065,7 @@ class SistemaExcusas {
             throw error;
         }
     }
-    
+
     logout() {
         this.currentUser = null;
         this.saveToStorage('currentUser', null);
