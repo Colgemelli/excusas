@@ -1122,6 +1122,50 @@ class SistemaExcusas {
         }
     }
 
+    async loadAdminExcusas() {
+        if (!this.currentUser ||
+            !this.hasPermission('ver_estadisticas') ||
+            !this.hasPermission('ver_todas_solicitudes')) {
+            this.showView('loginView');
+            return;
+        }
+
+        try {
+            const filtros = { tipo: 'excusa' };
+            const inicio = document.getElementById('excusasFechaInicio')?.value;
+            const fin = document.getElementById('excusasFechaFin')?.value;
+            if (inicio) filtros.fechaInicio = inicio;
+            if (fin) filtros.fechaFin = fin;
+            const solicitudes = await this.getSolicitudes(filtros);
+            await this.renderSolicitudesAdmin(solicitudes, 'adminExcusasList');
+        } catch (error) {
+            console.error('Error al cargar excusas admin:', error);
+            this.updateStatus('🔴 Error al cargar excusas');
+        }
+    }
+
+    async loadAdminPermisos() {
+        if (!this.currentUser ||
+            !this.hasPermission('ver_estadisticas') ||
+            !this.hasPermission('ver_todas_solicitudes')) {
+            this.showView('loginView');
+            return;
+        }
+
+        try {
+            const filtros = { tipo: 'permiso' };
+            const inicio = document.getElementById('permisosFechaInicio')?.value;
+            const fin = document.getElementById('permisosFechaFin')?.value;
+            if (inicio) filtros.fechaInicio = inicio;
+            if (fin) filtros.fechaFin = fin;
+            const solicitudes = await this.getSolicitudes(filtros);
+            await this.renderSolicitudesAdmin(solicitudes, 'adminPermisosList');
+        } catch (error) {
+            console.error('Error al cargar permisos admin:', error);
+            this.updateStatus('🔴 Error al cargar permisos');
+        }
+    }
+
     async registrarValidacionDocente(id, observaciones) {
         const registro = {
             docente: this.currentUser.nombre,
@@ -1219,8 +1263,8 @@ class SistemaExcusas {
             `).join('');
     }
 
-    async renderSolicitudesAdmin(solicitudes) {
-        const container = document.getElementById('adminSolicitudes');
+    async renderSolicitudesAdmin(solicitudes, containerId = 'adminSolicitudes') {
+        const container = document.getElementById(containerId);
 
         if (solicitudes.length === 0) {
             container.innerHTML = '<p class="no-solicitudes">No hay solicitudes</p>';
@@ -1344,7 +1388,8 @@ class SistemaExcusas {
             return;
         }
         
-        if (viewId === 'adminView' &&
+        const adminViews = ['adminView', 'adminExcusasView', 'adminPermisosView'];
+        if (adminViews.includes(viewId) &&
             (!this.currentUser || !this.hasPermission('ver_estadisticas') || !this.hasPermission('ver_todas_solicitudes'))) {
             return;
         }
@@ -1372,6 +1417,8 @@ class SistemaExcusas {
         if (viewId === 'coordinadorView') this.loadCoordinadorDashboard();
         if (viewId === 'docenteView') this.loadDocenteDashboard();
         if (viewId === 'adminView') this.loadAdminDashboard();
+        if (viewId === 'adminExcusasView') this.loadAdminExcusas();
+        if (viewId === 'adminPermisosView') this.loadAdminPermisos();
     }
 
     updateNavigation(activeView) {
@@ -1816,6 +1863,45 @@ class SistemaExcusas {
             });
         }
         aplicarFiltro?.addEventListener('click', () => this.loadAdminDashboard());
+
+
+        // Botones administración adicionales
+        document.getElementById('adminExcusasBtn')?.addEventListener('click', () => this.showView('adminExcusasView'));
+        document.getElementById('adminPermisosBtn')?.addEventListener('click', () => this.showView('adminPermisosView'));
+        document.getElementById('backToAdminExcusas')?.addEventListener('click', () => this.showView('adminView'));
+        document.getElementById('backToAdminPermisos')?.addEventListener('click', () => this.showView('adminView'));
+
+        // Filtros para excusas
+        const toggleFechaExcusas = document.getElementById('toggleFechaExcusas');
+        const fechaFiltersExcusas = document.getElementById('fechaFiltersExcusas');
+        const aplicarExcusas = document.getElementById('aplicarFiltroExcusas');
+        if (toggleFechaExcusas) {
+            toggleFechaExcusas.addEventListener('change', () => {
+                if (fechaFiltersExcusas) fechaFiltersExcusas.style.display = toggleFechaExcusas.checked ? 'flex' : 'none';
+                if (!toggleFechaExcusas.checked) {
+                    document.getElementById('excusasFechaInicio').value = '';
+                    document.getElementById('excusasFechaFin').value = '';
+                    this.loadAdminExcusas();
+                }
+            });
+        }
+        aplicarExcusas?.addEventListener('click', () => this.loadAdminExcusas());
+
+        // Filtros para permisos
+        const toggleFechaPermisos = document.getElementById('toggleFechaPermisos');
+        const fechaFiltersPermisos = document.getElementById('fechaFiltersPermisos');
+        const aplicarPermisos = document.getElementById('aplicarFiltroPermisos');
+        if (toggleFechaPermisos) {
+            toggleFechaPermisos.addEventListener('change', () => {
+                if (fechaFiltersPermisos) fechaFiltersPermisos.style.display = toggleFechaPermisos.checked ? 'flex' : 'none';
+                if (!toggleFechaPermisos.checked) {
+                    document.getElementById('permisosFechaInicio').value = '';
+                    document.getElementById('permisosFechaFin').value = '';
+                    this.loadAdminPermisos();
+                }
+            });
+        }
+        aplicarPermisos?.addEventListener('click', () => this.loadAdminPermisos());
     }
 
     // Utilidades de almacenamiento
