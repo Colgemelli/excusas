@@ -721,17 +721,6 @@ class SistemaExcusas {
             }).join('');
         }
 
-        imprimirSolicitud(id) {
-        const solicitud = this.solicitudes.find(s => String(s.id) === String(id));
-        if (!solicitud) return;
-        const ventana = window.open('', '_blank');
-        if (!ventana) return;
-        const contenido = this.generateConsultaHTML(solicitud);
-        ventana.document.write(`<!DOCTYPE html><html><head><title>Imprimir</title><style>body{font-family:Arial,sans-serif;padding:20px;}</style></head><body>${contenido}</body></html>`);
-        ventana.document.close();
-        ventana.print();
-    }
-
         html += `
             <div class="solicitud-actions">
                 <button class="btn-secondary" onclick="sistema.imprimirSolicitud('${solicitud.id}')">
@@ -742,6 +731,18 @@ class SistemaExcusas {
 
         return html;
     }
+
+    imprimirSolicitud(id) {
+        const solicitud = this.solicitudes.find(s => String(s.id) === String(id));
+        if (!solicitud) return;
+        const ventana = window.open('', '_blank');
+        if (!ventana) return;
+        const contenido = this.generateConsultaHTML(solicitud);
+        ventana.document.write(`<!DOCTYPE html><html><head><title>Imprimir</title><style>body{font-family:Arial,sans-serif;padding:20px;}</style></head><body>${contenido}</body></html>`);
+        ventana.document.close();
+        ventana.print();
+    }
+
 
     // Funciones auxiliares compartidas entre modales
     showModalConfirmacion(titulo, mensaje, accion, mostrarObservaciones = false) {
