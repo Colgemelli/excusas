@@ -1100,7 +1100,12 @@ class SistemaExcusas {
         }
 
         try {
-            const solicitudes = await this.getSolicitudes();
+            const filtros = {};
+            const inicio = document.getElementById('adminFechaInicio')?.value;
+            const fin = document.getElementById('adminFechaFin')?.value;
+            if (inicio) filtros.fechaInicio = inicio;
+            if (fin) filtros.fechaFin = fin;
+            const solicitudes = await this.getSolicitudes(filtros);
             
             const total = solicitudes.length;
             const aprobadas = solicitudes.filter(s => {
