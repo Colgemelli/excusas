@@ -1,5 +1,8 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
+set -euo pipefail
+
+: "${SUPABASE_URL:?SUPABASE_URL not set}"
+: "${SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY not set}"
 
 cat > env.js <<'EOF'
 window.process = {
@@ -9,3 +12,6 @@ window.process = {
   }
 };
 EOF
+
+echo "env.js generado"
+exit 0
