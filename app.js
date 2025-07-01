@@ -259,9 +259,36 @@ class SistemaExcusas {
                 { id: 'directora', usuario: 'directora', password: 'dir123', nombre: 'Ana Patricia López', tipo: 'coordinador', email: 'ana.lopez@gemelli.edu.co' }
             ],
             docentes: [
-                { id: 'doc1', usuario: 'doc1', password: 'doc123', nombre: 'Carlos Ramírez', grado: '5°', tipo: 'docente', email: 'carlos.ramirez@gemelli.edu.co' },
-                { id: 'doc2', usuario: 'doc2', password: 'doc123', nombre: 'Laura Martínez', grado: '8°', tipo: 'docente', email: 'laura.martinez@gemelli.edu.co' },
-                { id: 'doc3', usuario: 'doc3', password: 'doc123', nombre: 'Pedro Silva', grado: '11°', tipo: 'docente', email: 'pedro.silva@gemelli.edu.co' }
+                {
+                    id: 'doc1',
+                    usuario: 'doc1',
+                    password: 'doc123',
+                    nombre: 'Carlos Ramírez',
+                    grado: '5°',
+                    asignatura: 'Matemáticas',
+                    tipo: 'docente',
+                    email: 'carlos.ramirez@gemelli.edu.co'
+                },
+                {
+                    id: 'doc2',
+                    usuario: 'doc2',
+                    password: 'doc123',
+                    nombre: 'Laura Martínez',
+                    grado: '8°',
+                    asignatura: 'Inglés',
+                    tipo: 'docente',
+                    email: 'laura.martinez@gemelli.edu.co'
+                },
+                {
+                    id: 'doc3',
+                    usuario: 'doc3',
+                    password: 'doc123',
+                    nombre: 'Pedro Silva',
+                    grado: '11°',
+                    asignatura: 'Física',
+                    tipo: 'docente',
+                    email: 'pedro.silva@gemelli.edu.co'
+                }
             ],
             admin: [
                 { id: 'admin', usuario: 'admin', password: 'admin123', nombre: 'Administrador Sistema', tipo: 'admin', email: 'admin@gemelli.edu.co' }
@@ -323,8 +350,8 @@ class SistemaExcusas {
             loginBtn.textContent = `${this.currentUser.nombre} (${this.currentUser.tipo})`;
             loginBtn.style.background = '#10b981';
             
-            // Mostrar botón de acceso directo para docentes
-            if (this.currentUser.tipo === 'docente') {
+    // Mostrar botón de acceso directo para docentes
+        if (this.currentUser.tipo === 'docente') {
                 docentesBtn.style.display = 'block';
             }
         } else {
@@ -360,6 +387,10 @@ class SistemaExcusas {
         }
         
         try {
+            const datosFormulario = {
+                ...solicitudData,
+                validacionesDocentes: []
+            };
             const { data, error } = await this.supabase
                 .from('solicitudes')
                 .insert([{
@@ -368,7 +399,7 @@ class SistemaExcusas {
                     nombre_estudiante: solicitudData.nombreEstudiante,
                     grado_id: await this.getGradoId(solicitudData.grado),
                     motivo: solicitudData.motivoInasistencia || solicitudData.motivoPermiso,
-                    datos_formulario: solicitudData,
+                    datos_formulario: datosFormulario,
                     nombre_padre_acudiente: solicitudData.firmaPadre,
                     tiene_certificado_medico: solicitudData.certificadoMedico || false,
                     tiene_incapacidad: solicitudData.incapacidad || false
@@ -391,6 +422,7 @@ class SistemaExcusas {
             tipo: solicitudData.tipo || (solicitudData.motivoInasistencia ? 'excusa' : 'permiso'),
             fecha: new Date().toISOString(),
             estado: 'pendiente',
+            validacionesDocentes: [],
             ...solicitudData
         };
 
@@ -855,7 +887,7 @@ class SistemaExcusas {
         const observaciones = escapeHTML(solicitud.observaciones || '');
         const validadoPor = escapeHTML(solicitud.validadoPor || solicitud.validado_por || '');
 
-        return `
+        let html = `
             <div class="solicitud-detalle">
                 <div class="solicitud-header">
                     <h3>Solicitud de ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</h3>
@@ -872,6 +904,32 @@ class SistemaExcusas {
                 </div>
             </div>
         `;
+        
+        const validaciones = solicitud.validacionesDocentes || solicitud.datos_formulario?.validacionesDocentes || [];
+        if (Array.isArray(validaciones) && validaciones.length > 0) {
+            html += validaciones.map(v => {
+                const docente = escapeHTML(v.docente || '');
+                const asignatura = escapeHTML(v.asignatura || '');
+                const fechaVal = v.fecha ? new Date(v.fecha).toLocaleString() : '';
+                const obs = escapeHTML(v.observacion || '');
+                return `
+                    <div class="validacion-detalle">
+                        <div class="solicitud-header">
+                            <h3>Validación Docente</h3>
+                            <span class="estado estado-validado">Validado</span>
+                        </div>
+                        <div class="solicitud-info">
+                            <p><strong>Docente:</strong> ${docente}</p>
+                            <p><strong>Asignatura:</strong> ${asignatura}</p>
+                            <p><strong>Fecha:</strong> ${fechaVal}</p>
+                            ${obs ? `<p><strong>Observación:</strong> ${obs}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        return html;
     }
 
     // Funciones auxiliares compartidas entre modales
@@ -958,7 +1016,7 @@ class SistemaExcusas {
             const { data: userData, error: userError } = await this.supabase
                 .from('usuarios')
                 .select(`
-                    id, usuario, nombre, email, grado_asignado,
+                    id, usuario, nombre, email, grado_asignado, asignatura,
                     tipos_usuario!inner(nombre)
                 `)
                 .eq('usuario', usuario)
@@ -994,7 +1052,8 @@ class SistemaExcusas {
                 nombre: userData.nombre,
                 email: userData.email,
                 tipo: tipoUsuario,
-                grado: userData.grado_asignado
+                grado: userData.grado_asignado,
+                asignatura: userData.asignatura
             };
 
         } catch (error) {
@@ -1203,6 +1262,7 @@ class SistemaExcusas {
         try {
             const observaciones = document.getElementById('observaciones').value;
             await this.updateSolicitudEstado(id, 'validado', observaciones);
+            await this.registrarValidacionDocente(id, observaciones);
             await this.loadDocenteDashboard();
             this.updateStatus('🟢 Solicitud validada exitosamente');
         } catch (error) {
@@ -1238,6 +1298,53 @@ class SistemaExcusas {
         } catch (error) {
             console.error('Error al cargar dashboard admin:', error);
             this.updateStatus('🔴 Error al cargar estadísticas');
+        }
+    }
+
+    async registrarValidacionDocente(id, observaciones) {
+        const registro = {
+            docente: this.currentUser.nombre,
+            asignatura: this.currentUser.asignatura || '',
+            fecha: new Date().toISOString(),
+            observacion: observaciones
+        };
+
+        if (SUPABASE_CONFIG.useLocal) {
+            const solicitud = this.solicitudes.find(s => Number(s.id) === Number(id));
+            if (solicitud) {
+                if (!Array.isArray(solicitud.validacionesDocentes)) {
+                    solicitud.validacionesDocentes = [];
+                }
+                solicitud.validacionesDocentes.push(registro);
+                this.saveToStorage('solicitudes', this.solicitudes);
+            }
+        } else {
+            try {
+                const { data, error } = await this.supabase
+                    .from('solicitudes')
+                    .select('validaciones_docentes, datos_formulario')
+                    .eq('id', id)
+                    .single();
+                if (error) throw error;
+
+                const existentes = Array.isArray(data.validaciones_docentes)
+                    ? data.validaciones_docentes
+                    : (data.datos_formulario?.validacionesDocentes || []);
+                existentes.push(registro);
+
+                await this.supabase
+                    .from('solicitudes')
+                    .update({
+                        validaciones_docentes: existentes,
+                        datos_formulario: {
+                            ...(data.datos_formulario || {}),
+                            validacionesDocentes: existentes
+                        }
+                    })
+                    .eq('id', id);
+            } catch (error) {
+                console.error('Error al registrar validación en Supabase:', error);
+            }
         }
     }
 
