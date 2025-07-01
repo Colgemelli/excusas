@@ -164,7 +164,7 @@ CREATE TABLE public.tipos_usuario (
 CREATE TABLE public.usuarios (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   usuario character varying NOT NULL UNIQUE,
-  password_hash text NOT NULL,
+  password text NOT NULL,
   nombre character varying NOT NULL,
   email character varying,
   telefono character varying,
