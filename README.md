@@ -198,6 +198,13 @@ El archivo `env.js` se carga antes de `app.js` y expone los valores mediante
 `window.process.env`.
 **Importante:** `env.js` no se incluye en el repositorio por contener credenciales.
 Tras clonar el proyecto, generalo nuevamente ejecutando el script anterior.
+
+### Generar `env.js`
+Ejecuta nuevamente `build.sh` especificando `SUPABASE_URL` y
+`SUPABASE_ANON_KEY`. El archivo resultante, `env.js`, debe quedar en la misma
+carpeta que `index.html`. Si no se proporcionan credenciales válidas, la
+aplicación cambia automáticamente a almacenamiento en `localStorage` como
+respaldo.
 🌐 Despliegue
 GitHub + Netlify (Recomendado)
 Crear repositorio en GitHub:
