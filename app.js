@@ -95,9 +95,10 @@ class SistemaExcusas {
                 }
                 console.log('✅ Conexión a Supabase verificada');
             } catch (error) {
-                this.updateStatus('🔴 Error conectando a Supabase');
-                console.error('Error al inicializar Supabase:', error);
-                throw error;
+                console.warn('Fallo inicializando Supabase, usando modo local:', error);
+                this.updateStatus('⚠️ Supabase no disponible, usando modo local');
+                SUPABASE_CONFIG.useLocal = true;
+                await this.loadLocalData();
             }
         } else {
             console.log('📱 Usando almacenamiento local para desarrollo');
