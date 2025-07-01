@@ -11,7 +11,7 @@ window.process = {
     SUPABASE_ANON_KEY: "${SUPABASE_ANON_KEY}"
   }
 };
-EOF
+EOL
 
 echo "env.js generado"
 exit 0
