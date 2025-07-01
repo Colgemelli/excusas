@@ -819,6 +819,18 @@
                     </div>
                 </div>
 
+                <div class="admin-filters">
+                    <div class="toggle-fecha">
+                        <input type="checkbox" id="toggleFecha">
+                        <label for="toggleFecha">Filtrar por fecha</label>
+                    </div>
+                    <div class="date-range" id="fechaFilters" style="display:none;">
+                        <label>Desde <input type="date" id="adminFechaInicio"></label>
+                        <label>Hasta <input type="date" id="adminFechaFin"></label>
+                        <button id="aplicarFiltroFecha" class="btn-secondary">Aplicar</button>
+                    </div>
+                </div>
+
                 <div class="admin-solicitudes">
                     <h3>Listado de Solicitudes</h3>
                     <div id="adminSolicitudes"></div>
