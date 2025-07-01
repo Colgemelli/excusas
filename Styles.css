@@ -1622,3 +1622,114 @@ body {
 .visible {
     display: block;
 }
+/* ========== ESTILOS ADICIONALES PARA DIAGNÓSTICO ========== */
+/* Agregar este código al final de tu archivo styles.css */
+
+/* Estilos para botón de diagnóstico */
+.admin-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.admin-actions button {
+    min-width: 120px;
+    transition: all 0.3s ease;
+}
+
+#adminDiagnosticoBtn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+#adminDiagnosticoBtn:hover {
+    background: linear-gradient(135deg, #5b59f7, #7c3aed);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+}
+
+#adminDiagnosticoBtn:active {
+    transform: translateY(0);
+}
+
+#adminDiagnosticoBtn i {
+    animation: heartbeat 2s infinite;
+}
+
+@keyframes heartbeat {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Indicador de estado mejorado */
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.status-indicator.diagnostic-active {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Responsive para admin actions */
+@media (max-width: 768px) {
+    .admin-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .admin-actions button {
+        width: 100%;
+        min-width: unset;
+    }
+}
+
+/* Tooltip para el botón de diagnóstico */
+#adminDiagnosticoBtn::after {
+    content: "Herramienta avanzada para verificar el funcionamiento del sistema";
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+#adminDiagnosticoBtn:hover::after {
+    opacity: 1;
+}
+
+/* Asegurar que el botón tenga posición relativa para el tooltip */
+#adminDiagnosticoBtn {
+    position: relative;
+}
