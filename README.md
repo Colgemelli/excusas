@@ -188,7 +188,7 @@ de construcción para generar `env.js`.
 ```bash
 SUPABASE_URL=tu-url SUPABASE_ANON_KEY=tu-clave ./build.sh
 ```
-
+Reemplaza `tu-url` y `tu-clave` con los valores reales de tu proyecto cuando ejecutes `build.sh`.
 Se incluye un archivo `env.example.js` como referencia.
 
 El archivo `env.js` se carga antes de `app.js` y expone los valores mediante
