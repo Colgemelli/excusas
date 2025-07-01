@@ -291,5 +291,6 @@ Para soporte técnico:
 Revisar console del navegador
 Verificar configuración de Supabase
 Consultar documentación de Supabase
-© 2025 Sistema de Excusas y Permisos - Colegio Gemelli Franciscanos
+## Licencia
 
+Este proyecto se distribuye bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
