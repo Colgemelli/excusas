@@ -80,7 +80,7 @@ Se utilizaron las siguientes tablas en Supabase para manejar todo el flujo del s
 
 La estructura completa de las tablas está descrita en el archivo `schema.sql` y fue generada desde Supabase. Las relaciones están correctamente establecidas con claves foráneas, UUIDs, timestamps automáticos y constraints de seguridad.
 
-> Para más detalles sobre el esquema SQL completo, revisa el archivo `schema.sql` o accede al [archivo SQL original](https://github.com/Colgemelli/excusas/blob/main/schema.sql).
+> Para más detalles sobre el esquema SQL completo, revisa el archivo `schema.sql` o accede al (schema.sql). https://github.com/Colgemelli/excusas/blob/main/schema.sql
 
 ---
 
