@@ -704,16 +704,39 @@ class SistemaExcusas {
             'validado': 'Validado por docente'
         };
 
-        const estado = escapeHTML(solicitud.estado || solicitud.estado_actual || 'pendiente');
-        const nombreEstudiante = escapeHTML(solicitud.nombreEstudiante || solicitud.nombre_estudiante || 'No especificado');
-        const grado = escapeHTML(solicitud.grado || 'No especificado');
-        const fecha = solicitud.fecha || solicitud.fecha_solicitud || new Date().toISOString();
-        const tipo = escapeHTML(solicitud.tipo || solicitud.tipo_solicitud || 'solicitud');
-        const recoge = escapeHTML(solicitud.personaRecoge || solicitud.persona_recoge || '');
+        const datos = solicitud.datos_formulario || {};
+
+        const tipo = escapeHTML(solicitud.tipo || solicitud.tipo_solicitud || datos.tipo || 'solicitud');
         const radicado = escapeHTML(solicitud.radicado);
-        const observaciones = escapeHTML(solicitud.observaciones || '');
+        const fecha = solicitud.fecha || solicitud.fecha_solicitud || new Date().toISOString();
+
+        const nombreEstudiante = escapeHTML(datos.nombreEstudiante || solicitud.nombreEstudiante || solicitud.nombre_estudiante || 'No especificado');
+        const codigoEstudiante = escapeHTML(datos.codigoEstudiante || solicitud.codigoEstudiante || '');
+        const grado = escapeHTML(datos.grado || solicitud.grado || 'No especificado');
+
+        const nombreAcudiente = escapeHTML(datos.nombreAcudiente || solicitud.nombreAcudiente || '');
+        const emailAcudiente = escapeHTML(datos.emailAcudiente || solicitud.emailAcudiente || '');
+        const telefonoAcudiente = escapeHTML(datos.telefonoAcudiente || solicitud.telefonoAcudiente || '');
+        const perfilAcudiente = escapeHTML(datos.perfilAcudiente || solicitud.perfilAcudiente || '');
+
+        const recoge = escapeHTML(datos.personaRecoge || solicitud.personaRecoge || solicitud.persona_recoge || '');
+        const observaciones = escapeHTML(solicitud.observaciones || datos.observaciones || '');
         const validadoPor = escapeHTML(solicitud.validadoPor || solicitud.validado_por || '');
-        const archivo = solicitud.archivoAdjunto || solicitud.datos_formulario?.archivoURL || solicitud.datos_formulario?.archivoAdjunto || '';
+        const archivo = solicitud.archivoAdjunto || datos.archivoURL || datos.archivoAdjunto || '';
+
+        const fechaExcusa = datos.fechaExcusa || solicitud.fechaExcusa || '';
+        const diasInasistencia = datos.diasInasistencia || solicitud.diasInasistencia || '';
+        const mesInasistencia = datos.mesInasistencia || solicitud.mesInasistencia || '';
+        const motivoInasistencia = escapeHTML(datos.motivoInasistencia || solicitud.motivoInasistencia || '');
+        const certificadoMedico = datos.certificadoMedico || solicitud.certificadoMedico;
+        const incapacidad = datos.incapacidad || solicitud.incapacidad;
+
+        const fechaPermiso = datos.fechaPermiso || solicitud.fechaPermiso || '';
+        const tipoPermiso = escapeHTML(datos.tipoPermiso || solicitud.tipoPermiso || '');
+        const motivoPermiso = escapeHTML(datos.motivoPermiso || solicitud.motivoPermiso || '');
+        const horaSalida = datos.horaSalida || solicitud.horaSalida || '';
+        const horaRegreso = datos.horaRegreso || solicitud.horaRegreso || '';
+        const lugarDestino = escapeHTML(datos.lugarDestino || solicitud.lugarDestino || '');
 
         let html = `
             <div class="solicitud-detalle">
@@ -723,11 +746,33 @@ class SistemaExcusas {
                 </div>
                 <div class="solicitud-info">
                     <p><strong>Radicado:</strong> ${radicado}</p>
-                    <p><strong>Estudiante:</strong> ${nombreEstudiante}</p>
-                    <p><strong>Grado:</strong> ${grado}</p>
                     <p><strong>Fecha de solicitud:</strong> ${new Date(fecha).toLocaleString()}</p>
-                    ${recoge ? `<p><strong>Recoge:</strong> ${recoge}</p>` : ''}
-                    ${solicitud.observaciones ? `<p><strong>Observaciones:</strong> ${observaciones}</p>` : ''}
+                    <p><strong>Estudiante:</strong> ${nombreEstudiante}</p>
+                    ${codigoEstudiante ? `<p><strong>Código:</strong> ${codigoEstudiante}</p>` : ''}
+                    <p><strong>Grado:</strong> ${grado}</p>
+                    ${nombreAcudiente ? `<p><strong>Acudiente:</strong> ${nombreAcudiente}</p>` : ''}
+                    ${emailAcudiente ? `<p><strong>Email acudiente:</strong> ${emailAcudiente}</p>` : ''}
+                    ${telefonoAcudiente ? `<p><strong>Teléfono acudiente:</strong> ${telefonoAcudiente}</p>` : ''}
+                    ${perfilAcudiente ? `<p><strong>Perfil acudiente:</strong> ${perfilAcudiente}</p>` : ''}`;
+
+        if (tipo === 'excusa') {
+            html += `
+                    ${fechaExcusa ? `<p><strong>Fecha de excusa:</strong> ${new Date(fechaExcusa).toLocaleDateString()}</p>` : ''}
+                    ${(diasInasistencia || mesInasistencia) ? `<p><strong>Período de ausencia:</strong> ${diasInasistencia || ''}${diasInasistencia && mesInasistencia ? ' de ' : ''}${mesInasistencia || ''}</p>` : ''}
+                    ${motivoInasistencia ? `<p><strong>Motivo:</strong> ${motivoInasistencia}</p>` : ''}
+                    ${(certificadoMedico || incapacidad) ? `<p><strong>Documentos:</strong> ${(certificadoMedico ? 'Certificado Médico' : '')}${certificadoMedico && incapacidad ? ', ' : ''}${incapacidad ? 'Incapacidad' : ''}</p>` : ''}`;
+        } else if (tipo === 'permiso') {
+            html += `
+                    ${fechaPermiso ? `<p><strong>Fecha permiso:</strong> ${new Date(fechaPermiso).toLocaleDateString()}</p>` : ''}
+                    ${tipoPermiso ? `<p><strong>Tipo de permiso:</strong> ${tipoPermiso}</p>` : ''}
+                    ${(horaSalida || horaRegreso) ? `<p><strong>Horario:</strong> ${horaSalida ? `Salida ${horaSalida}` : ''}${horaRegreso ? ` - Regreso ${horaRegreso}` : ''}</p>` : ''}
+                    ${lugarDestino ? `<p><strong>Destino:</strong> ${lugarDestino}</p>` : ''}
+                    ${recoge ? `<p><strong>Persona que recoge:</strong> ${recoge}</p>` : ''}
+                    ${motivoPermiso ? `<p><strong>Motivo:</strong> ${motivoPermiso}</p>` : ''}`;
+        }
+
+        html += `
+                    ${observaciones ? `<p><strong>Observaciones:</strong> ${observaciones}</p>` : ''}
                     ${validadoPor ? `<p><strong>Docente que validó:</strong> ${validadoPor}</p>` : ''}
                     ${archivo ? `<p><strong>Adjunto:</strong> <a href="${archivo}" target="_blank">Ver documento</a></p>` : ''}
                 </div>
@@ -804,19 +849,26 @@ class SistemaExcusas {
     }
 
     generateAdminCardHTML(solicitud) {
+        const datos = solicitud.datos_formulario || {};
         const estado = escapeHTML(solicitud.estado || solicitud.estado_actual || 'pendiente');
-        const nombre = escapeHTML(solicitud.nombreEstudiante || solicitud.nombre_estudiante || '');
-        const grado = escapeHTML(solicitud.grado || '');
+        const tipo = escapeHTML(solicitud.tipo || solicitud.tipo_solicitud || datos.tipo || 'solicitud');
+        const nombre = escapeHTML(datos.nombreEstudiante || solicitud.nombreEstudiante || solicitud.nombre_estudiante || '');
+        const grado = escapeHTML(datos.grado || solicitud.grado || '');
         const fecha = solicitud.fecha || solicitud.fecha_solicitud || new Date().toISOString();
         const radicado = escapeHTML(solicitud.radicado);
+
+        const fechaDetalle = datos.fechaExcusa || datos.fechaPermiso || '';
+        const motivo = escapeHTML(datos.motivoInasistencia || datos.motivoPermiso || solicitud.motivo || '');
 
         return `
             <div class="solicitud-card admin-card" data-id="${solicitud.id}">
                 <div>
-                    <h4>Radicado ${radicado}</h4>
+                    <h4>${tipo.charAt(0).toUpperCase() + tipo.slice(1)} - ${radicado}</h4>
                     <p><strong>Estudiante:</strong> ${nombre}</p>
                     <p><strong>Grado:</strong> ${grado}</p>
                     <p><strong>Fecha:</strong> ${new Date(fecha).toLocaleDateString()}</p>
+                    ${fechaDetalle ? `<p><strong>${tipo === 'excusa' ? 'Fecha excusa' : 'Fecha permiso'}:</strong> ${new Date(fechaDetalle).toLocaleDateString()}</p>` : ''}
+                    ${motivo ? `<p><strong>Motivo:</strong> ${motivo}</p>` : ''}
                 </div>
                 <span class="estado ${estado}"></span>
             </div>
