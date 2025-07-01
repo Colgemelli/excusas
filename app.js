@@ -39,12 +39,11 @@ class SistemaExcusas {
             this.initDateValidation();
             this.initStudentDatabase();
             await this.checkAuthStatus();
+            this.updateStatus('🟢 Sistema listo');
+            this.showView('homeView');
         } catch (error) {
             this.updateStatus('🔴 Error en inicialización');
             console.error('Error en inicialización:', error);
-        } finally {
-            this.updateStatus('🟢 Sistema listo');
-            this.showView('homeView');
         }
     }
 
@@ -52,34 +51,29 @@ class SistemaExcusas {
     async initSupabase() {
         if (!SUPABASE_CONFIG.useLocal) {
             try {
-                // Verificar que las variables de entorno existan
                 if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key) {
                     throw new Error('Variables de entorno de Supabase no configuradas');
                 }
 
-                // Inicializar Supabase v2 correctamente
-                if (typeof window.supabase !== 'undefined') {
-                    this.supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
-                    console.log('✅ Supabase inicializado correctamente');
-                    
-                    // Verificar la conexión
-                    const { data, error } = await this.supabase.from('grados').select('count').limit(1);
-                    if (error) {
-                        console.error('Error de conexión a Supabase:', error);
-                        throw error;
-                    }
-                    console.log('✅ Conexión a Supabase verificada');
-                } else {
+                if (typeof window.supabase === 'undefined') {
                     throw new Error('Supabase library not loaded');
                 }
-            } catch (error) {
-                console.warn('⚠️ Error al inicializar Supabase, usando almacenamiento local:', error);
-                SUPABASE_CONFIG.useLocal = true;
-                this.updateStatus('🟡 Usando modo local');
-            }
-        }
 
-        if (SUPABASE_CONFIG.useLocal) {
+                this.supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+                console.log('✅ Supabase inicializado correctamente');
+
+                const { error } = await this.supabase.from('grados').select('id').limit(1);
+                if (error) {
+                    console.error('Error de conexión a Supabase:', error);
+                    throw error;
+                }
+                console.log('✅ Conexión a Supabase verificada');
+            } catch (error) {
+                this.updateStatus('🔴 Error conectando a Supabase');
+                console.error('Error al inicializar Supabase:', error);
+                throw error;
+            }
+        } else {
             console.log('📱 Usando almacenamiento local para desarrollo');
             await this.loadLocalData();
         }
@@ -160,9 +154,8 @@ class SistemaExcusas {
             
         } catch (error) {
             console.error('❌ Error al crear solicitud en Supabase:', error);
-            // Si falla Supabase, intentar guardar localmente como respaldo
-            console.log('🔄 Intentando guardar localmente como respaldo...');
-            return await this.createSolicitudLocal(solicitudData);
+            this.updateStatus('🔴 Error guardando solicitud');
+            throw error;
         }
     }
 
