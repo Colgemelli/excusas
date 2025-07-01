@@ -192,6 +192,8 @@ Se incluye un archivo `env.example.js` como referencia.
 
 El archivo `env.js` se carga antes de `app.js` y expone los valores mediante
 `window.process.env`.
+**Importante:** `env.js` no se incluye en el repositorio por contener credenciales.
+Tras clonar el proyecto, generalo nuevamente ejecutando el script anterior.
 🌐 Despliegue
 GitHub + Netlify (Recomendado)
 Crear repositorio en GitHub:
