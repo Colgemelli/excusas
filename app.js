@@ -384,14 +384,30 @@ class SistemaExcusas {
     // CRUD Operations para Solicitudes
     async createSolicitud(solicitudData) {
         if (SUPABASE_CONFIG.useLocal) {
-            return this.createSolicitudLocal(solicitudData);
+            return await this.createSolicitudLocal(solicitudData);
         }
-        
+
         try {
+            let archivoURL = null;
+            if (solicitudData.archivoAdjunto) {
+                const fileName = `${Date.now()}_${solicitudData.archivoAdjunto.name}`;
+                const { error: upError } = await this.supabase
+                    .storage
+                    .from('solicitudes')
+                    .upload(fileName, solicitudData.archivoAdjunto);
+                if (upError && upError.statusCode !== 409) throw upError;
+                archivoURL = this.supabase
+                    .storage
+                    .from('solicitudes')
+                    .getPublicUrl(fileName).data.publicUrl;
+            }
+
             const datosFormulario = {
                 ...solicitudData,
-                validacionesDocentes: []
+                validacionesDocentes: [],
             };
+            if (archivoURL) datosFormulario.archivoURL = archivoURL;
+            delete datosFormulario.archivoAdjunto;
             const { data, error } = await this.supabase
                 .from('solicitudes')
                 .insert([{
@@ -415,8 +431,17 @@ class SistemaExcusas {
         }
     }
 
-    createSolicitudLocal(solicitudData) {
+    async createSolicitudLocal(solicitudData) {
         const radicado = this.generateRadicado();
+         let archivoBase64 = null;
+        if (solicitudData.archivoAdjunto) {
+            try {
+                archivoBase64 = await this.readFileAsBase64(solicitudData.archivoAdjunto);
+            } catch (e) {
+                console.warn('No se pudo leer el archivo adjunto:', e);
+            }
+        }
+
         const solicitud = {
             id: Date.now(),
             radicado: radicado,
@@ -424,13 +449,13 @@ class SistemaExcusas {
             fecha: new Date().toISOString(),
             estado: 'pendiente',
             validacionesDocentes: [],
-            ...solicitudData
+            ...solicitudData,
         };
-
+        if (archivoBase64) solicitud.archivoAdjunto = archivoBase64;
         this.solicitudes.push(solicitud);
         this.saveToStorage('solicitudes', this.solicitudes);
         this.saveToStorage('radicadoCounter', this.radicadoCounter);
-        
+
         return solicitud;
     }
 
@@ -596,6 +621,15 @@ class SistemaExcusas {
         return `RAD-${this.radicadoCounter}`;
     }
     
+    readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Error leyendo archivo'));
+            reader.readAsDataURL(file);
+        });
+    }
+
     // Consulta de radicado
     async consultarRadicado() {
         const numeroRadicado = document.getElementById('numeroRadicado').value.trim();
@@ -679,6 +713,7 @@ class SistemaExcusas {
         const radicado = escapeHTML(solicitud.radicado);
         const observaciones = escapeHTML(solicitud.observaciones || '');
         const validadoPor = escapeHTML(solicitud.validadoPor || solicitud.validado_por || '');
+        const archivo = solicitud.archivoAdjunto || solicitud.datos_formulario?.archivoURL || solicitud.datos_formulario?.archivoAdjunto || '';
 
         let html = `
             <div class="solicitud-detalle">
@@ -694,6 +729,7 @@ class SistemaExcusas {
                     ${recoge ? `<p><strong>Recoge:</strong> ${recoge}</p>` : ''}
                     ${solicitud.observaciones ? `<p><strong>Observaciones:</strong> ${observaciones}</p>` : ''}
                     ${validadoPor ? `<p><strong>Docente que validó:</strong> ${validadoPor}</p>` : ''}
+                    ${archivo ? `<p><strong>Adjunto:</strong> <a href="${archivo}" target="_blank">Ver documento</a></p>` : ''}
                 </div>
             </div>
         `;
@@ -742,6 +778,29 @@ class SistemaExcusas {
         ventana.document.write(`<!DOCTYPE html><html><head><title>Imprimir</title><style>body{font-family:Arial,sans-serif;padding:20px;}</style></head><body>${contenido}</body></html>`);
         ventana.document.close();
         ventana.print();
+    }
+
+    async showDetalleSolicitud(id) {
+        let solicitud = null;
+        if (SUPABASE_CONFIG.useLocal) {
+            solicitud = this.solicitudes.find(s => String(s.id) === String(id));
+        } else {
+            const { data, error } = await this.supabase
+                .from('vista_solicitudes_completas')
+                .select('*')
+                .eq('id', id)
+                .single();
+            if (!error) solicitud = data;
+        }
+        if (!solicitud) return;
+        const contenido = this.generateConsultaHTML(solicitud);
+        document.getElementById('detalleSolicitudBody').innerHTML = contenido;
+        document.getElementById('modalDetalleSolicitud').style.display = 'flex';
+    }
+
+    cerrarDetalleSolicitud() {
+        document.getElementById('modalDetalleSolicitud').style.display = 'none';
+        document.getElementById('detalleSolicitudBody').innerHTML = '';
     }
 
     generateAdminCardHTML(solicitud) {
@@ -1691,7 +1750,8 @@ class SistemaExcusas {
             mesInasistencia: document.getElementById('mesInasistencia').value,
             motivoInasistencia: document.getElementById('motivoInasistencia').value,
             certificadoMedico: document.getElementById('certificadoMedico').checked,
-            incapacidad: document.getElementById('incapacidad').checked
+            incapacidad: document.getElementById('incapacidad').checked,
+            archivoAdjunto: document.getElementById('archivoAdjunto')?.files?.[0] || null
         };
     }
 
