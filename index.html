@@ -6,8 +6,6 @@
     <title>Sistema de Excusas y Permisos - Colegio Gemelli Franciscanos</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- ========== CORRECCIÓN: Supabase v2 ========== -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <!-- Header -->
@@ -186,7 +184,6 @@
                                     <label for="estudianteExcusa">Estudiante *</label>
                                     <select id="estudianteExcusa" required disabled>
                                         <option value="">Seleccione un grado primero</option>
-                                        <span class="loading-message" id="loadingEstudiantesExcusa" style="display: none;">Cargando estudiantes...</span>
                                     </select>
                                 </div>
                             </div>
@@ -718,6 +715,14 @@
                         <button type="submit" class="btn-primary">Iniciar Sesión</button>
                         <div id="loginMessage" class="error-message" style="display:none"></div>
                     </form>
+                    
+                    <!-- Información de usuarios de prueba -->
+                    <div style="margin-top: 2rem; padding: 1rem; background: #f8fafc; border-radius: 8px; font-size: 0.875rem;">
+                        <h4 style="color: #1e40af; margin-bottom: 0.5rem;">👤 Usuarios de Prueba Disponibles:</h4>
+                        <p><strong>Administrador:</strong> usuario: <code>admin</code> | contraseña: <code>admin123</code></p>
+                        <p><strong>Coordinador:</strong> usuario: <code>coord1</code> | contraseña: <code>coord123</code></p>
+                        <p><strong>Docente:</strong> usuario: <code>doc1</code> | contraseña: <code>doc123</code></p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -1068,12 +1073,14 @@
         </div>
     </footer>
 
-    <!-- ========== CORRECCIÓN: Scripts en orden correcto ========== -->
-    <script>
-        // Hacer Supabase disponible globalmente
-        window.supabase = window.supabase || supabase;
-    </script>
+    <!-- ========== SCRIPTS CORREGIDOS ========== -->
+    <!-- 1. Cargar Supabase primero (opcional para desarrollo) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 2. Configurar variables de entorno -->
     <script src="env.js"></script>
-    <script src="app.js"></script>
+    
+    <!-- 3. Cargar la aplicación principal -->
+    <script src="app-corregido.js"></script>
 </body>
 </html>
