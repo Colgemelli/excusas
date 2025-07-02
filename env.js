@@ -1,128 +1,136 @@
-// ========== CONFIGURACIÓN DE SUPABASE ==========
+// ========== CONFIGURACIÓN DE VARIABLES DE ENTORNO CORREGIDA ==========
 // env.js - Variables de entorno para el sistema de excusas
 
-// ========== IMPORTANTE: REEMPLAZA ESTOS VALORES ==========
-// Sustituye las URLs y claves por las reales de tu proyecto Supabase
+// ========== CONFIGURACIÓN SUPABASE ==========
+// Reemplaza con tus credenciales reales de Supabase cuando estés listo para producción
 
 window.process = window.process || {};
 window.process.env = window.process.env || {};
 
-// ========== CONFIGURACIÓN SUPABASE ==========
-// Ve a https://supabase.com -> Tu proyecto -> Settings -> API
-// Copia la URL del proyecto y la clave pública (anon key)
-
+// ========== CREDENCIALES DE SUPABASE (ACTUALIZA ESTOS VALORES) ==========
 window.process.env.SUPABASE_URL = 'https://zkbnpjmtwkhcvqizpmhj.supabase.co';
 window.process.env.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprYm5wam10d2toY3ZxaXpwbWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTQyNDksImV4cCI6MjA2NjczMDI0OX0.McMyTT8-Myp6L0nIjTN4chedAPunB0dwymQKhiNp6uI';
 
-// ========== EJEMPLO DE CONFIGURACIÓN ==========
-// window.process.env.SUPABASE_URL = 'https://tuproyecto.supabase.co';
-// window.process.env.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
-
 // ========== CONFIGURACIÓN DE DESARROLLO ==========
-// Para usar datos locales durante desarrollo, cambia a true
-// Para usar Supabase, cambia a false
-window.SUPABASE_LOCAL_MODE = false; // ← Cambia según necesites
+// IMPORTANTE: El sistema está configurado para usar modo LOCAL por defecto
+// Esto significa que funcionará sin Supabase para pruebas
+window.SUPABASE_LOCAL_MODE = true; // ← true = modo local, false = usar Supabase
 
-// ========== DEBUG ==========
-console.log('🔧 Variables de entorno cargadas:', {
-    supabaseUrl: window.process.env.SUPABASE_URL ? '✅ Configurada' : '❌ Falta configurar',
-    supabaseKey: window.process.env.SUPABASE_ANON_KEY ? '✅ Configurada' : '❌ Falta configurar',
-    localMode: window.SUPABASE_LOCAL_MODE ? '🏠 Modo local' : '☁️ Modo Supabase'
-});
-
-// ========== VERIFICACIÓN ==========
-if (!window.process.env.SUPABASE_URL || !window.process.env.SUPABASE_ANON_KEY) {
-    console.warn('⚠️ CONFIGURACIÓN INCOMPLETA: Faltan variables de Supabase');
-    console.log('📚 Para configurar:');
-    console.log('1. Ve a https://supabase.com');
-    console.log('2. Abre tu proyecto');
-    console.log('3. Ve a Settings > API');
-    console.log('4. Copia la URL y la anon key');
-    console.log('5. Reemplaza los valores en este archivo (env.js)');
-}
-
-// ========== CONFIGURACIÓN ADICIONAL ==========
+// ========== CONFIGURACIÓN DE LA APLICACIÓN ==========
 window.APP_CONFIG = {
-    // Nombre de la aplicación
-    appName: 'Sistema de Excusas - Colegio Gemelli',
-    
-    // Versión
+    // Información del colegio
+    nombreColegio: 'Colegio Franciscano Agustín Gemelli',
     version: '1.0.0',
     
     // Configuración de desarrollo
-    debug: true, // Cambia a false en producción
+    debug: true, // Mostrar logs detallados en consola
     
-    // Configuración de carga de archivos
-    maxFileSize: 5 * 1024 * 1024, // 5MB
+    // Configuración de archivos
+    maxFileSize: 5 * 1024 * 1024, // 5MB máximo
     allowedFileTypes: ['.pdf', '.jpg', '.jpeg', '.png'],
     
     // Configuración de radicados
     radicadoPrefix: 'RAD-',
-    radicadoStart: 1000
+    radicadoStart: 1000,
+    
+    // Usuarios de prueba para desarrollo
+    testUsers: {
+        admin: { usuario: 'admin', password: 'admin123', tipo: 'admin' },
+        coordinador: { usuario: 'coord1', password: 'coord123', tipo: 'coordinador' },
+        docente: { usuario: 'doc1', password: 'doc123', tipo: 'docente' }
+    }
 };
 
-// ========== FUNCIONES DE UTILIDAD ==========
-window.checkSupabaseConnection = async function() {
-    if (!window.process.env.SUPABASE_URL || !window.process.env.SUPABASE_ANON_KEY) {
-        console.error('❌ Variables de Supabase no configuradas');
-        return false;
+// ========== VALIDACIÓN Y DEBUG ==========
+console.log('🔧 Configuración de entorno cargada:', {
+    supabaseUrl: window.process.env.SUPABASE_URL ? '✅ Configurada' : '❌ Falta configurar',
+    supabaseKey: window.process.env.SUPABASE_ANON_KEY ? '✅ Configurada' : '❌ Falta configurar',
+    modoLocal: window.SUPABASE_LOCAL_MODE ? '🏠 Modo LOCAL activado' : '☁️ Modo SUPABASE activado',
+    debug: window.APP_CONFIG.debug ? '🐛 Debug ACTIVADO' : '🔇 Debug desactivado'
+});
+
+// ========== FUNCIÓN DE DIAGNÓSTICO ==========
+window.diagnosticarSistema = function() {
+    console.log('🩺 DIAGNÓSTICO DEL SISTEMA');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    // Verificar variables de entorno
+    console.log('📊 Variables de entorno:');
+    console.log('  - SUPABASE_URL:', window.process.env.SUPABASE_URL ? '✅' : '❌');
+    console.log('  - SUPABASE_ANON_KEY:', window.process.env.SUPABASE_ANON_KEY ? '✅' : '❌');
+    console.log('  - Modo local:', window.SUPABASE_LOCAL_MODE ? '✅ Activado' : '❌ Desactivado');
+    
+    // Verificar elementos DOM críticos
+    console.log('🔍 Elementos DOM críticos:');
+    const elementosCriticos = [
+        'excusaForm', 'permisoForm', 'loginForm', 
+        'statusText', 'modalProteccionDatos', 'modalRadicado'
+    ];
+    
+    elementosCriticos.forEach(id => {
+        const elemento = document.getElementById(id);
+        console.log(`  - ${id}:`, elemento ? '✅' : '❌');
+    });
+    
+    // Verificar sistema de almacenamiento
+    console.log('💾 Sistema de almacenamiento:');
+    try {
+        localStorage.setItem('test', 'test');
+        localStorage.removeItem('test');
+        console.log('  - localStorage: ✅');
+    } catch(e) {
+        console.log('  - localStorage: ❌', e.message);
     }
     
-    try {
-        const response = await fetch(`${window.process.env.SUPABASE_URL}/rest/v1/`, {
-            headers: {
-                'apikey': window.process.env.SUPABASE_ANON_KEY,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            console.log('✅ Conexión a Supabase exitosa');
-            return true;
-        } else {
-            console.error('❌ Error de conexión a Supabase:', response.status);
-            return false;
-        }
-    } catch (error) {
-        console.error('❌ No se pudo conectar a Supabase:', error);
-        return false;
-    }
+    // Verificar usuarios de prueba
+    console.log('👤 Usuarios de prueba disponibles:');
+    Object.entries(window.APP_CONFIG.testUsers).forEach(([tipo, datos]) => {
+        console.log(`  - ${tipo}: ${datos.usuario}/${datos.password}`);
+    });
+    
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ Diagnóstico completado');
 };
 
-// ========== INSTRUCCIONES DE CONFIGURACIÓN ==========
-/*
-PASOS PARA CONFIGURAR SUPABASE:
+// ========== INSTRUCCIONES DE USO ==========
+console.log(`
+🎯 INSTRUCCIONES DE USO DEL SISTEMA:
 
-1. CREAR PROYECTO EN SUPABASE:
-   - Ve a https://supabase.com
-   - Crea una cuenta o inicia sesión
-   - Crea un nuevo proyecto
-   - Espera a que se complete la configuración
+1. 📝 CREAR EXCUSA O PERMISO:
+   - Ir a inicio y hacer clic en "Solicitar Excusa" o "Solicitar Permiso"
+   - Aceptar política de datos
+   - Completar formulario paso a paso
+   - Obtener número de radicado
 
-2. OBTENER CREDENCIALES:
-   - En tu proyecto, ve a Settings > API
-   - Copia la "Project URL"
-   - Copia la "anon public" key
+2. 🔐 ACCESO ADMINISTRATIVO:
+   - Hacer clic en "Login"
+   - Usar credenciales de prueba:
+     * Admin: admin/admin123
+     * Coordinador: coord1/coord123  
+     * Docente: doc1/doc123
 
-3. CONFIGURAR ESTE ARCHIVO:
-   - Reemplaza 'TU_SUPABASE_URL_AQUI' con tu Project URL
-   - Reemplaza 'TU_SUPABASE_ANON_KEY_AQUI' con tu anon key
+3. 🔍 CONSULTAR SOLICITUD:
+   - Hacer clic en "Consultar Radicado"
+   - Introducir número de radicado (ej: RAD-1001)
 
-4. CONFIGURAR BASE DE DATOS:
-   - Ejecuta el archivo schema.sql en tu base de datos Supabase
-   - Ve a Table Editor y verifica que las tablas se crearon
-   - Ve a Authentication > Users y crea usuarios de prueba
+4. 🐛 DIAGNOSTICAR PROBLEMAS:
+   - Abrir consola del navegador (F12)
+   - Ejecutar: diagnosticarSistema()
 
-5. CONFIGURAR RLS (Row Level Security):
-   - Ve a Authentication > Policies
-   - Configura las políticas según el esquema
+📞 Si necesitas ayuda adicional, revisa la consola del navegador para logs detallados.
+`);
 
-EJEMPLO DE CONFIGURACIÓN:
-window.process.env.SUPABASE_URL = 'https://abcdefghijklmnop.supabase.co';
-window.process.env.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiY2RlZmdoaWprbG1ub3AiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTYzNTc3NzI0MCwiZXhwIjoxOTUxMzUzMjQwfQ.example_key_here';
+// ========== CONFIGURACIÓN AUTOMÁTICA ==========
+// Verificar si estamos en desarrollo local
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    window.SUPABASE_LOCAL_MODE = true;
+    console.log('🏠 Modo local detectado automáticamente');
+}
 
-USUARIOS DE PRUEBA RECOMENDADOS:
-- Admin: usuario='admin', contraseña='admin123', tipo='admin'
-- Coordinador: usuario='coord1', contraseña='coord123', tipo='coordinador'
-- Docente: usuario='doc1', contraseña='doc123', tipo='docente'
-*/
+// ========== EXPORTAR CONFIGURACIÓN ==========
+window.ENV_CONFIG = {
+    supabaseUrl: window.process.env.SUPABASE_URL,
+    supabaseKey: window.process.env.SUPABASE_ANON_KEY,
+    localMode: window.SUPABASE_LOCAL_MODE,
+    appConfig: window.APP_CONFIG
+};
