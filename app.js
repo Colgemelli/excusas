@@ -5,7 +5,7 @@
 const SUPABASE_CONFIG = {
     url: window.process?.env?.SUPABASE_URL || '',
     key: window.process?.env?.SUPABASE_ANON_KEY || '',
-    useLocal: false // Cambiar a false cuando tengas Supabase configurado
+    useLocal: false // ========== CORRECCIÓN: Cambiar a false para usar Supabase ==========
 };
 
 // Sanitiza texto para evitar inyecciones al usar innerHTML
@@ -976,12 +976,32 @@ class SistemaExcusas {
         this.cerrarModalConfirmacion();
     }
 
-    // Autenticación
+    // ========== CORRECCIÓN PRINCIPAL: AUTENTICACIÓN ==========
     async handleLogin(e) {
         e.preventDefault();
-        const usuario = document.getElementById('usuario').value;
-        const password = document.getElementById('password').value;
+        
+        // ========== CORRECCIÓN: Limpiar y validar entrada ==========
+        const usuario = document.getElementById('usuario').value.trim();
+        const password = document.getElementById('password').value.trim();
         const tipoUsuario = document.getElementById('tipoUsuario').value;
+
+        // Validar que todos los campos estén llenos
+        if (!usuario || !password || !tipoUsuario) {
+            const loginMessage = document.getElementById('loginMessage');
+            loginMessage.textContent = 'Por favor complete todos los campos';
+            loginMessage.style.display = 'block';
+            loginMessage.style.color = 'red';
+            return;
+        }
+
+        // Limpiar mensaje de error previo
+        document.getElementById('loginMessage').style.display = 'none';
+
+        console.log('🔐 Intentando login...', {
+            usuario: usuario,
+            tipoUsuario: tipoUsuario,
+            useLocal: SUPABASE_CONFIG.useLocal
+        });
 
         try {
             let userFound = null;
@@ -1008,16 +1028,26 @@ class SistemaExcusas {
                 }
                 
                 this.updateStatus(`🟢 Bienvenido ${userFound.nombre}`);
+                console.log('✅ Login exitoso:', userFound);
             } else {
-                alert('Usuario o contraseña incorrectos');
+                const loginMessage = document.getElementById('loginMessage');
+                loginMessage.textContent = 'Usuario, contraseña o tipo de usuario incorrectos';
+                loginMessage.style.display = 'block';
+                loginMessage.style.color = 'red';
+                console.log('❌ Login fallido: credenciales incorrectas');
             }
         } catch (error) {
-            console.error('Error en login:', error);
-            alert('Error al iniciar sesión. Intente nuevamente.');
+            console.error('❌ Error en login:', error);
+            const loginMessage = document.getElementById('loginMessage');
+            loginMessage.textContent = 'Error al iniciar sesión. Intente nuevamente.';
+            loginMessage.style.display = 'block';
+            loginMessage.style.color = 'red';
         }
     }
 
     async loginLocal(usuario, password, tipoUsuario) {
+        console.log('🏠 Intentando login local...', { usuario, tipoUsuario });
+        
         let userFound = null;
 
         if (tipoUsuario === 'coordinador') {
@@ -1029,52 +1059,70 @@ class SistemaExcusas {
         }
         
         if (userFound && userFound.password === password) {
-            const { password, ...userData } = userFound;
+            const { password: _, ...userData } = userFound;
+            console.log('✅ Usuario encontrado en datos locales:', userData);
             return userData;
         }
 
+        console.log('❌ Usuario no encontrado en datos locales');
         return null;
     }
 
+    // ========== CORRECCIÓN PRINCIPAL: LOGIN SUPABASE ==========
     async loginSupabase(usuario, password, tipoUsuario) {
+        console.log('☁️ Intentando login Supabase...', { usuario, tipoUsuario });
+        
         try {
-            // Buscar usuario en la base de datos
+            // ========== CORRECCIÓN: Consulta mejorada ==========
             const { data: userData, error: userError } = await this.supabase
                 .from('usuarios')
                 .select(`
-                    id, usuario, nombre, email, grado_asignado, asignatura,
-                    tipos_usuario!inner(nombre)
+                    id, 
+                    usuario, 
+                    contrasena,
+                    nombre, 
+                    email, 
+                    grado_asignado, 
+                    asignatura,
+                    activo,
+                    tipo_usuario_id,
+                    tipos_usuario!tipo_usuario_id(nombre)
                 `)
                 .eq('usuario', usuario)
                 .eq('activo', true)
-                .eq('tipos_usuario.nombre', tipoUsuario)
                 .single();
 
-            if (userError || !userData) {
-                console.error('Usuario no encontrado:', userError);
+            console.log('📊 Resultado consulta usuario:', { userData, userError });
+
+            if (userError) {
+                console.error('❌ Error consultando usuario:', userError);
                 return null;
             }
 
-            // Obtener contraseña almacenada
-            const { data: authData, error: authError } = await this.supabase
-                .from('usuarios')
-                .select('password')
-                .eq('id', userData.id)
-                .single();
-
-            if (authError || !authData) {
-                console.log('Contraseña incorrecta');
+            if (!userData) {
+                console.log('❌ Usuario no encontrado en base de datos');
                 return null;
             }
 
-             if (!authData || password !== authData.password) {
-                console.log('Contraseña incorrecta');
-                return null;
-            }
-
-            // Autenticar con Supabase Auth (opcional)
-            const email = userData.email || `${usuario}@gemelli.edu.co`;
+            // ========== CORRECCIÓN: Verificar tipo de usuario ==========
+            const tipoUsuarioEnDB = userData.tipos_usuario?.nombre;
+            console.log('🔍 Tipo usuario en DB:', tipoUsuarioEnDB, 'vs solicitado:', tipoUsuario);
             
+            if (tipoUsuarioEnDB !== tipoUsuario) {
+                console.log('❌ Tipo de usuario no coincide');
+                return null;
+            }
+
+            // ========== CORRECCIÓN: Verificar contraseña en texto plano ==========
+            console.log('🔐 Verificando contraseña...');
+            if (!userData.contrasena || password !== userData.contrasena) {
+                console.log('❌ Contraseña incorrecta');
+                return null;
+            }
+
+            console.log('✅ Autenticación exitosa en Supabase');
+
+            // Retornar datos del usuario
             return {
                 id: userData.id,
                 usuario: userData.usuario,
@@ -1086,12 +1134,12 @@ class SistemaExcusas {
             };
 
         } catch (error) {
-            console.error('Error en autenticación Supabase:', error);
+            console.error('❌ Error en autenticación Supabase:', error);
             return null;
         }
     }
 
-    // Crear usuario en Supabase (contraseña en texto plano almacenada en la columna "password")
+    // Crear usuario en Supabase (contraseña en texto plano almacenada en la columna "contrasena")
     async createUserSupabase(usuarioData) {
         try {
             
@@ -1100,7 +1148,7 @@ class SistemaExcusas {
                 .insert([
                     {
                         usuario: usuarioData.usuario,
-                        password: usuarioData.password,
+                        contrasena: usuarioData.password, // ========== CORRECCIÓN: Campo contrasena ==========
                         nombre: usuarioData.nombre,
                         email: usuarioData.email,
                         grado_asignado: usuarioData.grado,
