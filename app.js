@@ -1079,7 +1079,7 @@ class SistemaExcusas {
                 .select(`
                     id, 
                     usuario, 
-                    contrasena,
+                    password,
                     nombre, 
                     email, 
                     grado_asignado, 
@@ -1115,7 +1115,7 @@ class SistemaExcusas {
 
             // ========== CORRECCIÓN: Verificar contraseña en texto plano ==========
             console.log('🔐 Verificando contraseña...');
-            if (!userData.contrasena || password !== userData.contrasena) {
+            if (!userData.password || password !== userData.password) {
                 console.log('❌ Contraseña incorrecta');
                 return null;
             }
@@ -1139,7 +1139,7 @@ class SistemaExcusas {
         }
     }
 
-    // Crear usuario en Supabase (contraseña en texto plano almacenada en la columna "contrasena")
+    // Crear usuario en Supabase (contraseña en texto plano almacenada en la columna "password")
     async createUserSupabase(usuarioData) {
         try {
             
@@ -1148,7 +1148,7 @@ class SistemaExcusas {
                 .insert([
                     {
                         usuario: usuarioData.usuario,
-                        contrasena: usuarioData.password, // ========== CORRECCIÓN: Campo contrasena ==========
+                        password: usuarioData.password,
                         nombre: usuarioData.nombre,
                         email: usuarioData.email,
                         grado_asignado: usuarioData.grado,
