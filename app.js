@@ -309,6 +309,15 @@ class SistemaExcusasSimple {
 
         // Mostrar/ocultar botones
         this.updateStepButtons(tipo, step);
+
+        // Si es el paso de revisión, poblar los datos ingresados
+        if (step === 4) {
+            if (tipo === 'excusa') {
+                this.populateExcusaReview();
+            } else {
+                this.populatePermisoReview();
+            }
+        }
     }
 
     updateStepButtons(tipo, step) {
@@ -369,6 +378,56 @@ class SistemaExcusasSimple {
         });
 
         select.disabled = estudiantes.length === 0;
+    }
+
+    // ========== POBLAR VISTA DE CONFIRMACIÓN ==========
+    populateExcusaReview() {
+        const val = id => document.getElementById(id)?.value || '-';
+
+        document.getElementById('reviewNombreAcudiente').textContent = val('nombreAcudiente');
+        document.getElementById('reviewEmailAcudiente').textContent = val('emailAcudiente');
+        document.getElementById('reviewTelefonoAcudiente').textContent = val('telefonoAcudiente');
+        document.getElementById('reviewPerfilAcudiente').textContent = val('perfilAcudiente');
+
+        document.getElementById('reviewEstudiante').textContent = val('estudianteExcusa');
+        document.getElementById('reviewGrado').textContent = val('gradoExcusa');
+        document.getElementById('reviewFecha').textContent = val('fechaExcusa');
+
+        const mes = val('mesInasistencia');
+        const dias = val('diasInasistencia');
+        document.getElementById('reviewPeriodo').textContent = mes !== '-' || dias !== '-' ? `${mes} ${dias}`.trim() : '-';
+
+        document.getElementById('reviewMotivo').textContent = val('motivoInasistencia');
+
+        const docs = [];
+        if (document.getElementById('certificadoMedico')?.checked) docs.push('Certificado Médico');
+        if (document.getElementById('incapacidad')?.checked) docs.push('Incapacidad Médica');
+        const archivo = document.getElementById('archivoAdjunto');
+        if (archivo && archivo.files.length) docs.push(archivo.files[0].name);
+        document.getElementById('reviewDocumentos').textContent = docs.length ? docs.join(', ') : 'Ninguno';
+    }
+
+    populatePermisoReview() {
+        const val = id => document.getElementById(id)?.value || '-';
+
+        document.getElementById('reviewNombreAcudientePermiso').textContent = val('nombreAcudientePermiso');
+        document.getElementById('reviewEmailAcudientePermiso').textContent = val('emailAcudientePermiso');
+        document.getElementById('reviewTelefonoAcudientePermiso').textContent = val('telefonoAcudientePermiso');
+        document.getElementById('reviewPerfilAcudientePermiso').textContent = val('perfilAcudientePermiso');
+
+        document.getElementById('reviewEstudiantePermiso').textContent = val('estudiantePermiso');
+        document.getElementById('reviewGradoPermiso').textContent = val('gradoPermiso');
+
+        document.getElementById('reviewFechaPermiso').textContent = val('fechaPermiso');
+        document.getElementById('reviewTipoPermiso').textContent = val('tipoPermiso');
+
+        const horaSalida = val('horaSalida');
+        const horaRegresoEl = document.getElementById('horaRegreso');
+        const horaRegreso = horaRegresoEl && horaRegresoEl.value ? horaRegresoEl.value : '';
+        document.getElementById('reviewHorarioPermiso').textContent = horaRegreso ? `${horaSalida} - ${horaRegreso}` : horaSalida;
+
+        document.getElementById('reviewPersonaRecoge').textContent = val('personaRecoge');
+        document.getElementById('reviewMotivoPermiso').textContent = val('motivoPermiso');
     }
 
     // ========== AUTENTICACIÓN ==========
