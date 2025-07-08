@@ -8,8 +8,8 @@ window.process = window.process || {};
 window.process.env = window.process.env || {};
 
 // ========== CREDENCIALES DE SUPABASE (ACTUALIZA ESTOS VALORES) ==========
-window.process.env.SUPABASE_URL = 'https://zkbnpjmtwkhcvqizpmhj.supabase.co';
-window.process.env.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprYm5wam10d2toY3ZxaXpwbWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTQyNDksImV4cCI6MjA2NjczMDI0OX0.McMyTT8-Myp6L0nIjTN4chedAPunB0dwymQKhiNp6uI';
+window.process.env.SUPABASE_URL = 'YOUR_SUPABASE_URL';
+window.process.env.SUPABASE_ANON_KEY = 'YOUR_SUPABASE_KEY';
 
 // ========== CONFIGURACIÓN DE DESARROLLO ==========
 // IMPORTANTE: El sistema está configurado para usar modo LOCAL por defecto
