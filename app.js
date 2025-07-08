@@ -6,7 +6,7 @@ console.log('🚀 Cargando sistema simplificado...');
 // ========== CONFIGURACIÓN GLOBAL ==========
 window.SISTEMA_CONFIG = {
     debug: true,
-    useLocal: true,
+    useLocal: typeof window.SUPABASE_LOCAL_MODE !== 'undefined' ? window.SUPABASE_LOCAL_MODE : true,
     radicadoPrefix: 'RAD-',
     radicadoCounter: 1000,
     maxRetries: 3,
@@ -20,6 +20,8 @@ class SistemaExcusasSimple {
         this.currentUser = null;
         this.solicitudes = [];
         this.radicadoCounter = 1000;
+        this.supabase = null;
+        this.useLocal = window.SISTEMA_CONFIG.useLocal;
         this.initStep = 0;
         this.maxSteps = 4;
         this.currentStepExcusa = 1;
@@ -42,6 +44,11 @@ class SistemaExcusasSimple {
             this.loadBasicData();
             this.updateStatus('🔄 Datos básicos cargados...');
             
+            // Paso 2.5: Inicializar Supabase si corresponde
+            if (!this.useLocal) {
+                this.initSupabase();
+            }
+
             // Paso 3: Configurar eventos (con timeout)
             setTimeout(() => this.setupEvents(), 100);
             this.updateStatus('🔄 Configurando eventos...');
@@ -102,8 +109,24 @@ class SistemaExcusasSimple {
         // Cargar datos del localStorage
         this.solicitudes = this.loadFromStorage('solicitudes') || [];
         this.radicadoCounter = this.loadFromStorage('radicadoCounter') || 1000;
-        
+
         this.log('✅ Datos básicos cargados');
+    }
+
+    initSupabase() {
+        try {
+            if (typeof window.supabase === 'undefined') {
+                this.log('❌ Librería Supabase no encontrada');
+                return;
+            }
+            this.supabase = window.supabase.createClient(
+                window.process.env.SUPABASE_URL,
+                window.process.env.SUPABASE_ANON_KEY
+            );
+            this.log('✅ Supabase inicializado');
+        } catch (error) {
+            this.log('❌ Error inicializando Supabase:', error);
+        }
     }
 
     setupEvents() {
@@ -494,25 +517,37 @@ class SistemaExcusasSimple {
     }
 
     // ========== ENVÍO DE FORMULARIOS ==========
-    handleExcusaSubmit(e) {
+    async handleExcusaSubmit(e) {
         e.preventDefault();
         this.log('📤 Enviando excusa...');
 
         try {
             const formData = this.getFormData('excusa');
-            const radicado = this.generateRadicado();
-            
-            const solicitud = {
-                id: Date.now(),
-                radicado: radicado,
-                tipo: 'excusa',
-                fecha: new Date().toISOString(),
-                estado: 'pendiente',
-                ...formData
-            };
+            let radicado;
 
-            this.solicitudes.push(solicitud);
-            this.saveToStorage('solicitudes', this.solicitudes);
+            if (this.useLocal) {
+                radicado = this.generateRadicado();
+                const solicitud = {
+                    id: Date.now(),
+                    radicado,
+                    tipo: 'excusa',
+                    fecha: new Date().toISOString(),
+                    estado: 'pendiente',
+                    ...formData
+                };
+                this.solicitudes.push(solicitud);
+                this.saveToStorage('solicitudes', this.solicitudes);
+            } else {
+                const data = await this.insertSolicitudSupabase('excusa', formData);
+                radicado = data.radicado;
+                this.solicitudes.push({
+                    ...formData,
+                    radicado,
+                    tipo: 'excusa',
+                    fecha: data.fecha_solicitud || new Date().toISOString(),
+                    estado: 'pendiente'
+                });
+            }
 
             this.showRadicado(radicado);
             this.clearForm('excusaForm');
@@ -523,25 +558,37 @@ class SistemaExcusasSimple {
         }
     }
 
-    handlePermisoSubmit(e) {
+    async handlePermisoSubmit(e) {
         e.preventDefault();
         this.log('📤 Enviando permiso...');
 
         try {
             const formData = this.getFormData('permiso');
-            const radicado = this.generateRadicado();
-            
-            const solicitud = {
-                id: Date.now(),
-                radicado: radicado,
-                tipo: 'permiso',
-                fecha: new Date().toISOString(),
-                estado: 'pendiente',
-                ...formData
-            };
+            let radicado;
 
-            this.solicitudes.push(solicitud);
-            this.saveToStorage('solicitudes', this.solicitudes);
+            if (this.useLocal) {
+                radicado = this.generateRadicado();
+                const solicitud = {
+                    id: Date.now(),
+                    radicado,
+                    tipo: 'permiso',
+                    fecha: new Date().toISOString(),
+                    estado: 'pendiente',
+                    ...formData
+                };
+                this.solicitudes.push(solicitud);
+                this.saveToStorage('solicitudes', this.solicitudes);
+            } else {
+                const data = await this.insertSolicitudSupabase('permiso', formData);
+                radicado = data.radicado;
+                this.solicitudes.push({
+                    ...formData,
+                    radicado,
+                    tipo: 'permiso',
+                    fecha: data.fecha_solicitud || new Date().toISOString(),
+                    estado: 'pendiente'
+                });
+            }
 
             this.showRadicado(radicado);
             this.clearForm('permisoForm');
@@ -580,6 +627,50 @@ class SistemaExcusasSimple {
         this.radicadoCounter++;
         this.saveToStorage('radicadoCounter', this.radicadoCounter);
         return `RAD-${this.radicadoCounter}`;
+    }
+
+    async insertSolicitudSupabase(tipo, formData) {
+        if (!this.supabase) throw new Error('Supabase no inicializado');
+
+        const { data: tipoData, error: tipoError } = await this.supabase
+            .from('tipos_solicitud')
+            .select('id')
+            .eq('nombre', tipo)
+            .single();
+        if (tipoError) throw new Error(tipoError.message);
+
+        const { data: estadoData, error: estadoError } = await this.supabase
+            .from('estados_solicitud')
+            .select('id')
+            .eq('nombre', 'pendiente')
+            .single();
+        if (estadoError) throw new Error(estadoError.message);
+
+        const { data: gradoData, error: gradoError } = await this.supabase
+            .from('grados')
+            .select('id')
+            .eq('nombre', formData.grado)
+            .single();
+        if (gradoError) throw new Error(gradoError.message);
+
+        const solicitudData = {
+            tipo_solicitud_id: tipoData.id,
+            estado_actual_id: estadoData.id,
+            nombre_estudiante: formData.estudiante,
+            grado_id: gradoData.id,
+            motivo: formData.motivo,
+            datos_formulario: formData,
+            nombre_padre_acudiente: formData.nombreAcudiente,
+            telefono_contacto: formData.telefonoAcudiente,
+            email_contacto: formData.emailAcudiente
+        };
+
+        const { data, error } = await this.supabase
+            .from('solicitudes')
+            .insert([solicitudData])
+            .select();
+        if (error) throw new Error(error.message);
+        return data[0];
     }
 
     // ========== CONSULTA DE RADICADO ==========
