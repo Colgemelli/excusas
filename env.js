@@ -12,9 +12,9 @@ window.process.env.SUPABASE_URL = 'https://zkbnpjmtwkhcvqizpmhj.supabase.co';
 window.process.env.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprYm5wam10d2toY3ZxaXpwbWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTQyNDksImV4cCI6MjA2NjczMDI0OX0.McMyTT8-Myp6L0nIjTN4chedAPunB0dwymQKhiNp6uI';
 
 // ========== CONFIGURACIÓN DE DESARROLLO ==========
-// IMPORTANTE: El sistema está configurado para usar modo LOCAL por defecto
-// Esto significa que funcionará sin Supabase para pruebas
-window.SUPABASE_LOCAL_MODE = true; // ← true = modo local, false = usar Supabase
+// IMPORTANTE: El sistema está configurado para usar Supabase por defecto
+// Cambie a 'true' si desea trabajar sin conexión (modo local)
+window.SUPABASE_LOCAL_MODE = false; // ← true = modo local, false = usar Supabase
 
 // ========== CONFIGURACIÓN DE LA APLICACIÓN ==========
 window.APP_CONFIG = {
