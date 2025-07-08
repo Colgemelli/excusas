@@ -121,11 +121,7 @@ console.log(`
 `);
 
 // ========== CONFIGURACIÓN AUTOMÁTICA ==========
-// Verificar si estamos en desarrollo local
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    window.SUPABASE_LOCAL_MODE = true;
-    console.log('🏠 Modo local detectado automáticamente');
-}
+// Se eliminó la detección automática de entorno local para forzar modo en línea
 
 // ========== EXPORTAR CONFIGURACIÓN ==========
 window.ENV_CONFIG = {
